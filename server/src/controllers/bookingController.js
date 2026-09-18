@@ -67,10 +67,6 @@ async function confirmBookingPayment(
     );
 }
 
-/* =========================================================
-   HOLD TICKETS
-========================================================= */
-
 export async function holdTickets(req, res) {
     try {
         const { roomCode, ticketIds } = req.body;
@@ -160,9 +156,6 @@ export async function holdTickets(req, res) {
     }
 }
 
-/* =========================================================
-   CREATE BOOKING + RAZORPAY ORDER
-========================================================= */
 
 export async function createBooking(req, res) {
     try {
@@ -236,13 +229,7 @@ export async function createBooking(req, res) {
             Date.now() + HOLD_DURATION_MS,
         );
 
-        /*
-         * Create the Razorpay order.
-         *
-         * Razorpay expects the amount in paise:
-         *
-         * ₹100 = 10000 paise
-         */
+
         const order =
             await razorpay.orders.create({
                 amount: Math.round(
@@ -256,10 +243,6 @@ export async function createBooking(req, res) {
                 },
             });
 
-        /*
-         * Create our booking after the
-         * Razorpay order succeeds.
-         */
         const b = await Booking.create({
             reference: ref,
             room: room._id,
@@ -304,12 +287,7 @@ export async function createBooking(req, res) {
                 upiReference:
                     b.upiReference,
 
-                /*
-                 * These values are safe
-                 * to send to React.
-                 *
-                 * NEVER send KEY_SECRET.
-                 */
+        
                 razorpayOrderId:
                     order.id,
 
@@ -338,9 +316,6 @@ export async function createBooking(req, res) {
     }
 }
 
-/* =========================================================
-   VERIFY RAZORPAY PAYMENT
-========================================================= */
 
 export async function verifyBookingPayment(
     req,
@@ -361,9 +336,7 @@ export async function verifyBookingPayment(
             });
         }
 
-        /*
-         * Already confirmed.
-         */
+
         if (
             booking.paymentStatus ===
             "paid"
@@ -380,9 +353,6 @@ export async function verifyBookingPayment(
             });
         }
 
-        /*
-         * Booking expired.
-         */
         if (
             booking.expiresAt <=
             new Date()
@@ -431,11 +401,6 @@ export async function verifyBookingPayment(
                     "Razorpay order not found for this booking.",
             });
         }
-
-        /*
-         * Fetch all payments for this
-         * Razorpay order.
-         */
         const payments =
             await razorpay.orders.fetchPayments(
                 booking.razorpayOrderId,
@@ -446,11 +411,6 @@ export async function verifyBookingPayment(
                 booking.total * 100,
             );
 
-        /*
-         * Look for a successful,
-         * captured payment matching
-         * the exact booking amount.
-         */
         const payment =
             payments.items?.find(
                 (item) =>
@@ -464,9 +424,6 @@ export async function verifyBookingPayment(
                     "INR",
             );
 
-        /*
-         * No successful payment yet.
-         */
         if (!payment) {
             return res.json({
                 verified: false,
@@ -517,9 +474,6 @@ export async function verifyBookingPayment(
     }
 }
 
-/* =========================================================
-   RAZORPAY WEBHOOK
-========================================================= */
 
 export async function razorpayWebhook(
     req,
@@ -587,11 +541,6 @@ export async function razorpayWebhook(
                     "utf8",
                 ),
             );
-
-        /*
-         * payment.captured is the important
-         * event for our application.
-         */
         if (
             event.event ===
             "payment.captured"
@@ -702,9 +651,6 @@ export async function razorpayWebhook(
     }
 }
 
-/* =========================================================
-   GET BOOKING STATUS
-========================================================= */
 
 export async function getBookingStatus(
     req,
@@ -773,6 +719,136 @@ export async function getBookingStatus(
         return res.status(500).json({
             message:
                 "Unable to get booking status",
+        });
+    }
+}
+export async function joinRoom(req, res) {
+    try {
+        const { roomCode, phone } = req.body;
+
+        const code = roomCode
+            ?.trim()
+            .toUpperCase();
+
+        const cleanPhone = String(phone || "")
+            .replace(/\D/g, "")
+            .replace(/^91/, "")
+            .replace(/^0/, "");
+
+        if (!code) {
+            return res.status(400).json({
+                message: "Room code is required.",
+            });
+        }
+
+        if (!cleanPhone) {
+            return res.status(400).json({
+                message: "Mobile number is required.",
+            });
+        }
+
+        /*
+         * Find the room.
+         */
+        const room = await Room.findOne({
+            code,
+        });
+
+        if (!room) {
+            return res.status(404).json({
+                message: "Invalid room code.",
+            });
+        }
+
+    
+        const user = await User.findById(
+            req.auth.sub
+        );
+
+        if (!user) {
+            return res.status(401).json({
+                message: "User account not found.",
+            });
+        }
+
+        const registeredPhone = String(user.phone || "")
+            .replace(/\D/g, "")
+            .replace(/^91/, "")
+            .replace(/^0/, "");
+
+        if (registeredPhone !== cleanPhone) {
+            return res.status(403).json({
+                message: "The mobile number does not match your registered account.",
+            });
+        }
+
+        const booking = await Booking.findOne({
+            room: room._id,
+            user: user._id,
+            paymentStatus: "paid",
+            status: "confirmed",
+        })
+            .populate({
+                path: "tickets",
+                select:
+                    "_id number publicCode grid status",
+            });
+
+        if (!booking) {
+            return res.status(403).json({
+                message:
+                    "No confirmed ticket booking was found for this room.",
+            });
+        }
+
+        const tickets = booking.tickets || [];
+
+        if (!tickets.length) {
+            return res.status(403).json({
+                message:
+                    "No registered tickets were found for this booking.",
+            });
+        }
+
+        return res.json({
+            success: true,
+
+            room: {
+                id: room._id,
+                code: room.code,
+                title: room.title,
+                description: room.description,
+                status: room.status,
+                startsAt: room.startsAt,
+                ticketPrice: room.ticketPrice,
+                jackpot: room.jackpot,
+                balls: room.balls,
+            },
+
+            player: {
+                id: user._id,
+                name: user.name,
+                phone: user.phone,
+            },
+
+            booking: {
+                reference: booking.reference,
+                paymentStatus:
+                    booking.paymentStatus,
+                status: booking.status,
+            },
+
+            tickets,
+        });
+    } catch (error) {
+        console.error(
+            "joinRoom:",
+            error
+        );
+
+        return res.status(500).json({
+            message:
+                "Unable to verify room access.",
         });
     }
 }

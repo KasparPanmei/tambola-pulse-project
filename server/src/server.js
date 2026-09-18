@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 import roomRoutes from "./routes/roomRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import { startGameEngine } from "./utils/gameEngine.js";
 const app = express(),
   PORT = process.env.PORT || 5000;
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
@@ -22,10 +23,18 @@ app.use((e, _, res, __) =>
   res.status(500).json({ message: e.message || "Internal server error" }),
 );
 connectDB()
-  .then(() =>
-    app.listen(PORT, () => console.log(`API: http://localhost:${PORT}`)),
-  )
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+    .then(() => {
+        startGameEngine();
+
+        app.listen(PORT, () => {
+            console.log(
+                `Server running on port ${PORT}`,
+            );
+        });
+    })
+    .catch((error) => {
+        console.error(
+            "Database connection failed:",
+            error,
+        );
+    });

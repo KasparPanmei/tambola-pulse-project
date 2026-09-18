@@ -102,50 +102,146 @@ export async function createRoom(req, res) {
             ticketPrice,
             jackpot,
             balls,
+            prizes,
         } = req.body;
 
         if (!code || !title) {
             return res.status(400).json({
-                message: "Room code and title are required",
+                message:
+                    "Room code and title are required",
             });
         }
 
-        const normalizedCode = code.trim().toUpperCase();
+        const normalizedCode =
+            code.trim().toUpperCase();
 
-        const existingRoom = await Room.findOne({
-            code: normalizedCode,
-        });
+        const existingRoom =
+            await Room.findOne({
+                code: normalizedCode,
+            });
 
         if (existingRoom) {
             return res.status(409).json({
-                message: "A room with this code already exists",
+                message:
+                    "A room with this code already exists",
             });
         }
 
-        const room = await Room.create({
-            code: normalizedCode,
-            title: title.trim(),
-            description: description?.trim() || "",
-            status: "upcoming",
-            startsAt: startsAt ? new Date(startsAt) : new Date(),
-            ticketPrice: Number(ticketPrice) || 0,
-            jackpot: Number(jackpot) || 0,
-            balls: Number(balls) || 90,
-        });
+        const normalizedPrizes =
+            Array.isArray(prizes)
+                ? prizes
+                    .map((prize, index) => ({
+                        id:
+                            prize?.id ||
+                            [
+                                "early-five",
+                                "top-line",
+                                "middle-line",
+                                "bottom-line",
+                                "four-corners",
+                                "full-house",
+                            ][index] ||
+                            `prize-${index + 1}`,
+
+                        name:
+                            prize?.name ||
+                            `Prize ${index + 1}`,
+
+                        shortName:
+                            prize?.shortName ||
+                            prize?.name ||
+                            `Prize ${index + 1}`,
+
+                        amount:
+                            Number(
+                                prize?.amount ??
+                                prize?.prizeAmount ??
+                                0,
+                            ),
+
+                        reward:
+                            typeof prize?.reward ===
+                                "string"
+                                ? prize.reward
+                                : `₹${Number(
+                                    prize?.amount ??
+                                    prize?.prizeAmount ??
+                                    0,
+                                ).toLocaleString(
+                                    "en-IN",
+                                )}`,
+
+                        detail:
+                            prize?.detail ||
+                            prize?.description ||
+                            "Complete the required pattern",
+
+                        accent:
+                            prize?.accent ||
+                            [
+                                "coral",
+                                "gold",
+                                "mint",
+                                "lilac",
+                            ][index % 4],
+
+                        winners:
+                            Number(
+                                prize?.winners,
+                            ) || 1,
+
+                        enabled:
+                            prize?.enabled !== false,
+                    }))
+                : [];
+
+        const room =
+            await Room.create({
+                code: normalizedCode,
+
+                title: title.trim(),
+
+                description:
+                    description?.trim() || "",
+
+                status: "upcoming",
+
+                startsAt: startsAt
+                    ? new Date(startsAt)
+                    : new Date(),
+
+                ticketPrice:
+                    Number(ticketPrice) || 0,
+
+                jackpot:
+                    Number(jackpot) || 0,
+
+                balls:
+                    Number(balls) || 90,
+
+                prizes:
+                    normalizedPrizes,
+            });
 
         return res.status(201).json({
-            message: "Room created successfully",
+            message:
+                "Room created successfully",
+
             room,
         });
     } catch (error) {
-        console.error("Create room error:", error);
+        console.error(
+            "Create room error:",
+            error,
+        );
 
         return res.status(500).json({
-            message: "Unable to create room",
+            message:
+                error.message ||
+                "Unable to create room",
         });
     }
 }
-
 
 export async function getAdminTickets(req, res) {
     try {

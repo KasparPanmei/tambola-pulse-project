@@ -11,7 +11,9 @@ import {
     CheckCircle2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import JoinRoomModal from "./JoinRoomModal.jsx";
 import api from "../lib/api.js";
+import adminApi from "../lib/adminApi.js";
 
 const items = [
     ["home", "Home", Gamepad2],
@@ -27,7 +29,7 @@ export default function BottomNav({
 
     const [adminModal, setAdminModal] =
         useState(false);
-
+    const [joinModal, setJoinModal] = useState(false);
     const [phone, setPhone] = useState("");
 
     const [otp, setOtp] = useState([
@@ -96,7 +98,7 @@ export default function BottomNav({
         setLoading(true);
 
         try {
-            const { data } = await api.post(
+            const { data } = await adminApi.post(
                 "/auth/request-otp",
                 {
                     phone: cleanPhone,
@@ -115,7 +117,7 @@ export default function BottomNav({
         } catch (e) {
             setError(
                 e.response?.data?.message ||
-                    "Could not send OTP.",
+                "Could not send OTP.",
             );
         } finally {
             setLoading(false);
@@ -166,7 +168,7 @@ export default function BottomNav({
         setLoading(true);
 
         try {
-            const { data } = await api.post(
+            const { data } = await adminApi.post(
                 "/auth/verify-otp",
                 {
                     phone: cleanPhone,
@@ -188,12 +190,12 @@ export default function BottomNav({
             }
 
             localStorage.setItem(
-                "tp_token",
+                "tp_admin_token",
                 data.token,
             );
 
             localStorage.setItem(
-                "tp_user",
+                "tp_admin_user",
                 JSON.stringify(data.user),
             );
 
@@ -208,7 +210,7 @@ export default function BottomNav({
         } catch (e) {
             setError(
                 e.response?.data?.message ||
-                    "OTP verification failed.",
+                "OTP verification failed.",
             );
         } finally {
             setLoading(false);
@@ -223,11 +225,10 @@ export default function BottomNav({
                         <button
                             key={id}
                             type="button"
-                            className={`nav ${
-                                active === id
-                                    ? "active"
-                                    : ""
-                            }`}
+                            className={`nav ${active === id
+                                ? "active"
+                                : ""
+                                }`}
                             onClick={() => {
                                 if (
                                     id === "admin"
@@ -235,10 +236,15 @@ export default function BottomNav({
                                     openAdmin();
                                     return;
                                 }
+                                if (id === "join") {
+                                    setJoinModal(true);
+                                    return;
+                                }
 
                                 if (id === "home") {
                                     navigate("/");
                                 }
+
                             }}
                         >
                             <Icon size={21} />
@@ -257,6 +263,13 @@ export default function BottomNav({
                     ),
                 )}
             </nav>
+            {joinModal && (
+                <JoinRoomModal
+                    onClose={() =>
+                        setJoinModal(false)
+                    }
+                />
+            )}
 
             {/* ADMIN LOGIN MODAL */}
             {adminModal && (
@@ -451,10 +464,10 @@ export default function BottomNav({
                                                         ) => {
                                                             if (
                                                                 e.key ===
-                                                                    "Backspace" &&
+                                                                "Backspace" &&
                                                                 !value &&
                                                                 index >
-                                                                    0
+                                                                0
                                                             ) {
                                                                 document
                                                                     .getElementById(

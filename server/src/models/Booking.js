@@ -34,7 +34,6 @@ const s = new mongoose.Schema(
         razorpayPaymentId: {
             type: String,
         },
-
         razorpayPaymentId: String,
     },
     { timestamps: true }

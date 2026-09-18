@@ -7,57 +7,117 @@ import {
     getAdminBookings,
     getAdminPayments,
     getAdminRoom,
+    createRoom,
+} from "../controllers/adminController.js";
+
+import {
     resetRoom,
     startRoom,
     pauseRoom,
     terminateRoom,
-    createRoom,
-} from "../controllers/adminController.js";
+    drawRoomBall,
+} from "../controllers/roomController.js";
 
-import { requireAuth } from "../utils/auth.js";
-import { requireAdmin } from "../utils/adminAuth.js";
+import {
+    getAdminClaims,
+    verifyClaim,
+    rejectClaim,
+} from "../controllers/ClaimController.js";
+
+import {
+    requireAuth,
+} from "../utils/auth.js";
+
+import {
+    requireAdmin,
+} from "../utils/adminAuth.js";
 
 const router = Router();
 
-router.use(requireAuth);
-router.use(requireAdmin);
-
-router.get("/dashboard", getAdminDashboard);
-
-router.get("/tickets", getAdminTickets);
-
-router.post(
-    "/tickets/generate",
-    generateAdminTickets,
+router.use(
+    requireAuth,
+    requireAdmin
 );
-router.post("/rooms", createRoom);
-router.get("/rooms/:roomCode", getAdminRoom);
-router.get("/bookings", getAdminBookings);
-router.get("/payments", getAdminPayments);
+
+// Dashboard
+router.get(
+    "/dashboard",
+    getAdminDashboard
+);
+
+// Rooms
 router.get(
     "/rooms/:roomCode",
-    getAdminRoom,
+    getAdminRoom
 );
 
 router.post(
-    "/rooms/:roomCode/reset",
-    resetRoom,
+    "/rooms",
+    createRoom
 );
 
 router.post(
     "/rooms/:roomCode/start",
-    startRoom,
+    startRoom
 );
 
 router.post(
     "/rooms/:roomCode/pause",
-    pauseRoom,
+    pauseRoom
 );
 
 router.post(
     "/rooms/:roomCode/terminate",
-    terminateRoom,
+    terminateRoom
 );
 
+router.post(
+    "/rooms/:roomCode/reset",
+    resetRoom
+);
+
+router.post(
+    "/rooms/:roomCode/draw",
+    drawRoomBall
+);
+
+// Tickets
+router.get(
+    "/tickets",
+    getAdminTickets
+);
+
+router.post(
+    "/tickets/generate",
+    generateAdminTickets
+);
+
+// Bookings
+router.get(
+    "/bookings",
+    getAdminBookings
+);
+
+// Payments
+router.get(
+    "/payments",
+    getAdminPayments
+);
+
+// Prize claims
+router.get(
+    "/rooms/:roomCode/claims",
+    getAdminClaims
+);
+
+router.post(
+    "/claims/:claimId/verify",
+    verifyClaim
+);
+
+router.post(
+    "/claims/:claimId/reject",
+    rejectClaim
+);
 
 export default router;

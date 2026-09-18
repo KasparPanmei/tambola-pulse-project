@@ -1,19 +1,137 @@
 import mongoose from "mongoose";
+
+const prizeSchema = new mongoose.Schema(
+    {
+        id: {
+            type: String,
+            required: true,
+        },
+        name: {
+            type: String,
+            required: true,
+        },
+        shortName: {
+            type: String,
+            default: "",
+        },
+        amount: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        reward: {
+            type: String,
+            default: "",
+        },
+        detail: {
+            type: String,
+            default: "",
+        },
+        accent: {
+            type: String,
+            default: "gold",
+        },
+        winners: {
+            type: Number,
+            default: 1,
+            min: 1,
+        },
+        enabled: {
+            type: Boolean,
+            default: true,
+        },
+    },
+    {
+        _id: false,
+    },
+);
+
 const s = new mongoose.Schema(
     {
-        code: { type: String, required: true, unique: true, index: true },
+        code: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true,
+        },
+
         title: String,
+
         description: String,
+
         status: {
             type: String,
-            enum: ["upcoming", "live", "closed"],
+            enum: [
+                "upcoming",
+                "live",
+                "paused",
+                "closed",
+            ],
             default: "upcoming",
         },
+
         startsAt: Date,
-        ticketPrice: { type: Number, min: 0 },
-        jackpot: { type: Number, min: 0, default: 0 },
-        balls: { type: Number, default: 90 },
+
+        ticketPrice: {
+            type: Number,
+            min: 0,
+        },
+
+        jackpot: {
+            type: Number,
+            min: 0,
+            default: 0,
+        },
+
+        balls: {
+            type: Number,
+            default: 90,
+        },
+
+        prizes: {
+            type: [prizeSchema],
+            default: [],
+        },
+
+        currentNumber: {
+            type: Number,
+            default: null,
+        },
+
+        calledNumbers: {
+            type: [Number],
+            default: [],
+        },
+
+        callCadence: {
+            type: Number,
+            enum: [3, 5, 10],
+            default: 5,
+        },
+
+        autoCaller: {
+            type: Boolean,
+            default: false,
+        },
+
+        gameStartedAt: {
+            type: Date,
+            default: null,
+        },
+
+        lastCalledAt: {
+            type: Date,
+            default: null,
+        },
+
+        gameVersion: {
+            type: Number,
+            default: 0,
+        },
     },
-    { timestamps: true },
+    {
+        timestamps: true,
+    },
 );
+
 export default mongoose.model("Room", s);

@@ -5,6 +5,7 @@ import {
     createBooking,
     getBookingStatus,
     verifyBookingPayment,
+    joinRoom,
 } from "../controllers/bookingController.js";
 
 import { requireAuth } from "../utils/auth.js";
@@ -33,4 +34,8 @@ r.post(
     verifyBookingPayment,
 );
 
+r.post(
+    "/join-room",
+    joinRoom
+);
 export default r;

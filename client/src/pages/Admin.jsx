@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../lib/api.js";
+import adminApi from "../lib/adminApi.js";
 import {
     Activity,
     AlertTriangle,
@@ -14,53 +14,23 @@ import {
     FileText,
     Gamepad2,
     History,
+    Hash,
     LayoutDashboard,
     Menu,
     Pause,
+    Phone,
     Play,
     RefreshCcw,
     Settings,
     ShieldCheck,
     Ticket,
     Trophy,
+    UserRound,
     Users,
     X,
     XCircle,
     Zap,
 } from "lucide-react";
-
-const prizeRows = [
-    {
-        name: "Early Five",
-        prize: "₹1,000",
-        winners: "1 winner",
-    },
-    {
-        name: "Four Corners",
-        prize: "₹1,500",
-        winners: "1 winner",
-    },
-    {
-        name: "Top Line",
-        prize: "₹2,000",
-        winners: "1 winner",
-    },
-    {
-        name: "Middle Line",
-        prize: "₹2,000",
-        winners: "1 winner",
-    },
-    {
-        name: "Bottom Line",
-        prize: "₹2,000",
-        winners: "1 winner",
-    },
-    {
-        name: "Full House",
-        prize: "₹6,500",
-        winners: "1 winner",
-    },
-];
 
 const historyRows = [
     {
@@ -174,34 +144,542 @@ function TicketCard({ ticket }) {
 }
 
 function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
+    function updatePrize(index, field, value) {
+        setForm((current) => ({
+            ...current,
+            prizes: current.prizes.map((prize, prizeIndex) =>
+                prizeIndex === index
+                    ? {
+                        ...prize,
+                        [field]:
+                            field === "amount" || field === "winners"
+                                ? Number(value)
+                                : value,
+                    }
+                    : prize,
+            ),
+        }));
+    }
+
     return (
         <section className="admin-panel" style={{ marginTop: 24 }}>
             <PanelHeader
                 icon={Settings}
                 title="Create Game Room"
-                description="Create the room that players will use. Tickets can be generated after the room is created."
+                description="Create the room and configure its prize structure before players join."
                 tag="ROOM SETUP"
             />
+
             <form onSubmit={onSubmit}>
-                <div className="admin-generator-actions" style={{ alignItems: "stretch", flexWrap: "wrap" }}>
-                    <div className="admin-count-input" style={{ minWidth: 180 }}><span>ROOM CODE</span><input value={form.code} onChange={(e) => setForm((v) => ({ ...v, code: e.target.value.toUpperCase() }))} placeholder="TAM-8842" required /></div>
-                    <div className="admin-count-input" style={{ minWidth: 260 }}><span>TITLE</span><input value={form.title} onChange={(e) => setForm((v) => ({ ...v, title: e.target.value }))} placeholder="Pick Your Lucky Numbers & Win Jackpot Housie" required /></div>
-                    <div className="admin-count-input" style={{ minWidth: 160 }}><span>TICKET PRICE</span><input type="number" min="0" value={form.ticketPrice} onChange={(e) => setForm((v) => ({ ...v, ticketPrice: e.target.value }))} required /></div>
-                    <div className="admin-count-input" style={{ minWidth: 160 }}><span>JACKPOT</span><input type="number" min="0" value={form.jackpot} onChange={(e) => setForm((v) => ({ ...v, jackpot: e.target.value }))} required /></div>
-                    <div className="admin-count-input" style={{ minWidth: 160 }}><span>BALLS</span><input type="number" min="1" max="90" value={form.balls} onChange={(e) => setForm((v) => ({ ...v, balls: e.target.value }))} required /></div>
-                    <div className="admin-count-input" style={{ minWidth: 220 }}><span>START TIME</span><input type="datetime-local" value={form.startsAt} onChange={(e) => setForm((v) => ({ ...v, startsAt: e.target.value }))} /></div>
+                <div
+                    className="admin-generator-actions"
+                    style={{
+                        alignItems: "stretch",
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <div className="admin-count-input" style={{ minWidth: 180 }}>
+                        <span>ROOM CODE</span>
+                        <input
+                            value={form.code}
+                            onChange={(e) =>
+                                setForm((v) => ({
+                                    ...v,
+                                    code: e.target.value.toUpperCase(),
+                                }))
+                            }
+                            placeholder="TAM-8842"
+                            required
+                        />
+                    </div>
+
+                    <div className="admin-count-input" style={{ minWidth: 260 }}>
+                        <span>TITLE</span>
+                        <input
+                            value={form.title}
+                            onChange={(e) =>
+                                setForm((v) => ({
+                                    ...v,
+                                    title: e.target.value,
+                                }))
+                            }
+                            placeholder="Pick Your Lucky Numbers & Win Jackpot Housie"
+                            required
+                        />
+                    </div>
+
+                    <div className="admin-count-input" style={{ minWidth: 160 }}>
+                        <span>TICKET PRICE</span>
+                        <input
+                            type="number"
+                            min="0"
+                            value={form.ticketPrice}
+                            onChange={(e) =>
+                                setForm((v) => ({
+                                    ...v,
+                                    ticketPrice: e.target.value,
+                                }))
+                            }
+                            required
+                        />
+                    </div>
+
+                    <div className="admin-count-input" style={{ minWidth: 160 }}>
+                        <span>JACKPOT</span>
+                        <input
+                            type="number"
+                            min="0"
+                            value={form.jackpot}
+                            onChange={(e) =>
+                                setForm((v) => ({
+                                    ...v,
+                                    jackpot: e.target.value,
+                                }))
+                            }
+                            required
+                        />
+                    </div>
+
+                    <div className="admin-count-input" style={{ minWidth: 160 }}>
+                        <span>BALLS</span>
+                        <input
+                            type="number"
+                            min="1"
+                            max="90"
+                            value={form.balls}
+                            onChange={(e) =>
+                                setForm((v) => ({
+                                    ...v,
+                                    balls: e.target.value,
+                                }))
+                            }
+                            required
+                        />
+                    </div>
+
+                    <div className="admin-count-input" style={{ minWidth: 220 }}>
+                        <span>START TIME</span>
+                        <input
+                            type="datetime-local"
+                            value={form.startsAt}
+                            onChange={(e) =>
+                                setForm((v) => ({
+                                    ...v,
+                                    startsAt: e.target.value,
+                                }))
+                            }
+                        />
+                    </div>
                 </div>
+
                 <div style={{ marginTop: 16 }}>
                     <label style={{ display: "block" }}>
-                        <span style={{ display: "block", marginBottom: 8, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em" }}>DESCRIPTION</span>
-                        <textarea value={form.description} onChange={(e) => setForm((v) => ({ ...v, description: e.target.value }))} placeholder="Official weekend mega bumper draw with instant UPI automated settlements." rows={3} style={{ width: "100%", resize: "vertical" }} />
+                        <span
+                            style={{
+                                display: "block",
+                                marginBottom: 8,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                letterSpacing: "0.08em",
+                            }}
+                        >
+                            DESCRIPTION
+                        </span>
+
+                        <textarea
+                            value={form.description}
+                            onChange={(e) =>
+                                setForm((v) => ({
+                                    ...v,
+                                    description: e.target.value,
+                                }))
+                            }
+                            placeholder="Official weekend mega bumper draw with instant UPI automated settlements."
+                            rows={3}
+                            style={{
+                                width: "100%",
+                                resize: "vertical",
+                            }}
+                        />
                     </label>
                 </div>
-                <div className="admin-scheduler-actions" style={{ marginTop: 16 }}>
-                    <button className="admin-start-game" type="submit" disabled={busy}><Gamepad2 size={15} />{busy ? "CREATING ROOM..." : "CREATE ROOM"}</button>
+
+                <div className="admin-prize-config" style={{ marginTop: 24 }}>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: 12,
+                        }}
+                    >
+                        <div>
+                            <div
+                                style={{
+                                    fontSize: 12,
+                                    fontWeight: 800,
+                                    letterSpacing: "0.08em",
+                                }}
+                            >
+                                PRIZE CONFIGURATION
+                            </div>
+
+                            <div
+                                style={{
+                                    marginTop: 4,
+                                    fontSize: 12,
+                                    opacity: 0.65,
+                                }}
+                            >
+                                Set the payout and number of winners for this room.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="admin-prize-config-list">
+                        {form.prizes.map((prize, index) => (
+                            <div
+                                className="admin-prize-config-row"
+                                key={prize.id}
+                            >
+                                <div className="admin-prize-config-name">
+                                    <Trophy size={15} />
+                                    <strong>{prize.name}</strong>
+                                </div>
+
+                                <label className="admin-prize-field">
+                                    <span>AMOUNT</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={prize.amount}
+                                        onChange={(e) =>
+                                            updatePrize(
+                                                index,
+                                                "amount",
+                                                e.target.value,
+                                            )
+                                        }
+                                        required={prize.enabled}
+                                    />
+                                </label>
+
+                                <label className="admin-prize-field">
+                                    <span>WINNERS</span>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={prize.winners}
+                                        onChange={(e) =>
+                                            updatePrize(
+                                                index,
+                                                "winners",
+                                                e.target.value,
+                                            )
+                                        }
+                                        required={prize.enabled}
+                                    />
+                                </label>
+
+                                <label className="admin-prize-toggle">
+                                    <span>ENABLED</span>
+                                    <input
+                                        type="checkbox"
+                                        checked={prize.enabled}
+                                        onChange={(e) =>
+                                            updatePrize(
+                                                index,
+                                                "enabled",
+                                                e.target.checked,
+                                            )
+                                        }
+                                    />
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div
+                        className="admin-payout-footer"
+                        style={{ marginTop: 14 }}
+                    >
+                        <span>TOTAL CONFIGURED PRIZES</span>
+
+                        <strong>
+                            ₹
+                            {form.prizes
+                                .filter((prize) => prize.enabled)
+                                .reduce(
+                                    (total, prize) =>
+                                        total +
+                                        Number(prize.amount || 0) *
+                                        Number(prize.winners || 1),
+                                    0,
+                                )
+                                .toLocaleString("en-IN")}
+                        </strong>
+                    </div>
+                </div>
+
+                <div
+                    className="admin-scheduler-actions"
+                    style={{ marginTop: 16 }}
+                >
+                    <button
+                        className="admin-start-game"
+                        type="submit"
+                        disabled={busy}
+                    >
+                        <Gamepad2 size={15} />
+
+                        {busy
+                            ? "CREATING ROOM..."
+                            : "CREATE ROOM"}
+                    </button>
                 </div>
             </form>
         </section>
+    );
+}
+
+
+function getTicketNumbers(ticket) {
+    if (!Array.isArray(ticket?.grid)) return [];
+    return ticket.grid.flat().filter(
+        (value) => value !== null && value !== undefined && value !== "",
+    );
+}
+
+function getCalledSet(calledNumbers) {
+    return new Set(
+        Array.isArray(calledNumbers) ? calledNumbers.map(Number) : [],
+    );
+}
+
+function getTicketValidation(ticket, calledNumbers) {
+    const grid = Array.isArray(ticket?.grid) ? ticket.grid : [];
+    const called = getCalledSet(calledNumbers);
+    const rows = grid.map((row) => {
+        const numbers = Array.isArray(row)
+            ? row.filter((value) => value !== null && value !== undefined && value !== "")
+            : [];
+        const marked = numbers.filter((value) => called.has(Number(value))).length;
+        return {
+            total: numbers.length,
+            marked,
+            complete: numbers.length > 0 && marked === numbers.length,
+        };
+    });
+    const allNumbers = getTicketNumbers(ticket);
+    const markedTotal = allNumbers.filter((value) => called.has(Number(value))).length;
+    const firstRow = grid[0] || [];
+    const lastRow = grid[2] || [];
+    const firstNumber = firstRow.find((value) => value !== null && value !== undefined && value !== "");
+    const lastNumber = [...firstRow].reverse().find((value) => value !== null && value !== undefined && value !== "");
+    const bottomFirst = lastRow.find((value) => value !== null && value !== undefined && value !== "");
+    const bottomLast = [...lastRow].reverse().find((value) => value !== null && value !== undefined && value !== "");
+    const corners = [firstNumber, lastNumber, bottomFirst, bottomLast].filter(
+        (value) => value !== null && value !== undefined && value !== "",
+    );
+    const markedCorners = corners.filter((value) => called.has(Number(value))).length;
+    return {
+        rows,
+        markedTotal,
+        totalNumbers: allNumbers.length,
+        fourCorners: corners.length === 4 && markedCorners === 4,
+        markedCorners,
+    };
+}
+
+function ClaimTicketChart({ ticket, calledNumbers = [] }) {
+    const called = getCalledSet(calledNumbers);
+    const grid = Array.isArray(ticket?.grid) ? ticket.grid : [];
+    return (
+        <div className="claim-review-ticket">
+            <div className="claim-review-ticket-header">
+                <div>
+                    <span className="claim-review-eyebrow">TICKET CHART</span>
+                    <strong>
+                        {ticket?.publicCode || ticket?.code || `Ticket #${ticket?.number ?? "—"}`}
+                    </strong>
+                </div>
+                <span className="claim-review-ticket-id">
+                    <Hash size={11} />
+                    {ticket?._id || "N/A"}
+                </span>
+            </div>
+            <div className="claim-review-grid">
+                {grid.flatMap((row, rowIndex) =>
+                    Array.isArray(row)
+                        ? row.map((value, columnIndex) => {
+                            const number = value !== null && value !== undefined && value !== "";
+                            const marked = number && called.has(Number(value));
+                            return (
+                                <div
+                                    key={`${rowIndex}-${columnIndex}`}
+                                    className={["claim-review-cell", !number ? "empty" : "", marked ? "called" : ""]
+                                        .filter(Boolean)
+                                        .join(" ")}
+                                >
+                                    {number ? value : ""}
+                                </div>
+                            );
+                        })
+                        : [],
+                )}
+            </div>
+            <div className="claim-review-ticket-legend">
+                <span><i className="legend-number" />Number</span>
+                <span><i className="legend-called" />Called</span>
+                <span><i className="legend-empty" />Empty</span>
+            </div>
+        </div>
+    );
+}
+
+function ClaimValidationPanel({ claim, calledNumbers }) {
+    const validation = getTicketValidation(claim?.ticket, calledNumbers);
+    const prizeId = String(claim?.prizeId || "");
+    const topLine = validation.rows[0] || { total: 5, marked: 0, complete: false };
+    const middleLine = validation.rows[1] || { total: 5, marked: 0, complete: false };
+    const bottomLine = validation.rows[2] || { total: 5, marked: 0, complete: false };
+    const checks = [
+        { label: "Early Five", value: `${Math.min(validation.markedTotal, 5)} / 5`, valid: validation.markedTotal >= 5, active: prizeId === "early-five" },
+        { label: "Top Line", value: `${topLine.marked} / ${topLine.total || 5}`, valid: topLine.complete, active: prizeId === "top-line" },
+        { label: "Middle Line", value: `${middleLine.marked} / ${middleLine.total || 5}`, valid: middleLine.complete, active: prizeId === "middle-line" },
+        { label: "Bottom Line", value: `${bottomLine.marked} / ${bottomLine.total || 5}`, valid: bottomLine.complete, active: prizeId === "bottom-line" },
+        { label: "Four Corners", value: `${validation.markedCorners} / 4`, valid: validation.fourCorners, active: prizeId === "four-corners" },
+        { label: "Full House", value: `${validation.markedTotal} / ${validation.totalNumbers || 15}`, valid: validation.totalNumbers > 0 && validation.markedTotal === validation.totalNumbers, active: prizeId === "full-house" },
+    ];
+    return (
+        <div className="claim-validation-panel">
+            <div className="claim-validation-header">
+                <div>
+                    <strong>Winning Condition Check</strong>
+                    <span>System calculation based on the numbers already called.</span>
+                </div>
+                <span className="claim-validation-total">{validation.markedTotal} / {validation.totalNumbers || 15}</span>
+            </div>
+            <div className="claim-validation-list">
+                {checks.map((check) => (
+                    <div
+                        key={check.label}
+                        className={["claim-validation-row", check.active ? "active" : "", check.valid ? "valid" : ""]
+                            .filter(Boolean)
+                            .join(" ")}
+                    >
+                        <div className="claim-validation-icon">
+                            {check.valid ? <CheckCircle2 size={14} /> : <Clock3 size={14} />}
+                        </div>
+                        <div className="claim-validation-name">
+                            <strong>{check.label}</strong>
+                            {check.active && <span>CLAIMED CONDITION</span>}
+                        </div>
+                        <strong className="claim-validation-count">{check.value}</strong>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onReject }) {
+    if (!claim) return null;
+    const status = String(claim.status || "pending").toLowerCase();
+    return (
+        <div
+            className="claim-review-overlay"
+            onMouseDown={(event) => {
+                if (event.target === event.currentTarget) onClose();
+            }}
+        >
+            <div className="claim-review-modal">
+                <div className="claim-review-header">
+                    <div>
+                        <div className="claim-review-kicker">
+                            <ShieldCheck size={14} />
+                            PRIZE CLAIM VERIFICATION
+                        </div>
+                        <h2>Review Winner Claim</h2>
+                        <p>Verify the player, ticket and winning condition before approving this claim.</p>
+                    </div>
+                    <button type="button" className="claim-review-close" onClick={onClose}>
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="claim-review-status-row">
+                    <div>
+                        <span className="claim-review-prize-label">CLAIMED PRIZE</span>
+                        <strong className="claim-review-prize">{claim.prizeName || "Prize"}</strong>
+                    </div>
+                    <span className={`claim-review-status ${status}`}>{status.toUpperCase()}</span>
+                </div>
+
+                <div className="claim-review-info-grid">
+                    <div className="claim-review-info-card">
+                        <div className="claim-review-info-icon"><UserRound size={16} /></div>
+                        <div><span>PLAYER NAME</span><strong>{claim.user?.name || "Unknown"}</strong></div>
+                    </div>
+                    <div className="claim-review-info-card">
+                        <div className="claim-review-info-icon"><Phone size={16} /></div>
+                        <div><span>CONTACT NUMBER</span><strong>{claim.user?.phone || "N/A"}</strong></div>
+                    </div>
+                    <div className="claim-review-info-card">
+                        <div className="claim-review-info-icon"><Ticket size={16} /></div>
+                        <div><span>TICKET ID</span><strong>{claim.ticket?.publicCode || claim.ticket?.code || claim.ticket?.number || "N/A"}</strong></div>
+                    </div>
+                    <div className="claim-review-info-card">
+                        <div className="claim-review-info-icon"><Trophy size={16} /></div>
+                        <div><span>PRIZE AMOUNT</span><strong>₹{Number(claim.prizeAmount || 0).toLocaleString("en-IN")}</strong></div>
+                    </div>
+                </div>
+
+                <div className="claim-review-section">
+                    <div className="claim-review-section-title">
+                        <div>
+                            <strong>Exact Ticket Verification</strong>
+                            <span>Numbers highlighted in gold have already been called.</span>
+                        </div>
+                        <span className="claim-review-ball-count">{calledNumbers.length} / {balls || 90} CALLED</span>
+                    </div>
+                    <ClaimTicketChart ticket={claim.ticket} calledNumbers={calledNumbers} />
+                </div>
+
+                <div className="claim-review-section">
+                    <ClaimValidationPanel claim={claim} calledNumbers={calledNumbers} />
+                </div>
+
+                <div className="claim-review-validation">
+                    <div className="claim-review-validation-icon"><CheckCircle2 size={17} /></div>
+                    <div>
+                        <strong>Claim submission record</strong>
+                        <span>Submitted {claim.claimedAt ? new Date(claim.claimedAt).toLocaleString("en-IN") : "N/A"}</span>
+                    </div>
+                    <div className="claim-review-validation-value">
+                        {status === "pending" ? "PENDING REVIEW" : status.toUpperCase()}
+                    </div>
+                </div>
+
+                {status === "pending" ? (
+                    <div className="claim-review-actions">
+                        <button type="button" className="claim-review-reject" onClick={() => onReject(claim._id)}>
+                            <XCircle size={16} />
+                            Reject Claim
+                        </button>
+                        <button type="button" className="claim-review-verify" onClick={() => onVerify(claim._id)}>
+                            <CheckCircle2 size={16} />
+                            Verify Winner
+                        </button>
+                    </div>
+                ) : (
+                    <div className="claim-review-closed">
+                        {status === "verified" ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                        Claim status: <strong>{status.toUpperCase()}</strong>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }
 
@@ -210,9 +688,9 @@ export default function Admin() {
 
     useEffect(() => {
         try {
-            const token = localStorage.getItem("tp_token");
+            const token = localStorage.getItem("tp_admin_token");
             const user = JSON.parse(
-                localStorage.getItem("tp_user") || "null",
+                localStorage.getItem("tp_admin_user") || "null",
             );
 
             if (!token || user?.role !== "admin") {
@@ -221,14 +699,15 @@ export default function Admin() {
                 });
             }
         } catch {
-            localStorage.removeItem("tp_token");
-            localStorage.removeItem("tp_user");
+            localStorage.removeItem("tp_admin_token");
+            localStorage.removeItem("tp_admin_user");
 
             navigate("/", {
                 replace: true,
             });
         }
     }, [navigate]);
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeSection, setActiveSection] =
         useState("overview");
@@ -239,6 +718,69 @@ export default function Admin() {
     const [bookings, setBookings] = useState([]);
     const [payments, setPayments] = useState([]);
     const [creatingRoom, setCreatingRoom] = useState(false);
+    const currentBall = room?.currentNumber ?? null;
+
+    const calledBalls = Array.isArray(room?.calledNumbers)
+        ? room.calledNumbers
+        : [];
+    const [winnerClaims, setWinnerClaims] =
+        useState([]);
+
+    const [winnerAlert, setWinnerAlert] =
+        useState(null);
+
+    const seenClaimIds =
+        useRef(new Set());
+
+    const claimsInitialized =
+        useRef(false);
+    async function verifyClaim(claimId) {
+        try {
+            const { data } = await adminApi.post(`/admin/claims/${claimId}/verify`);
+            const updatedClaim = data?.claim;
+            setWinnerClaims((current) =>
+                current.map((claim) =>
+                    String(claim._id) === String(claimId)
+                        ? { ...claim, ...(updatedClaim || {}), status: "verified" }
+                        : claim,
+                ),
+            );
+            setWinnerAlert((current) =>
+                current && String(current._id) === String(claimId)
+                    ? { ...current, ...(updatedClaim || {}), status: "verified" }
+                    : current,
+            );
+            setLastAction("Winner verified successfully.");
+            await loadAdminData({ silent: true });
+        } catch (error) {
+            console.error("Verify winner error:", error);
+            setLastAction(error.response?.data?.message || "Unable to verify winner.");
+        }
+    }
+
+    async function rejectClaim(claimId) {
+        try {
+            const { data } = await adminApi.post(`/admin/claims/${claimId}/reject`);
+            const updatedClaim = data?.claim;
+            setWinnerClaims((current) =>
+                current.map((claim) =>
+                    String(claim._id) === String(claimId)
+                        ? { ...claim, ...(updatedClaim || {}), status: "rejected" }
+                        : claim,
+                ),
+            );
+            setWinnerAlert((current) =>
+                current && String(current._id) === String(claimId)
+                    ? { ...current, ...(updatedClaim || {}), status: "rejected" }
+                    : current,
+            );
+            setLastAction("Prize claim rejected.");
+            await loadAdminData({ silent: true });
+        } catch (error) {
+            console.error("Reject winner error:", error);
+            setLastAction(error.response?.data?.message || "Unable to reject claim.");
+        }
+    }
     const [roomForm, setRoomForm] = useState({
         code: "",
         title: "Pick Your Lucky Numbers & Win Jackpot Housie",
@@ -247,6 +789,74 @@ export default function Admin() {
         ticketPrice: 50,
         jackpot: 15000,
         balls: 90,
+        prizes: [
+            {
+                id: "early-five",
+                name: "Early Five",
+                shortName: "Early 5",
+                amount: 1000,
+                reward: "₹1,000",
+                detail: "First five marks on your ticket",
+                accent: "coral",
+                winners: 1,
+                enabled: true,
+            },
+            {
+                id: "top-line",
+                name: "Top Line",
+                shortName: "Top line",
+                amount: 2000,
+                reward: "₹2,000",
+                detail: "Complete the top row",
+                accent: "gold",
+                winners: 1,
+                enabled: true,
+            },
+            {
+                id: "middle-line",
+                name: "Middle Line",
+                shortName: "Middle line",
+                amount: 2000,
+                reward: "₹2,000",
+                detail: "Complete the middle row",
+                accent: "mint",
+                winners: 1,
+                enabled: true,
+            },
+            {
+                id: "bottom-line",
+                name: "Bottom Line",
+                shortName: "Bottom line",
+                amount: 2000,
+                reward: "₹2,000",
+                detail: "Complete the bottom row",
+                accent: "lilac",
+                winners: 1,
+                enabled: true,
+            },
+            {
+                id: "four-corners",
+                name: "Four Corners",
+                shortName: "4 corners",
+                amount: 3000,
+                reward: "₹3,000",
+                detail: "Mark the outside corners",
+                accent: "gold",
+                winners: 1,
+                enabled: true,
+            },
+            {
+                id: "full-house",
+                name: "Full House",
+                shortName: "Full house",
+                amount: 5000,
+                reward: "₹5,000",
+                detail: "Mark all 15 numbers",
+                accent: "gold",
+                winners: 1,
+                enabled: true,
+            },
+        ],
     });
     const [dashboardStats, setDashboardStats] = useState({
         totalTickets: 0,
@@ -267,16 +877,7 @@ export default function Admin() {
                 ? "terminated"
                 : "upcoming";
 
-    const [currentBall, setCurrentBall] =
-        useState(47);
 
-    const [calledBalls, setCalledBalls] = useState([
-        31,
-        12,
-        64,
-        27,
-        47,
-    ]);
 
     const [notifications, setNotifications] =
         useState(true);
@@ -297,13 +898,48 @@ export default function Admin() {
             setDashboardStats({ totalTickets: 0, availableTickets: 0, bookedTickets: 0, heldTickets: 0, totalBookings: 0, revenue: 0 });
             setLoading(false); return;
         }
+        const claimsResponse =
+            await adminApi.get(
+                `/admin/rooms/${roomCode}/claims`,
+            );
+
+        const claims =
+            claimsResponse.data.claims || [];
+
+        setWinnerClaims(claims);
+        if (claimsInitialized.current) {
+            const newClaim =
+                claims.find(
+                    (claim) =>
+                        claim.status ===
+                        "pending" &&
+                        !seenClaimIds.current.has(
+                            claim._id,
+                        ),
+                );
+
+            if (
+                newClaim &&
+                notifications
+            ) {
+                setWinnerAlert(newClaim);
+            }
+        }
+
+        claims.forEach((claim) => {
+            seenClaimIds.current.add(
+                claim._id,
+            );
+        });
+
+        claimsInitialized.current = true;
         if (!silent) setLoading(true);
         try {
             const [roomResponse, ticketsResponse, bookingsResponse, paymentsResponse] = await Promise.all([
-                api.get(`/rooms/${encodeURIComponent(roomCode)}`),
-                api.get(`/admin/tickets?room=${encodeURIComponent(roomCode)}`),
-                api.get(`/admin/bookings?room=${encodeURIComponent(roomCode)}`),
-                api.get(`/admin/payments?room=${encodeURIComponent(roomCode)}`).catch(() => ({ data: { payments: [] } })),
+                adminApi.get(`/rooms/${encodeURIComponent(roomCode)}`),
+                adminApi.get(`/admin/tickets?room=${encodeURIComponent(roomCode)}`),
+                adminApi.get(`/admin/bookings?room=${encodeURIComponent(roomCode)}`),
+                adminApi.get(`/admin/payments?room=${encodeURIComponent(roomCode)}`).catch(() => ({ data: { payments: [] } })),
             ]);
             const nextRoom = roomResponse.data.room;
             const nextTickets = (ticketsResponse.data.tickets || []).map((ticket) => ({ ...ticket, code: ticket.publicCode || ticket.code }));
@@ -325,38 +961,160 @@ export default function Admin() {
             }
         } finally { setLoading(false); }
     };
-
     useEffect(() => {
         loadAdminData();
-        if (!roomCode) return undefined;
-        const interval = setInterval(() => loadAdminData({ silent: true }), 3000);
-        return () => clearInterval(interval);
+
+        if (!roomCode) {
+            return undefined;
+        }
+
+        const interval =
+            window.setInterval(
+                () =>
+                    loadAdminData({
+                        silent: true,
+                    }),
+                1000,
+            );
+
+        return () =>
+            window.clearInterval(
+                interval,
+            );
     }, [roomCode]);
 
     async function handleCreateRoom(event) {
-        event.preventDefault(); setCreatingRoom(true); setLastAction("");
+        event.preventDefault();
+        setCreatingRoom(true);
+        setLastAction("");
+
         try {
-            const payload = { ...roomForm, code: roomForm.code.trim().toUpperCase(), ticketPrice: Number(roomForm.ticketPrice), jackpot: Number(roomForm.jackpot), balls: Number(roomForm.balls), startsAt: roomForm.startsAt || undefined };
-            const { data } = await api.post("/admin/rooms", payload);
-            const createdRoom = data.room; const code = createdRoom.code;
-            localStorage.setItem("tp_admin_room_code", code); setRoomCode(code); setRoom(createdRoom);
-            setLastAction(`Room ${code} created successfully.`);
+            const payload = {
+                ...roomForm,
+                code: roomForm.code.trim().toUpperCase(),
+                ticketPrice: Number(roomForm.ticketPrice),
+                jackpot: Number(roomForm.jackpot),
+                balls: Number(roomForm.balls),
+                startsAt: roomForm.startsAt || undefined,
+                prizes: roomForm.prizes.map((prize) => ({
+                    ...prize,
+                    amount: Number(prize.amount),
+                    winners: Number(prize.winners),
+                })),
+            };
+
+            const { data } = await adminApi.post(
+                "/admin/rooms",
+                payload,
+            );
+
+            const createdRoom = data.room;
+            const code = createdRoom.code;
+
+            localStorage.setItem(
+                "tp_admin_room_code",
+                code,
+            );
+
+            setRoomCode(code);
+            setRoom(createdRoom);
+
+            setLastAction(
+                `Room ${code} created successfully.`,
+            );
 
             setRoomForm({
                 code: "",
                 title: "Pick Your Lucky Numbers & Win Jackpot Housie",
-                description: "Official weekend mega bumper draw with instant UPI automated settlements.",
+                description:
+                    "Official weekend mega bumper draw with instant UPI automated settlements.",
                 startsAt: "",
                 ticketPrice: 50,
                 jackpot: 15000,
                 balls: 90,
+                prizes: [
+                    {
+                        id: "early-five",
+                        name: "Early Five",
+                        shortName: "Early 5",
+                        amount: 1000,
+                        reward: "₹1,000",
+                        detail: "First five marks on your ticket",
+                        accent: "coral",
+                        winners: 1,
+                        enabled: true,
+                    },
+                    {
+                        id: "top-line",
+                        name: "Top Line",
+                        shortName: "Top line",
+                        amount: 2000,
+                        reward: "₹2,000",
+                        detail: "Complete the top row",
+                        accent: "gold",
+                        winners: 1,
+                        enabled: true,
+                    },
+                    {
+                        id: "middle-line",
+                        name: "Middle Line",
+                        shortName: "Middle line",
+                        amount: 2000,
+                        reward: "₹2,000",
+                        detail: "Complete the middle row",
+                        accent: "mint",
+                        winners: 1,
+                        enabled: true,
+                    },
+                    {
+                        id: "bottom-line",
+                        name: "Bottom Line",
+                        shortName: "Bottom line",
+                        amount: 2000,
+                        reward: "₹2,000",
+                        detail: "Complete the bottom row",
+                        accent: "lilac",
+                        winners: 1,
+                        enabled: true,
+                    },
+                    {
+                        id: "four-corners",
+                        name: "Four Corners",
+                        shortName: "4 corners",
+                        amount: 3000,
+                        reward: "₹3,000",
+                        detail: "Mark the outside corners",
+                        accent: "gold",
+                        winners: 1,
+                        enabled: true,
+                    },
+                    {
+                        id: "full-house",
+                        name: "Full House",
+                        shortName: "Full house",
+                        amount: 5000,
+                        reward: "₹5,000",
+                        detail: "Mark all 15 numbers",
+                        accent: "gold",
+                        winners: 1,
+                        enabled: true,
+                    },
+                ],
             });
         } catch (error) {
-            console.error("Create room error:", error);
-            setLastAction(error.response?.data?.message || "Unable to create room.");
-        } finally { setCreatingRoom(false); }
-    }
+            console.error(
+                "Create room error:",
+                error,
+            );
 
+            setLastAction(
+                error.response?.data?.message ||
+                "Unable to create room.",
+            );
+        } finally {
+            setCreatingRoom(false);
+        }
+    }
     function clearSelectedRoom() {
         const confirmed = window.confirm(
             "Start a new AdminDesk session? This only deselects the current room; it does not delete the room or its tickets."
@@ -392,27 +1150,67 @@ export default function Admin() {
                 block: "start",
             });
     }
+    async function drawBall() {
+        if (!roomCode) {
+            setLastAction(
+                "Select a room before drawing a ball.",
+            );
+            return;
+        }
 
-    function drawBall() {
-        let next;
+        if (room?.status !== "live") {
+            setLastAction(
+                "Game must be live before drawing a ball.",
+            );
+            return;
+        }
 
-        do {
-            next = Math.floor(Math.random() * 90) + 1;
-        } while (calledBalls.includes(next) && calledBalls.length < 90);
+        try {
+            const { data } =
+                await adminApi.post(
+                    `/admin/rooms/${encodeURIComponent(
+                        roomCode,
+                    )}/draw`,
+                );
 
-        setCurrentBall(next);
+            const updatedRoom =
+                data?.room;
 
-        setCalledBalls((previous) => [
-            ...previous.slice(-4),
-            next,
-        ]);
+            if (!updatedRoom) {
+                throw new Error(
+                    "Server did not return the updated room.",
+                );
+            }
 
-        setLastAction(`Ball ${next} called`);
+            /*
+             * Server is authoritative.
+             */
+            setRoom(updatedRoom);
+
+            setLastAction(
+                `Ball ${updatedRoom.currentNumber} called`,
+            );
+
+            await loadAdminData({
+                silent: true,
+            });
+        } catch (error) {
+            console.error(
+                "Draw ball error:",
+                error,
+            );
+
+            setLastAction(
+                error.response?.data
+                    ?.message ||
+                error.message ||
+                "Unable to draw ball.",
+            );
+        }
     }
-
     async function startGame() {
         try {
-            const { data } = await api.post(
+            const { data } = await adminApi.post(
                 `/admin/rooms/${encodeURIComponent(roomCode)}/start`,
             );
 
@@ -430,13 +1228,13 @@ export default function Admin() {
     async function toggleGame() {
         try {
             if (gameState === "live") {
-                const { data } = await api.post(
+                const { data } = await adminApi.post(
                     `/admin/rooms/${encodeURIComponent(roomCode)}/pause`,
                 );
                 setRoom(data.room);
                 setLastAction("Game paused");
             } else {
-                const { data } = await api.post(
+                const { data } = await adminApi.post(
                     `/admin/rooms/${encodeURIComponent(roomCode)}/start`,
                 );
                 setRoom(data.room);
@@ -456,7 +1254,7 @@ export default function Admin() {
 
     async function terminateGame() {
         try {
-            const { data } = await api.post(
+            const { data } = await adminApi.post(
                 `/admin/rooms/${encodeURIComponent(roomCode)}/terminate`,
             );
 
@@ -474,7 +1272,7 @@ export default function Admin() {
     async function resetRoom() {
         if (!roomCode) return;
         try {
-            const { data } = await api.post(`/admin/rooms/${encodeURIComponent(roomCode)}/reset`);
+            const { data } = await adminApi.post(`/admin/rooms/${encodeURIComponent(roomCode)}/reset`);
             setRoom(data.room); setLastAction("Room reset successfully."); await loadAdminData({ silent: true });
         } catch (error) { setLastAction(error.response?.data?.message || "Failed to reset room."); }
     }
@@ -484,7 +1282,7 @@ export default function Admin() {
         const requestedCount = Number(ticketCount);
         if (!Number.isInteger(requestedCount) || requestedCount < 1 || requestedCount > 1000) { setLastAction("Ticket count must be between 1 and 1000."); return; }
         try {
-            const { data } = await api.post("/admin/tickets/generate", { roomCode, count: requestedCount });
+            const { data } = await adminApi.post("/admin/tickets/generate", { roomCode, count: requestedCount });
             setLastAction(data.message || `${requestedCount} tickets generated successfully.`); await loadAdminData({ silent: true });
         } catch (error) { console.error("Generate tickets error:", error); setLastAction(error.response?.data?.message || "Failed to generate tickets."); }
     }
@@ -510,6 +1308,15 @@ export default function Admin() {
 
     return (
         <div className="admin-page">
+            <ClaimReviewModal
+                claim={winnerAlert}
+                calledNumbers={calledBalls}
+                balls={room?.balls}
+                onClose={() => setWinnerAlert(null)}
+                onVerify={verifyClaim}
+                onReject={rejectClaim}
+            />
+
             {sidebarOpen && (
                 <button
                     className="admin-sidebar-overlay"
@@ -605,7 +1412,7 @@ export default function Admin() {
                         <ShieldCheck size={16} />
                         <span>Dispute Queue</span>
                         <span className="admin-nav-badge">
-                            2
+                            {winnerClaims.filter((claim) => claim.status === "pending").length}
                         </span>
                     </button>
 
@@ -1011,22 +1818,19 @@ export default function Admin() {
                                                 RECENT CALLS
                                             </span>
 
-                                            <div>
-                                                {calledBalls.map(
-                                                    (ball, index) => (
+                                            <div className="admin-recent-ball-list">
+                                                {calledBalls
+                                                    .slice(-5)
+                                                    .reverse()
+                                                    .map((ball, index) => (
                                                         <div
                                                             key={`${ball}-${index}`}
-                                                            className={`recent-ball ${index ===
-                                                                calledBalls.length -
-                                                                1
-                                                                ? "current"
-                                                                : ""
+                                                            className={`recent-ball ${index === 0 ? "current" : ""
                                                                 }`}
                                                         >
                                                             {ball}
                                                         </div>
-                                                    ),
-                                                )}
+                                                    ))}
                                             </div>
                                         </div>
                                     </div>
@@ -1222,40 +2026,68 @@ export default function Admin() {
                                     />
 
                                     <div className="admin-prize-list">
-                                        {prizeRows.map(
-                                            (row, index) => (
+                                        {(room?.prizes || []).map((prize, index) => {
+                                            const verifiedWinner = winnerClaims.find(
+                                                (claim) =>
+                                                    String(claim.prizeId) ===
+                                                    String(prize.id) &&
+                                                    claim.status === "verified",
+                                            );
+
+                                            const pendingClaim = winnerClaims.find(
+                                                (claim) =>
+                                                    String(claim.prizeId) ===
+                                                    String(prize.id) &&
+                                                    claim.status === "pending",
+                                            );
+
+                                            return (
                                                 <div
                                                     className="admin-prize-row"
-                                                    key={row.name}
+                                                    key={prize.id || index}
                                                 >
                                                     <div className="admin-prize-icon">
-                                                        <Trophy
-                                                            size={13}
-                                                        />
+                                                        <Trophy size={13} />
                                                     </div>
 
-                                                    <span>
-                                                        {row.name}
-                                                    </span>
+                                                    <div className="admin-prize-info">
+                                                        <span>{prize.name}</span>
+
+                                                        {verifiedWinner ? (
+                                                            <small className="prize-winner">
+                                                                Winner:{" "}
+                                                                {verifiedWinner.user?.name ||
+                                                                    "Unknown"}
+                                                            </small>
+                                                        ) : pendingClaim ? (
+                                                            <small className="prize-pending">
+                                                                Claim under review
+                                                            </small>
+                                                        ) : (
+                                                            <small className="prize-open">
+                                                                {prize.enabled === false
+                                                                    ? "Disabled"
+                                                                    : "Available"}
+                                                            </small>
+                                                        )}
+                                                    </div>
 
                                                     <strong>
-                                                        {row.prize}
+                                                        ₹
+                                                        {Number(
+                                                            prize.amount || 0,
+                                                        ).toLocaleString("en-IN")}
                                                     </strong>
 
-                                                    <small
-                                                        className={
-                                                            index ===
-                                                                prizeRows.length -
-                                                                1
-                                                                ? "jackpot"
-                                                                : ""
-                                                        }
-                                                    >
-                                                        {row.winners}
+                                                    <small>
+                                                        {Number(prize.winners || 1)}
+                                                        {Number(prize.winners || 1) === 1
+                                                            ? " WINNER"
+                                                            : " WINNERS"}
                                                     </small>
                                                 </div>
-                                            ),
-                                        )}
+                                            );
+                                        })}
                                     </div>
 
                                     <div className="admin-payout-footer">
@@ -1264,7 +2096,17 @@ export default function Admin() {
                                         </span>
 
                                         <strong>
-                                            ₹15,000
+                                            ₹
+                                            {(room?.prizes || [])
+                                                .filter((prize) => prize.enabled !== false)
+                                                .reduce(
+                                                    (total, prize) =>
+                                                        total +
+                                                        Number(prize.amount || 0) *
+                                                        Number(prize.winners || 1),
+                                                    0,
+                                                )
+                                                .toLocaleString("en-IN")}
                                         </strong>
                                     </div>
                                 </div>
@@ -1272,83 +2114,86 @@ export default function Admin() {
                                 {/* DISPUTES */}
                                 <div
                                     id="disputes"
-                                    className="admin-panel"
+                                    className="admin-panel admin-verification-panel"
                                 >
                                     <PanelHeader
                                         icon={ShieldCheck}
                                         title="Dispute & Verification Queue"
-                                        description="Review player claims and ticket verification requests."
-                                        tag="2 PENDING"
+                                        description="Review player claims, verify the exact ticket and approve or reject the requested prize."
+                                        tag={`${winnerClaims.filter((claim) => claim.status === "pending").length} PENDING`}
                                     />
 
-                                    <div className="admin-dispute-list">
-                                        <div className="admin-dispute">
-                                            <div className="admin-dispute-icon">
-                                                <AlertTriangle
-                                                    size={15}
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <strong>
-                                                    Ticket claim requires review
-                                                </strong>
-
-                                                <span>
-                                                    TAM-8842-18
-                                                </span>
-
-                                                <small>
-                                                    Player claims Full House.
-                                                </small>
-                                            </div>
-
-                                            <button
-                                                onClick={() =>
-                                                    setLastAction(
-                                                        "Dispute review opened",
-                                                    )
-                                                }
-                                            >
-                                                Review
-                                            </button>
+                                    <div className="admin-verification-summary">
+                                        <div className="verification-summary-item">
+                                            <span>PENDING</span>
+                                            <strong>{winnerClaims.filter((claim) => claim.status === "pending").length}</strong>
                                         </div>
-
-                                        <div className="admin-dispute">
-                                            <div className="admin-dispute-icon">
-                                                <CheckCircle2
-                                                    size={15}
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <strong>
-                                                    Verification completed
-                                                </strong>
-
-                                                <span>
-                                                    TAM-8842-11
-                                                </span>
-
-                                                <small>
-                                                    Claim verified successfully.
-                                                </small>
-                                            </div>
-
-                                            <span className="payment-status">
-                                                <span />
-                                                VERIFIED
-                                            </span>
+                                        <div className="verification-summary-item">
+                                            <span>VERIFIED</span>
+                                            <strong>{winnerClaims.filter((claim) => claim.status === "verified").length}</strong>
                                         </div>
+                                        <div className="verification-summary-item">
+                                            <span>REJECTED</span>
+                                            <strong>{winnerClaims.filter((claim) => claim.status === "rejected").length}</strong>
+                                        </div>
+                                    </div>
+
+                                    <div className="admin-verification-list">
+                                        {winnerClaims.length === 0 ? (
+                                            <div className="verification-empty">
+                                                <ShieldCheck size={28} />
+                                                <strong>No claims submitted</strong>
+                                                <span>Player prize claims will appear here when submitted.</span>
+                                            </div>
+                                        ) : (
+                                            winnerClaims.map((claim) => {
+                                                const status = String(claim.status || "pending").toLowerCase();
+                                                const ticketLabel = claim.ticket?.publicCode || claim.ticket?.code || claim.ticket?.number || "Unknown ticket";
+                                                return (
+                                                    <div className={`verification-claim-card ${status}`} key={claim._id}>
+                                                        <div className="verification-claim-main">
+                                                            <div className={`verification-claim-icon ${status}`}>
+                                                                {status === "verified" ? <CheckCircle2 size={17} /> : status === "rejected" ? <XCircle size={17} /> : <AlertTriangle size={17} />}
+                                                            </div>
+                                                            <div className="verification-claim-content">
+                                                                <div className="verification-claim-title">
+                                                                    <strong>{claim.prizeName || "Prize Claim"}</strong>
+                                                                    <span className={`verification-status-pill ${status}`}>{status.toUpperCase()}</span>
+                                                                </div>
+                                                                <div className="verification-claim-player">
+                                                                    <UserRound size={13} />
+                                                                    <span>{claim.user?.name || "Unknown Player"}</span>
+                                                                    <span className="verification-separator">•</span>
+                                                                    <Phone size={13} />
+                                                                    <span>{claim.user?.phone || "N/A"}</span>
+                                                                </div>
+                                                                <div className="verification-claim-meta">
+                                                                    <span>Ticket <strong>{ticketLabel}</strong></span>
+                                                                    <span>Prize <strong>₹{Number(claim.prizeAmount || 0).toLocaleString("en-IN")}</strong></span>
+                                                                    <span>{claim.claimedAt ? new Date(claim.claimedAt).toLocaleString("en-IN") : "Time unavailable"}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="verification-claim-actions">
+                                                            <button
+                                                                type="button"
+                                                                className="verification-review-button"
+                                                                onClick={() => setWinnerAlert(claim)}
+                                                            >
+                                                                <ShieldCheck size={14} />
+                                                                {status === "pending" ? "Review Claim" : "View Details"}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
                                     </div>
 
                                     <button
                                         className="admin-view-queue"
-                                        onClick={() =>
-                                            setLastAction(
-                                                "Dispute queue opened",
-                                            )
-                                        }
+                                        type="button"
+                                        onClick={() => document.getElementById("disputes")?.scrollIntoView({ behavior: "smooth", block: "start" })}
                                     >
                                         Open Verification Queue
                                         <ChevronRight size={13} />
