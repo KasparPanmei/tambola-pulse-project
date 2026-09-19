@@ -275,17 +275,11 @@ function getEligibleTickets(
     });
 }
 
-function getClaimedTicketIds(
-    prizeId,
-    claims
-) {
+function getClaimedTicketIds(prizeId, claims) {
     const ids = new Set();
 
     for (const claim of claims || []) {
-        if (
-            String(claim?.prizeId) !==
-            String(prizeId)
-        ) {
+        if (String(claim?.prizeId) !== String(prizeId)) {
             continue;
         }
 
@@ -1094,8 +1088,8 @@ function PrizePanel({
             <div className="claim-disclaimer">
                 <ShieldCheck size={15} />
                 <span>
-                    Each ticket can claim each prize only once.
-                    Rejected claims become available again.
+                    Each ticket can claim every prize once as it becomes eligible.
+                    Claiming one prize does not stop the ticket from playing.
                 </span>
             </div>
         </section>
