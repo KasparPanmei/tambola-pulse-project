@@ -67,7 +67,7 @@ s.index(
     {
         room: 1,
         prizeId: 1,
-        ticket: 1,
+        user: 1,
     },
     {
         unique: true,

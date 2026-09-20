@@ -192,6 +192,7 @@ export async function submitClaim(req, res) {
 
         const existing = await PrizeClaim.findOne({
             room: room._id,
+            user: userId,
             ticket: playerTicket._id,
             prizeId: String(prizeId),
             status: {

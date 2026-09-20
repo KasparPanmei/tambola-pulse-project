@@ -254,16 +254,19 @@ function getEligibleTickets(
     prizeId,
     tickets,
     calledNumbers,
-    claimedTicketIds
+    prizeAlreadyClaimed
 ) {
-    if (!Array.isArray(tickets)) {
+    if (
+        !Array.isArray(tickets) ||
+        prizeAlreadyClaimed
+    ) {
         return [];
     }
 
     return tickets.filter((ticket) => {
         const ticketId = getTicketId(ticket);
 
-        if (!ticketId || claimedTicketIds.has(ticketId)) {
+        if (!ticketId) {
             return false;
         }
 
@@ -275,34 +278,16 @@ function getEligibleTickets(
     });
 }
 
-function getClaimedTicketIds(prizeId, claims) {
-    const ids = new Set();
-
-    for (const claim of claims || []) {
-        if (String(claim?.prizeId) !== String(prizeId)) {
-            continue;
-        }
-
-        if (
-            claim?.status !== "pending" &&
-            claim?.status !== "verified"
-        ) {
-            continue;
-        }
-
-        const ticketId =
-            claim?.ticket?._id ||
-            claim?.ticket?.id ||
-            claim?.ticket;
-
-        if (ticketId) {
-            ids.add(String(ticketId));
-        }
-    }
-
-    return ids;
+function hasClaimedPrize(prizeId, claims) {
+    return (claims || []).some(
+        (claim) =>
+            String(claim?.prizeId) === String(prizeId) &&
+            (
+                claim?.status === "pending" ||
+                claim?.status === "verified"
+            )
+    );
 }
-
 
 
 function SectionLabel({
@@ -960,8 +945,8 @@ function PrizePanel({
 
             <div className="prize-list">
                 {prizes.map((prize, index) => {
-                    const claimedTicketIds =
-                        getClaimedTicketIds(
+                    const prizeAlreadyClaimed =
+                        hasClaimedPrize(
                             prize.id,
                             myClaims
                         );
@@ -971,38 +956,17 @@ function PrizePanel({
                             prize.id,
                             tickets,
                             calledNumbers,
-                            claimedTicketIds
+                            prizeAlreadyClaimed
                         );
 
-                    const claimedEligibleTickets =
-                        tickets.filter((ticket) => {
-                            const ticketId =
-                                getTicketId(ticket);
-
-                            return (
-                                ticketId &&
-                                claimedTicketIds.has(
-                                    ticketId
-                                ) &&
-                                getPrizeEligibility(
-                                    prize.id,
-                                    ticket?.grid,
-                                    calledNumbers
-                                )
-                            );
-                        });
-
-                    const hasAvailableTicket =
+                    const hasEligibleTicket =
                         eligibleTickets.length > 0;
 
-                    const hasClaimedTicket =
-                        claimedEligibleTickets.length > 0;
-
                     const status =
-                        hasAvailableTicket
-                            ? "eligible"
-                            : hasClaimedTicket
-                                ? "claimed"
+                        prizeAlreadyClaimed
+                            ? "claimed"
+                            : hasEligibleTicket
+                                ? "eligible"
                                 : "locked";
 
                     return (
@@ -1883,22 +1847,18 @@ export default function GameRoom({
             return;
         }
 
-        const claimedTicketIds =
-            getClaimedTicketIds(
+        const prizeAlreadyClaimed =
+            hasClaimedPrize(
                 prize.id,
                 myClaims
             );
 
-        if (
-            claimedTicketIds.has(
-                ticketId
-            )
-        ) {
+        if (prizeAlreadyClaimed) {
             toast.info(
-                "Ticket already claimed",
+                "Prize already claimed",
                 {
                     description:
-                        `Ticket ${selectedTicket.publicCode || selectedTicket.number || ticketId} already has a ${prize.name} claim.`,
+                        `You have already claimed ${prize.name}. Another ticket from your booking cannot claim the same prize.`,
                 }
             );
             return;
