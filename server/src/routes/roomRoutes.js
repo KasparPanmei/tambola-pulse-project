@@ -6,10 +6,7 @@ import {
     getPlayerRoomState,
 } from "../controllers/roomController.js";
 
-import {
-    submitClaim,
-} from "../controllers/ClaimController.js";
-
+// CHANGED: Player claim submission was removed; winning tickets are claimed automatically by the draw engine.
 import {
     requireAuth,
 } from "../utils/auth.js";
@@ -30,12 +27,6 @@ router.get(
     "/:code/state",
     requireAuth,
     getPlayerRoomState
-);
-
-router.post(
-    "/:code/claims",
-    requireAuth,
-    submitClaim
 );
 
 export default router;

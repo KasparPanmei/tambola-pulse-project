@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api.js";
+import BackConfirmationGuard from "./BackConfirmationGuard.jsx";
 
 export default function JoinRoomModal({ onClose }) {
     const navigate = useNavigate();
@@ -88,6 +89,8 @@ export default function JoinRoomModal({ onClose }) {
     }
 
     return (
+        // CHANGED: Hardware/device back while joining asks before returning Home.
+        <BackConfirmationGuard active onConfirm={onClose}>
         <div
             className="join-room-overlay"
             onMouseDown={(event) => {
@@ -202,5 +205,6 @@ export default function JoinRoomModal({ onClose }) {
                 </div>
             </div>
         </div>
+        </BackConfirmationGuard>
     );
 }

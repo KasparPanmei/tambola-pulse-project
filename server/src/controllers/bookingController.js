@@ -163,6 +163,7 @@ export async function createBooking(req, res) {
             roomCode,
             ticketIds,
             paymentMethod = "upi_qr",
+            name,
         } = req.body;
 
         if (
@@ -201,6 +202,18 @@ export async function createBooking(req, res) {
             return res.status(404).json({
                 message:
                     "Room or user not found",
+            });
+        }
+
+        // CHANGED: Enforce the same phone/name identity rule again on the booking API, not only in the client.
+        const requestedName = String(name || "").trim();
+        if (
+            requestedName &&
+            user.name?.trim() &&
+            user.name.trim().toLocaleLowerCase() !== requestedName.toLocaleLowerCase()
+        ) {
+            return res.status(409).json({
+                message: "This phone number is already registered under a different name. Please enter another phone number.",
             });
         }
 

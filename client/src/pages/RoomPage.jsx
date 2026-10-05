@@ -149,10 +149,7 @@ export default function RoomPage() {
     }
 
     return (
-        <GameRoom
-            room={room}
-            tickets={tickets}
-            player={player}
-        />
+        // CHANGED: The confirmation is scoped to JoinRoomModal; after entry, device Back returns directly to Home.
+        <GameRoom room={room} tickets={tickets} player={player} />
     );
 }

@@ -16,7 +16,9 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
         [method, setMethod] = useState("upi_qr"),
         [loading, setLoading] = useState(false),
         [showAllTickets, setShowAllTickets] = useState(false),
-        [error, setError] = useState("");
+        [error, setError] = useState(""),
+        // CHANGED: Retain the verified profile name so an edited name cannot reuse that phone at confirmation.
+        [verifiedIdentity, setVerifiedIdentity] = useState(null);
     const amount = selected.length * room.ticketPrice;
     useEffect(() => {
         try {
@@ -30,6 +32,8 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                 // Only treat the user as verified if the stored account
                 // explicitly says that the phone was verified.
                 setVerified(user.phoneVerified === true);
+                // CHANGED: Load the account identity alongside the verified-session state.
+                setVerifiedIdentity(user);
             }
         } catch {
             localStorage.removeItem("tp_user");
@@ -51,7 +55,12 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
     async function send() {
         try {
             setError("");
-            const { data } = await api.post("/auth/request-otp", { phone });
+            if (!name.trim()) {
+                setError("Enter your name before requesting an OTP.");
+                return;
+            }
+            // CHANGED: Send the booking name with the phone so the server can reject phone reuse under a different name.
+            const { data } = await api.post("/auth/request-otp", { phone, name });
             setSent(true);
             setMsg(
                 data.devOtp ? `Development OTP: ${data.devOtp}` : "OTP sent by SMS",
@@ -70,6 +79,8 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             localStorage.setItem("tp_token", data.token);
             localStorage.setItem("tp_user", JSON.stringify(data.user));
             setVerified(true);
+            // CHANGED: Remember which name was associated with the OTP-verified phone.
+            setVerifiedIdentity(data.user || { name, phone });
             setMsg("✓ OTP verified automatically");
         } catch (e) {
             setError(e.response?.data?.message || "OTP verification failed");
@@ -86,12 +97,17 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
         setError("");
         setMessage("");
 
-        // -----------------------------
-        // Frontend validation
-        // -----------------------------
-
         if (!selected.length) {
             setError("Select at least one available ticket.");
+            return;
+        }
+
+        // CHANGED: Catch a changed name locally at confirmation; the server repeats this check for safety.
+        if (
+            verifiedIdentity?.name?.trim() &&
+            verifiedIdentity.name.trim().toLocaleLowerCase() !== name.trim().toLocaleLowerCase()
+        ) {
+            setError("This phone number is already registered under a different name. Please enter another phone number.");
             return;
         }
 
@@ -110,14 +126,6 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
         setLoading(true);
 
         try {
-            console.log("=== BOOKING START ===");
-            console.log("Room:", room.code);
-            console.log("Selected tickets:", selected.map((t) => t.number));
-            console.log("Payment method:", method);
-
-            // ==========================================
-            // STEP 1 — HOLD SELECTED TICKETS
-            // ==========================================
 
             setMessage("Reserving your selected tickets...");
 
@@ -136,10 +144,6 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                 );
             }
 
-            // ==========================================
-            // STEP 2 — CREATE PENDING BOOKING
-            // ==========================================
-
             setMessage("Creating your secure payment session...");
 
             const ticketIds = heldTickets
@@ -156,6 +160,7 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                 roomCode: room.code,
                 ticketIds,
                 paymentMethod: method,
+                name: name.trim(),
             });
 
             console.log("Booking response:", bookingResponse.data);
@@ -182,16 +187,9 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
 
             console.log("Booking successfully created:", booking);
 
-            // ==========================================
-            // STEP 3 — OPEN PAYMENT SCREEN
-            // ==========================================
 
             setMessage("Payment session created. Opening payment...");
 
-            /*
-             * Give React a moment to finish the loading state,
-             * then explicitly transition to PaymentScreen.
-             */
             setTimeout(() => {
                 onPayment(booking);
             }, 150);
@@ -203,9 +201,6 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             const status = e.response?.status;
             const serverMessage = e.response?.data?.message;
 
-            // ------------------------------------------
-            // Authentication error
-            // ------------------------------------------
 
             if (status === 401) {
                 localStorage.removeItem("tp_token");
@@ -220,9 +215,6 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                 return;
             }
 
-            // ------------------------------------------
-            // Ticket conflict
-            // ------------------------------------------
 
             if (status === 409) {
                 setError(
@@ -233,9 +225,6 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                 return;
             }
 
-            // ------------------------------------------
-            // Server error
-            // ------------------------------------------
 
             if (status >= 500) {
                 setError(
@@ -245,10 +234,6 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
 
                 return;
             }
-
-            // ------------------------------------------
-            // Network error
-            // ------------------------------------------
 
             if (!e.response) {
                 setError(
@@ -376,7 +361,10 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                                     className="input"
                                     style={{ paddingLeft: 34 }}
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) => {
+                                        setName(e.target.value);
+                                        setError("");
+                                    }}
                                     placeholder="Enter Full Name"
                                 />
                             </div>
@@ -392,11 +380,18 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                                     />
                                     <input
                                         className="input"
+                                        type="tel"
+                                        inputMode="tel"
+                                        autoComplete="tel"
                                         style={{ paddingLeft: 34 }}
                                         value={phone}
                                         onChange={(e) => {
                                             setPhone(e.target.value);
                                             setVerified(false);
+                                            setVerifiedIdentity(null);
+                                            setSent(false);
+                                            setOtp(["", "", "", "", "", ""]);
+                                            setError("");
                                         }}
                                     />
                                 </div>

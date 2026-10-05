@@ -366,19 +366,8 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
 
                                 <label className="admin-prize-field">
                                     <span>WINNERS</span>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={prize.winners}
-                                        onChange={(e) =>
-                                            updatePrize(
-                                                index,
-                                                "winners",
-                                                e.target.value,
-                                            )
-                                        }
-                                        required={prize.enabled}
-                                    />
+                                    {/* CHANGED: Each prize is awarded to one ticket only. */}
+                                    <input type="number" value="1" readOnly aria-label={`${prize.name}: one winning ticket`} />
                                 </label>
 
                                 <label className="admin-prize-toggle">
@@ -683,6 +672,260 @@ function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onRe
     );
 }
 
+// CHANGED: Generate a downloadable PNG poster from the current room setup, prizes, timing, and ticket count.
+function downloadGamePoster({ room, totalTickets }) {
+    if (!room) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = 1500;
+    const context = canvas.getContext("2d");
+    const prizes = (room.prizes || []).filter((prize) => prize?.enabled !== false);
+    const startTime = room.startsAt
+        ? new Date(room.startsAt).toLocaleString("en-IN", {
+            weekday: "short",
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+        })
+        : "To be announced";
+
+    const roundedRect = (x, y, width, height, radius, fill, stroke) => {
+        context.beginPath();
+        context.roundRect(x, y, width, height, radius);
+        context.fillStyle = fill;
+        context.fill();
+        if (stroke) {
+            context.strokeStyle = stroke;
+            context.lineWidth = 2;
+            context.stroke();
+        }
+    };
+
+    const wrapText = (text, x, y, maxWidth, lineHeight, maxLines = 3) => {
+        const words = String(text || "").split(" ");
+        let line = "";
+        let lines = 0;
+        words.forEach((word) => {
+            const test = line ? `${line} ${word}` : word;
+            if (context.measureText(test).width > maxWidth && line && lines < maxLines - 1) {
+                context.fillText(line, x, y + lines * lineHeight);
+                lines += 1;
+                line = word;
+            } else {
+                line = test;
+            }
+        });
+        if (line && lines < maxLines) context.fillText(line, x, y + lines * lineHeight);
+        return y + Math.min(lines + 1, maxLines) * lineHeight;
+    };
+
+    const background = context.createLinearGradient(0, 0, 1200, 1500);
+    background.addColorStop(0, "#090f24");
+    background.addColorStop(0.55, "#1e1b4b");
+    background.addColorStop(1, "#080d1d");
+    context.fillStyle = background;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.fillStyle = "rgba(99, 102, 241, 0.18)";
+    context.beginPath();
+    context.arc(1030, 110, 280, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "rgba(251, 191, 36, 0.12)";
+    context.beginPath();
+    context.arc(140, 1300, 250, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = "#a5b4fc";
+    context.font = "700 24px Arial";
+    context.fillText("TAMBOLA PULSE", 84, 92);
+    context.fillStyle = "#f8fafc";
+    context.font = "800 66px Arial";
+    wrapText(room.title || "Live Tambola Game", 84, 190, 1030, 76, 2);
+    context.fillStyle = "#c7d2fe";
+    context.font = "400 24px Arial";
+    wrapText(room.description || "Join the live game and play for exciting prizes.", 88, 350, 880, 34, 2);
+
+    roundedRect(84, 450, 1032, 155, 22, "rgba(255,255,255,0.08)", "rgba(165,180,252,0.32)");
+    const meta = [
+        ["ROOM CODE", room.code || "—"],
+        ["STARTS", startTime],
+        ["TICKETS", `${Number(totalTickets || 0).toLocaleString("en-IN")} available`],
+    ];
+    meta.forEach(([label, value], index) => {
+        const x = 116 + index * 337;
+        context.fillStyle = "#94a3b8";
+        context.font = "700 15px Arial";
+        context.fillText(label, x, 495);
+        context.fillStyle = "#ffffff";
+        context.font = "700 25px Arial";
+        wrapText(value, x, 540, 285, 30, 2);
+    });
+
+    context.fillStyle = "#fbbf24";
+    context.font = "800 22px Arial";
+    context.fillText("PRIZES TO WIN", 88, 690);
+    prizes.forEach((prize, index) => {
+        const y = 735 + index * 92;
+        roundedRect(84, y, 1032, 72, 14, "rgba(15,23,42,0.72)", "rgba(255,255,255,0.1)");
+        context.fillStyle = "#f8fafc";
+        context.font = "700 24px Arial";
+        context.fillText(prize.name || `Prize ${index + 1}`, 112, y + 31);
+        context.fillStyle = "#94a3b8";
+        context.font = "400 16px Arial";
+        context.fillText(prize.detail || "Complete the winning pattern", 112, y + 55);
+        context.fillStyle = "#4edea3";
+        context.font = "800 25px Arial";
+        context.textAlign = "right";
+        context.fillText(`₹${Number(prize.amount || 0).toLocaleString("en-IN")}`, 1085, y + 43);
+        context.textAlign = "left";
+    });
+
+    const footerY = 735 + prizes.length * 92 + 58;
+    roundedRect(84, footerY, 1032, 120, 18, "#4f46e5", null);
+    context.fillStyle = "#ffffff";
+    context.font = "800 28px Arial";
+    context.fillText(`Ticket price: ₹${Number(room.ticketPrice || 0).toLocaleString("en-IN")}`, 116, footerY + 48);
+    context.font = "400 18px Arial";
+    context.fillStyle = "#e0e7ff";
+    context.fillText("Book your ticket and be ready when the caller goes live.", 116, footerY + 82);
+    context.fillStyle = "#94a3b8";
+    context.font = "400 16px Arial";
+    context.fillText("Play responsibly • Keep this poster handy for the room code", 88, 1430);
+
+    canvas.toBlob((blob) => {
+        if (!blob) return;
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${String(room.code || "tambola-game").toLowerCase()}-poster.png`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }, "image/png");
+}
+
+// CHANGED: Generate a downloadable winners poster from verified prize claims after the room is finished.
+function downloadWinnerPoster({ room, winnerClaims }) {
+    if (!room) return;
+
+    const verifiedWinners = (winnerClaims || []).filter(
+        (claim) => claim?.status === "verified",
+    );
+    if (!verifiedWinners.length) return;
+
+    const rowHeight = 118;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = Math.max(900, 470 + verifiedWinners.length * rowHeight);
+    const context = canvas.getContext("2d");
+
+    const roundedRect = (x, y, width, height, radius, fill, stroke) => {
+        context.beginPath();
+        context.roundRect(x, y, width, height, radius);
+        context.fillStyle = fill;
+        context.fill();
+        if (stroke) {
+            context.strokeStyle = stroke;
+            context.lineWidth = 2;
+            context.stroke();
+        }
+    };
+
+    const wrapText = (text, x, y, maxWidth, lineHeight, maxLines = 2) => {
+        const words = String(text || "—").split(" ");
+        let line = "";
+        let lines = 0;
+        words.forEach((word) => {
+            const test = line ? `${line} ${word}` : word;
+            if (context.measureText(test).width > maxWidth && line && lines < maxLines - 1) {
+                context.fillText(line, x, y + lines * lineHeight);
+                lines += 1;
+                line = word;
+            } else {
+                line = test;
+            }
+        });
+        if (line && lines < maxLines) context.fillText(line, x, y + lines * lineHeight);
+    };
+
+    const background = context.createLinearGradient(0, 0, 1200, canvas.height);
+    background.addColorStop(0, "#090f24");
+    background.addColorStop(0.55, "#312e81");
+    background.addColorStop(1, "#111827");
+    context.fillStyle = background;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.fillStyle = "rgba(251, 191, 36, 0.14)";
+    context.beginPath();
+    context.arc(1040, 120, 270, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "rgba(99, 102, 241, 0.18)";
+    context.beginPath();
+    context.arc(130, canvas.height - 100, 240, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = "#a5b4fc";
+    context.font = "700 24px Arial";
+    context.fillText("TAMBOLA PULSE", 84, 86);
+    context.fillStyle = "#f8fafc";
+    context.font = "800 62px Arial";
+    context.fillText("WINNERS", 84, 168);
+    context.fillStyle = "#c7d2fe";
+    context.font = "400 24px Arial";
+    context.fillText(`${room.title || "Tambola Game"} • Room ${room.code || "—"}`, 88, 218);
+
+    const verifiedAt = new Date().toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    });
+    context.fillStyle = "#94a3b8";
+    context.font = "400 18px Arial";
+    context.fillText(`Verified winners • ${verifiedAt}`, 88, 258);
+
+    verifiedWinners.forEach((claim, index) => {
+        const y = 320 + index * rowHeight;
+        roundedRect(84, y, 1032, 92, 16, "rgba(15,23,42,0.78)", "rgba(255,255,255,0.12)");
+
+        context.fillStyle = "#fbbf24";
+        context.font = "800 26px Arial";
+        context.fillText(`${index + 1}`, 116, y + 38);
+
+        context.fillStyle = "#f8fafc";
+        context.font = "800 23px Arial";
+        wrapText(claim.prizeName || "Prize Winner", 172, y + 31, 300, 27, 2);
+
+        context.fillStyle = "#cbd5e1";
+        context.font = "600 19px Arial";
+        const playerName = claim.user?.name || claim.userName || "Player";
+        const ticketNumber = claim.ticket?.publicCode || claim.ticket?.number || claim.ticketNumber || "—";
+        context.fillText(playerName, 520, y + 31);
+        context.fillStyle = "#94a3b8";
+        context.font = "400 16px Arial";
+        context.fillText(`Ticket ${ticketNumber}`, 520, y + 60);
+
+        context.fillStyle = "#4edea3";
+        context.font = "800 23px Arial";
+        context.textAlign = "right";
+        context.fillText(`₹${Number(claim.prizeAmount || 0).toLocaleString("en-IN")}`, 1082, y + 38);
+        context.textAlign = "left";
+    });
+
+    context.fillStyle = "#94a3b8";
+    context.font = "400 16px Arial";
+    context.fillText("Congratulations to all winners • Tambola Pulse", 88, canvas.height - 48);
+
+    canvas.toBlob((blob) => {
+        if (!blob) return;
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${String(room.code || "tambola-game").toLowerCase()}-winners.png`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }, "image/png");
+}
+
 export default function Admin() {
     const navigate = useNavigate();
 
@@ -894,72 +1137,172 @@ export default function Admin() {
 
     const loadAdminData = async ({ silent = false } = {}) => {
         if (!roomCode) {
-            setRoom(null); setTickets([]); setBookings([]); setPayments([]);
-            setDashboardStats({ totalTickets: 0, availableTickets: 0, bookedTickets: 0, heldTickets: 0, totalBookings: 0, revenue: 0 });
-            setLoading(false); return;
+            setRoom(null);
+            setTickets([]);
+            setBookings([]);
+            setPayments([]);
+            setWinnerClaims([]);
+            setDashboardStats({
+                totalTickets: 0,
+                availableTickets: 0,
+                bookedTickets: 0,
+                heldTickets: 0,
+                totalBookings: 0,
+                revenue: 0,
+            });
+            setLoading(false);
+            return;
         }
-        const claimsResponse =
-            await adminApi.get(
-                `/admin/rooms/${roomCode}/claims`,
+
+        if (!silent) {
+            setLoading(true);
+        }
+
+        try {
+            const roomResponse = await adminApi.get(
+                `/rooms/${encodeURIComponent(roomCode)}`
             );
 
-        const claims =
-            claimsResponse.data.claims || [];
+            const nextRoom = roomResponse.data.room;
 
-        setWinnerClaims(claims);
-        if (claimsInitialized.current) {
-            const newClaim =
-                claims.find(
+            const [
+                ticketsResponse,
+                bookingsResponse,
+                paymentsResponse,
+                claimsResponse,
+            ] = await Promise.all([
+                adminApi.get(
+                    `/admin/tickets?room=${encodeURIComponent(roomCode)}`
+                ),
+                adminApi.get(
+                    `/admin/bookings?room=${encodeURIComponent(roomCode)}`
+                ),
+                adminApi
+                    .get(
+                        `/admin/payments?room=${encodeURIComponent(roomCode)}`
+                    )
+                    .catch(() => ({
+                        data: { payments: [] },
+                    })),
+                adminApi
+                    .get(
+                        `/admin/rooms/${encodeURIComponent(roomCode)}/claims`
+                    )
+                    .catch(() => ({
+                        data: { claims: [] },
+                    })),
+            ]);
+
+            const nextTickets = (
+                ticketsResponse.data.tickets || []
+            ).map((ticket) => ({
+                ...ticket,
+                code: ticket.publicCode || ticket.code,
+            }));
+
+            const nextBookings =
+                bookingsResponse.data.bookings || [];
+
+            const nextPayments =
+                paymentsResponse.data.payments || [];
+
+            const claims =
+                claimsResponse.data.claims || [];
+
+            setRoom(nextRoom);
+            setTickets(nextTickets);
+            setBookings(nextBookings);
+            setPayments(nextPayments);
+            setWinnerClaims(claims);
+
+            if (claimsInitialized.current) {
+                const newClaim = claims.find(
                     (claim) =>
-                        claim.status ===
-                        "pending" &&
-                        !seenClaimIds.current.has(
-                            claim._id,
-                        ),
+                        claim.status === "pending" &&
+                        !seenClaimIds.current.has(claim._id)
                 );
 
-            if (
-                newClaim &&
-                notifications
-            ) {
-                setWinnerAlert(newClaim);
+                if (newClaim && notifications) {
+                    setWinnerAlert(newClaim);
+                }
             }
-        }
 
-        claims.forEach((claim) => {
-            seenClaimIds.current.add(
-                claim._id,
-            );
-        });
+            claims.forEach((claim) => {
+                seenClaimIds.current.add(claim._id);
+            });
 
-        claimsInitialized.current = true;
-        if (!silent) setLoading(true);
-        try {
-            const [roomResponse, ticketsResponse, bookingsResponse, paymentsResponse] = await Promise.all([
-                adminApi.get(`/rooms/${encodeURIComponent(roomCode)}`),
-                adminApi.get(`/admin/tickets?room=${encodeURIComponent(roomCode)}`),
-                adminApi.get(`/admin/bookings?room=${encodeURIComponent(roomCode)}`),
-                adminApi.get(`/admin/payments?room=${encodeURIComponent(roomCode)}`).catch(() => ({ data: { payments: [] } })),
-            ]);
-            const nextRoom = roomResponse.data.room;
-            const nextTickets = (ticketsResponse.data.tickets || []).map((ticket) => ({ ...ticket, code: ticket.publicCode || ticket.code }));
-            const nextBookings = bookingsResponse.data.bookings || [];
-            const nextPayments = paymentsResponse.data.payments || [];
-            setRoom(nextRoom); setTickets(nextTickets); setBookings(nextBookings); setPayments(nextPayments);
-            const available = nextTickets.filter((x) => x.status === "available").length;
-            const booked = nextTickets.filter((x) => x.status === "booked").length;
-            const held = nextTickets.filter((x) => x.status === "held").length;
-            const revenue = nextBookings.filter((x) => x.paymentStatus === "paid").reduce((sum, x) => sum + Number(x.total ?? x.amount ?? 0), 0);
-            setDashboardStats({ totalTickets: nextTickets.length, availableTickets: available, bookedTickets: booked, heldTickets: held, totalBookings: nextBookings.length, revenue });
+            claimsInitialized.current = true;
+
+            const available = nextTickets.filter(
+                (ticket) => ticket.status === "available"
+            ).length;
+
+            const booked = nextTickets.filter(
+                (ticket) => ticket.status === "booked"
+            ).length;
+
+            const held = nextTickets.filter(
+                (ticket) => ticket.status === "held"
+            ).length;
+
+            const revenue = nextBookings
+                .filter(
+                    (booking) =>
+                        booking.paymentStatus === "paid"
+                )
+                .reduce(
+                    (sum, booking) =>
+                        sum +
+                        Number(
+                            booking.total ??
+                            booking.amount ??
+                            0
+                        ),
+                    0
+                );
+
+            setDashboardStats({
+                totalTickets: nextTickets.length,
+                availableTickets: available,
+                bookedTickets: booked,
+                heldTickets: held,
+                totalBookings: nextBookings.length,
+                revenue,
+            });
         } catch (error) {
-            console.error("Admin data loading error:", error);
+            console.error(
+                "Admin data loading error:",
+                error
+            );
+
             if (error.response?.status === 404) {
-                setRoom(null); setTickets([]); setBookings([]); setPayments([]);
-                setLastAction(`Room ${roomCode} was not found. Create/select a valid room.`);
+                setRoom(null);
+                setTickets([]);
+                setBookings([]);
+                setPayments([]);
+                setWinnerClaims([]);
+
+                setDashboardStats({
+                    totalTickets: 0,
+                    availableTickets: 0,
+                    bookedTickets: 0,
+                    heldTickets: 0,
+                    totalBookings: 0,
+                    revenue: 0,
+                });
+
+                setLastAction(
+                    `Room ${roomCode} was not found. Create a new room to continue.`
+                );
             } else {
-                setLastAction(error.response?.data?.message || "Unable to synchronize AdminDesk with the server.");
+                setLastAction(
+                    error.response?.data?.message ||
+                    "Unable to synchronize AdminDesk with the server."
+                );
             }
-        } finally { setLoading(false); }
+        } finally {
+            setLoading(false);
+        }
     };
     useEffect(() => {
         loadAdminData();
@@ -1209,6 +1552,11 @@ export default function Admin() {
         }
     }
     async function startGame() {
+        // CHANGED: Give immediate feedback and refuse the start action until a paid ticket exists.
+        if (bookedTickets < 1) {
+            setLastAction("No tickets have been bought yet. The game cannot start until at least one booking is paid and confirmed.");
+            return;
+        }
         try {
             const { data } = await adminApi.post(
                 `/admin/rooms/${encodeURIComponent(roomCode)}/start`,
@@ -1234,6 +1582,11 @@ export default function Admin() {
                 setRoom(data.room);
                 setLastAction("Game paused");
             } else {
+                // CHANGED: Apply the same empty-room guard to Resume as to Start Game.
+                if (bookedTickets < 1) {
+                    setLastAction("No tickets have been bought yet. The game cannot start until at least one booking is paid and confirmed.");
+                    return;
+                }
                 const { data } = await adminApi.post(
                     `/admin/rooms/${encodeURIComponent(roomCode)}/start`,
                 );
@@ -1486,6 +1839,28 @@ export default function Admin() {
                 </nav>
 
                 <div className="admin-sidebar-footer">
+                    {/* CHANGED: Keep the poster download at the bottom of the admin sidebar. */}
+                    <button
+                        type="button"
+                        className="admin-poster-button"
+                        onClick={() => downloadGamePoster({ room, totalTickets: totalGenerated })}
+                        disabled={!room}
+                        title={room ? "Download a poster with the current game setup" : "Create or select a room first"}
+                    >
+                        <Download size={15} />
+                        <span>Download Game Poster</span>
+                    </button>
+                    {/* CHANGED: Put the winners-poster download directly below the game-poster action and enable it only for verified finished-room winners. */}
+                    <button
+                        type="button"
+                        className="admin-poster-button"
+                        onClick={() => downloadWinnerPoster({ room, winnerClaims })}
+                        disabled={room?.status !== "closed" || !winnerClaims.some((claim) => claim.status === "verified")}
+                        title={room?.status !== "closed" ? "Terminate the room after the game finishes to download winners" : "Download a poster of verified winners"}
+                    >
+                        <Download size={15} />
+                        <span>Download Winners Poster</span>
+                    </button>
                     <div className="admin-rng-status">
                         <span className="admin-rng-dot" />
 
@@ -1615,6 +1990,16 @@ export default function Admin() {
                                         DATABASE SYNCED
                                     </div>
 
+                                    {/* CHANGED: Surface the poster action beside the active room controls so it is easy to discover. */}
+                                    <button
+                                        className="admin-poster-shortcut"
+                                        type="button"
+                                        onClick={() => downloadGamePoster({ room, totalTickets: totalGenerated })}
+                                    >
+                                        <Download size={14} />
+                                        Download Poster
+                                    </button>
+
                                     <button className="admin-action-button" onClick={clearSelectedRoom}>
                                         <X size={14} />
                                         New Room
@@ -1687,18 +2072,29 @@ export default function Admin() {
                                             </div>
                                         </div>
 
+                                        {bookedTickets < 1 && (
+                                            // CHANGED: Tell admins why Start/Resume is unavailable before they click.
+                                            <div className="admin-start-warning" role="alert">
+                                                <AlertTriangle size={15} />
+                                                No tickets have been bought yet. Sell and confirm at least one ticket before starting.
+                                            </div>
+                                        )}
+
                                         <div className="admin-scheduler-actions">
                                             <button
                                                 className="admin-start-game"
                                                 onClick={startGame}
+                                                disabled={!room || bookedTickets < 1}
                                             >
                                                 <Play size={15} />
                                                 START GAME
                                             </button>
 
+                                            {/* CHANGED: Keep Resume disabled until at least one paid booking exists. */}
                                             <button
                                                 className="admin-secondary-action"
                                                 onClick={toggleGame}
+                                                disabled={gameState !== "live" && bookedTickets < 1}
                                             >
                                                 {gameState ===
                                                     "live" ? (

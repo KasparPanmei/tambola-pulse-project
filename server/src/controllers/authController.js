@@ -13,6 +13,19 @@ export async function requestOtp(req, res) {
         });
     }
 
+    const requestedName = String(req.body.name || "").trim();
+    const existingUser = await User.findOne({ phone });
+    // CHANGED: Do not let the same registered phone number be reused under a different booking name.
+    if (
+        requestedName &&
+        existingUser?.name?.trim() &&
+        existingUser.name.trim().toLocaleLowerCase() !== requestedName.toLocaleLowerCase()
+    ) {
+        return res.status(409).json({
+            message: "This phone number is already registered under a different name. Please enter another phone number.",
+        });
+    }
+
     const otp = makeOtp();
 
     const hash = await bcrypt.hash(otp, 10);
@@ -84,11 +97,21 @@ export async function verifyOtp(req, res) {
         });
     }
 
-    c.verified = true;
-
-    await c.save();
-
     let user = await User.findOne({ phone });
+    const requestedName = String(req.body.name || "").trim();
+    // CHANGED: Recheck the identity at OTP verification so a changed name cannot take over an existing phone account.
+    if (
+        requestedName &&
+        user?.name?.trim() &&
+        user.name.trim().toLocaleLowerCase() !== requestedName.toLocaleLowerCase()
+    ) {
+        return res.status(409).json({
+            message: "This phone number is already registered under a different name. Please enter another phone number.",
+        });
+    }
+
+    c.verified = true;
+    await c.save();
 
     if (!user) {
         user = await User.create({
@@ -98,8 +121,9 @@ export async function verifyOtp(req, res) {
             role: "player",
         });
     } else {
-        if (req.body.name?.trim()) {
-            user.name = req.body.name.trim();
+        // CHANGED: Only fill a missing profile name; never overwrite a registered name for the same phone.
+        if (!user.name?.trim() && requestedName) {
+            user.name = requestedName;
         }
 
         user.phoneVerified = true;

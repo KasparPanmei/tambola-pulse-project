@@ -10,7 +10,7 @@ body,
 }
 body {
   background: #0b1326;
-  color: #f8fafc;
+  color: var(--text);
   overscroll-behavior: none;
 }
 button,
@@ -37,11 +37,14 @@ button {
   --green: #4edea3;
   --muted: #94a3b8;
   --muted2: #64748b;
+  /* CHANGED: Keep text and borders themeable while preserving the original default appearance. */
+  --text: #f8fafc;
+  --line: rgba(255, 255, 255, 0.10);
 }
 .app {
   min-height: 100vh;
   background: var(--s);
-  color: #f8fafc;
+  color: var(--text);
 }
 .header {
   position: fixed;
@@ -212,7 +215,7 @@ button {
 }
 .surface {
   background: var(--sh);
-  color: #fff;
+  color: var(--text);
 }
 .ghost {
   background: transparent;
@@ -781,6 +784,61 @@ button {
   margin-top: auto;
 
   padding: 10px;
+}
+
+/* CHANGED: Style the admin sidebar's generated game-poster download action. */
+.admin-poster-button {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 185, 95, 0.36);
+  border-radius: 9px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(79, 70, 229, 0.25));
+  color: #ffddb8;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.admin-poster-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--admin-amber);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.32), rgba(79, 70, 229, 0.34));
+}
+
+.admin-poster-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* CHANGED: Make the same poster action discoverable beside the active room controls. */
+.admin-poster-shortcut {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 185, 95, 0.42);
+  border-radius: 7px;
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--admin-amber);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-poster-shortcut:hover {
+  background: rgba(245, 158, 11, 0.24);
+  border-color: var(--admin-amber);
 }
 
 .admin-rng-status {
@@ -2788,7 +2846,7 @@ button {
 .admin-login-header h2 {
   margin: 3px 0 0;
 
-  color: #ffffff;
+  color: var(--text);
 
   font-family: "Outfit", sans-serif;
 
@@ -3399,7 +3457,7 @@ button {
   border-radius: 12px;
 
   background: #4f46e5;
-  color: #ffffff;
+  color: var(--text);
 
   font-size: 14px;
   font-weight: 700;
@@ -3509,7 +3567,7 @@ button {
     ),
     var(--s);
 
-  color: #f8fafc;
+  color: var(--text);
 }
 
 .app-shell::before {
@@ -3615,7 +3673,7 @@ button {
 }
 
 .brand-name {
-  color: #f8fafc;
+  color: var(--text);
 
   font-family: Outfit, sans-serif;
 
@@ -3860,7 +3918,7 @@ button {
 }
 
 .welcome-strip p strong {
-  color: #f8fafc;
+  color: var(--text);
 }
 
 .welcome-strip small {
@@ -3949,7 +4007,7 @@ button {
 .section-heading h2 {
   margin: 3px 0 0;
 
-  color: #f8fafc;
+  color: var(--text);
 
   font-family: Outfit, sans-serif;
 
@@ -4414,7 +4472,7 @@ button {
 .ticket-topline h2 {
   margin: 5px 0 0;
 
-  color: #f8fafc;
+  color: var(--text);
 
   font-family: Outfit, sans-serif;
 
@@ -4505,7 +4563,7 @@ button {
 
   background: #1e293b;
 
-  color: #f8fafc;
+  color: var(--text);
 
   font-family: "Space Grotesk", monospace;
 
@@ -4774,7 +4832,7 @@ button {
 }
 
 .prize-info strong {
-  color: #f8fafc;
+  color: var(--text);
 
   font-size: 10px;
 }
@@ -5007,7 +5065,7 @@ button {
 
   white-space: nowrap;
 
-  color: #f8fafc;
+  color: var(--text);
 
   font-size: 9px;
 }
@@ -5132,7 +5190,7 @@ button {
 
   white-space: nowrap;
 
-  color: #f8fafc;
+  color: var(--text);
 
   font-size: 8px;
 }
@@ -5227,7 +5285,7 @@ button {
 .room-error-card h2 {
   margin: 0 0 8px;
 
-  color: #f8fafc;
+  color: var(--text);
 
   font-family: Outfit, sans-serif;
 
@@ -5624,7 +5682,7 @@ button {
 .winner-details strong {
   display: block;
 
-  color: #f8fafc;
+  color: var(--text);
 
   font-size: 14px;
 
@@ -5653,7 +5711,7 @@ button {
 
 .winner-reject-btn {
   background: #222a3d;
-  color: #f8fafc;
+  color: var(--text);
 }
 
 .winner-verify-btn {
@@ -6230,7 +6288,7 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   background: #151619;
-  color: #fff;
+  color: var(--text);
   box-shadow:
     0 30px 90px rgba(0, 0, 0, 0.55),
     0 8px 30px rgba(0, 0, 0, 0.3);
@@ -6299,7 +6357,7 @@ button {
 
 .claim-review-close:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  color: var(--text);
 }
 
 .claim-review-status-row {
@@ -6917,4 +6975,518 @@ button {
   .claim-review-cell {
     font-size: 7px;
   }
+}
+
+
+/* CHANGED: Additional palettes retain the original Midnight colors as the default. */
+:root[data-theme="lagoon"] {
+  --s: #071923;
+  --sl: #0d2732;
+  --sc: #153744;
+  --sh: #1b4350;
+  --s0: #04131b;
+  --p: #0e7490;
+  --pl: #67e8f9;
+  --sec: #fb923c;
+  --amber: #fbbf24;
+  --green: #34d399;
+  --muted: #a7c4cf;
+  --muted2: #7192a1;
+}
+:root[data-theme="forest"] {
+  --s: #101b18;
+  --sl: #192923;
+  --sc: #24372e;
+  --sh: #30463a;
+  --s0: #0b1411;
+  --p: #16835d;
+  --pl: #8ce0b7;
+  --sec: #e7b45e;
+  --amber: #f4c96b;
+  --green: #6fe0a5;
+  --muted: #b4c9bd;
+  --muted2: #82998b;
+}
+:root[data-theme="rose"] {
+  --s: #20131e;
+  --sl: #2d1c2a;
+  --sc: #3d2739;
+  --sh: #4a3045;
+  --s0: #180e17;
+  --p: #b83280;
+  --pl: #f5a7d2;
+  --sec: #f7ad72;
+  --amber: #f5c26a;
+  --green: #71d5b0;
+  --muted: #d3b7cb;
+  --muted2: #a78da0;
+}
+:root[data-theme="lagoon"] .header,
+:root[data-theme="forest"] .header,
+:root[data-theme="rose"] .header,
+:root[data-theme="lagoon"] .topbar,
+:root[data-theme="forest"] .topbar,
+:root[data-theme="rose"] .topbar {
+  background: color-mix(in srgb, var(--s) 90%, transparent);
+}
+:root[data-theme="lagoon"] .bottom,
+:root[data-theme="forest"] .bottom,
+:root[data-theme="rose"] .bottom {
+  background: color-mix(in srgb, var(--s0) 94%, transparent);
+}
+
+/* CHANGED: Theme controls are readable in both the home navbar and compact game-room topbar. */
+.theme-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--muted2) 28%, transparent);
+  border-radius: 9px;
+  background: var(--sh);
+  color: var(--pl);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.theme-picker select {
+  max-width: 95px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.theme-picker option {
+  background: var(--sl);
+  color: var(--text);
+}
+
+/* CHANGED: Confirm device-back actions with explicit stay/home choices. */
+.back-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(3, 8, 18, 0.78);
+  backdrop-filter: blur(8px);
+}
+.back-confirm-dialog {
+  width: min(100%, 420px);
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--pl) 18%, transparent);
+  border-radius: 18px;
+  background: var(--sl);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+.back-confirm-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--p) 25%, transparent);
+  color: var(--pl);
+}
+.back-confirm-dialog h2 {
+  margin: 14px 0 6px;
+  font: 700 20px/1.25 Outfit, sans-serif;
+}
+.back-confirm-dialog p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.back-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 22px;
+}
+.back-confirm-actions button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.back-stay-button {
+  background: var(--sh);
+  color: var(--text);
+}
+.back-home-button {
+  background: var(--p);
+  color: white;
+}
+.no-active-room {
+  border: 1px solid color-mix(in srgb, var(--pl) 12%, transparent);
+}
+.home-upcoming-room-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 12px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(129, 140, 248, 0.48);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(49, 46, 129, 0.92), rgba(30, 27, 75, 0.96));
+  box-shadow: 0 12px 30px rgba(49, 46, 129, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.home-upcoming-room-card::after {
+  position: absolute;
+  top: -45px;
+  right: -35px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(251, 191, 36, 0.14);
+  content: "";
+  pointer-events: none;
+}
+.home-upcoming-room-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.home-upcoming-eyebrow {
+  color: #c7d2fe;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+.home-upcoming-countdown {
+  color: #ffffff;
+  font-size: clamp(28px, 8vw, 42px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  text-shadow: 0 0 22px rgba(165, 180, 252, 0.42);
+}
+.home-upcoming-room-code {
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 700;
+}
+.home-join-room-button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.28);
+  color: #241208;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.home-join-room-button:hover {
+  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.4);
+  transform: translateY(-2px);
+}
+.home-join-room-button:active {
+  transform: translateY(0);
+}
+@media (max-width: 520px) {
+  .home-upcoming-room-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .home-join-room-button {
+    width: 100%;
+  }
+}
+.admin-start-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: 9px;
+  background: rgba(251, 191, 36, 0.09);
+  color: #fbd98a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.admin-start-warning svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.admin-start-game:disabled,
+.admin-secondary-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+}
+
+@media (max-width: 760px) {
+  .h-actions .theme-picker-label,
+  .topbar-meta .theme-picker-label {
+    display: none;
+  }
+  .theme-picker {
+    gap: 4px;
+    padding: 0 6px;
+  }
+  .theme-picker select {
+    max-width: 74px;
+    font-size: 10px;
+  }
+}
+
+
+/* CHANGED: Warm ivory light theme and cool sky light theme; the existing dark themes are unchanged. */
+:root[data-theme="light-soft"] {
+  color-scheme: light;
+  --s: #f7f4ec;
+  --sl: #fffdf8;
+  --sc: #f2eddf;
+  --sh: #e8dfcd;
+  --s0: #eee7d9;
+  --p: #7355bc;
+  --pl: #52388f;
+  --sec: #a85e17;
+  --amber: #986000;
+  --green: #16724f;
+  --muted: #536174;
+  --muted2: #748195;
+  --text: #263246;
+  --line: rgba(38, 50, 70, 0.15);
+}
+:root[data-theme="light-cool"] {
+  color-scheme: light;
+  --s: #f0f6fb;
+  --sl: #fbfdff;
+  --sc: #eaf2f8;
+  --sh: #dce9f3;
+  --s0: #e5eef6;
+  --p: #3378be;
+  --pl: #24598f;
+  --sec: #a34d2d;
+  --amber: #895900;
+  --green: #147451;
+  --muted: #506274;
+  --muted2: #718599;
+  --text: #203044;
+  --line: rgba(32, 48, 68, 0.14);
+}
+:root[data-theme^="light-"] body,
+:root[data-theme^="light-"] .app,
+:root[data-theme^="light-"] .app-shell {
+  background: var(--s);
+  color: var(--text);
+}
+:root[data-theme^="light-"] .header,
+:root[data-theme^="light-"] .topbar {
+  background: color-mix(in srgb, var(--sl) 94%, transparent);
+  border-color: var(--line);
+  box-shadow: 0 4px 18px rgba(31, 45, 62, 0.10);
+  color: var(--text);
+}
+:root[data-theme^="light-"] .bottom {
+  background: color-mix(in srgb, var(--sl) 96%, transparent);
+  border-color: var(--line);
+  box-shadow: 0 -4px 18px rgba(31, 45, 62, 0.08);
+}
+:root[data-theme^="light-"] .card,
+:root[data-theme^="light-"] .panel-card,
+:root[data-theme^="light-"] .welcome-strip,
+:root[data-theme^="light-"] .number-board-card,
+:root[data-theme^="light-"] .prize-card,
+:root[data-theme^="light-"] .back-confirm-dialog {
+  border-color: var(--line);
+  box-shadow: 0 10px 30px rgba(31, 45, 62, 0.09);
+}
+:root[data-theme^="light-"] .brand-title,
+:root[data-theme^="light-"] .brand-name,
+:root[data-theme^="light-"] .section-heading h2,
+:root[data-theme^="light-"] .welcome-strip p strong,
+:root[data-theme^="light-"] .back-confirm-dialog,
+:root[data-theme^="light-"] .ticket-cell,
+:root[data-theme^="light-"] .board-number {
+  color: var(--text);
+}
+:root[data-theme^="light-"] .theme-picker {
+  color: var(--text);
+  border-color: var(--line);
+}
+:root[data-theme^="light-"] .theme-picker option {
+  background: var(--sl);
+  color: var(--text);
+}
+:root[data-theme^="light-"] .back-stay-button {
+  background: var(--sh);
+  color: var(--text);
+}
+:root[data-theme^="light-"] .room-code,
+:root[data-theme^="light-"] .icon-button,
+:root[data-theme^="light-"] .wallet,
+:root[data-theme^="light-"] .pill,
+:root[data-theme^="light-"] .metric,
+:root[data-theme^="light-"] .board-count {
+  border-color: var(--line);
+}
+:root[data-theme^="light-"] .ticket-cell,
+:root[data-theme^="light-"] .board-number {
+  border-color: var(--line);
+  background: var(--sl);
+}
+:root[data-theme^="light-"] .ticket-cell.blank,
+:root[data-theme^="light-"] .board-number {
+  background: var(--sh);
+}
+:root[data-theme^="light-"] .board-number.called {
+  background: color-mix(in srgb, var(--p) 17%, var(--sl));
+  border-color: color-mix(in srgb, var(--p) 45%, var(--line));
+  color: var(--pl);
+}
+:root[data-theme^="light-"] input,
+:root[data-theme^="light-"] textarea {
+  border-color: var(--line);
+  background: var(--sl);
+  color: var(--text);
+}
+
+/* CHANGED: Winner celebration modal, confetti animation, and responsive player-room styles. */
+.winner-celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow: hidden;
+  background: rgba(4, 8, 24, 0.78);
+  backdrop-filter: blur(12px);
+}
+.winner-celebration-modal {
+  position: relative;
+  width: min(100%, 460px);
+  padding: 42px 30px 30px;
+  border: 1px solid rgba(255, 217, 128, 0.45);
+  border-radius: 24px;
+  background: linear-gradient(145deg, #201b55, #101a36 72%);
+  color: #f8fafc;
+  text-align: center;
+  box-shadow: 0 28px 100px rgba(0, 0, 0, 0.62), 0 0 50px rgba(245, 158, 11, 0.2);
+  animation: winner-modal-in 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.winner-celebration-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+}
+.winner-trophy-burst {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  border: 2px solid #fbbf24;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fbbf24, #d97706);
+  color: #3b2200;
+  box-shadow: 0 0 0 10px rgba(251, 191, 36, 0.12), 0 0 38px rgba(251, 191, 36, 0.7);
+  animation: winner-trophy-pulse 1.6s ease-in-out infinite;
+}
+.winner-celebration-kicker {
+  margin: 0 0 8px;
+  color: #fbbf24;
+  font: 700 11px/16px "Space Grotesk", sans-serif;
+  letter-spacing: 0.14em;
+}
+.winner-celebration-modal h2 {
+  margin: 0;
+  font: 800 34px/1.12 Outfit, sans-serif;
+  letter-spacing: -0.03em;
+}
+.winner-celebration-prize {
+  margin: 18px 0 8px;
+  color: #6ffbbe;
+  font: 800 24px/1.3 Outfit, sans-serif;
+}
+.winner-celebration-copy {
+  max-width: 330px;
+  margin: 0 auto;
+  color: #c7d2fe;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.winner-celebration-button {
+  min-height: 44px;
+  margin-top: 24px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 10px;
+  background: #4edea3;
+  color: #003824;
+  font-size: 13px;
+  font-weight: 800;
+}
+.winner-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.winner-confetti span {
+  position: absolute;
+  top: -18px;
+  left: calc(var(--confetti-index) * 2.8%);
+  width: 9px;
+  height: 18px;
+  border-radius: 3px;
+  background: hsl(calc(var(--confetti-index) * 47), 92%, 64%);
+  transform: rotate(calc(var(--confetti-index) * 31deg));
+  animation: confetti-fall 2.8s linear infinite;
+  animation-delay: calc(var(--confetti-index) * -0.08s);
+}
+@keyframes winner-modal-in {
+  from { opacity: 0; transform: translateY(22px) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes winner-trophy-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@keyframes confetti-fall {
+  0% { opacity: 0; transform: translate3d(0, -20px, 0) rotate(0deg); }
+  12% { opacity: 1; }
+  100% { opacity: 0.9; transform: translate3d(calc((var(--confetti-index) - 3) * 22px), 110vh, 0) rotate(560deg); }
+}
+@media (max-width: 560px) {
+  .winner-celebration-modal { padding: 36px 22px 24px; }
+  .winner-celebration-modal h2 { font-size: 29px; }
 }

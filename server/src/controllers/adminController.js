@@ -185,10 +185,8 @@ export async function createRoom(req, res) {
                                 "lilac",
                             ][index % 4],
 
-                        winners:
-                            Number(
-                                prize?.winners,
-                            ) || 1,
+                        // CHANGED: Automatic room claims are deliberately limited to one winning ticket per prize.
+                        winners: 1,
 
                         enabled:
                             prize?.enabled !== false,

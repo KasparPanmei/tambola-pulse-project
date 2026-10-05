@@ -40,6 +40,25 @@ const prizeSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        // CHANGED: Store the automatic winner in the room so every player sees the same claimed state.
+        claimed: {
+            type: Boolean,
+            default: false,
+        },
+        claimedByTicket: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Ticket",
+            default: null,
+        },
+        claimedByUser: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        },
+        claimedAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         _id: false,

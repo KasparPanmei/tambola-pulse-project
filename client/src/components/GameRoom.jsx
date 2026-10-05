@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../lib/api.js";
+import ThemeSelector from "./ThemeSelector.jsx";
 
 import {
     AlertCircle,
-    ArrowUpRight,
     Check,
     CheckCircle2,
     ChevronRight,
@@ -23,6 +24,7 @@ import {
     Volume2,
     WandSparkles,
     Zap,
+    X,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -136,6 +138,9 @@ function normalizePrize(prize, index) {
 
         enabled:
             prize?.enabled !== false,
+
+        // CHANGED: Preserve the server's room-level claimed flag so the prize table updates even before winner details load.
+        claimed: prize?.claimed === true,
     };
 }
 
@@ -148,147 +153,8 @@ function isMarked(value, calledNumbers) {
     );
 }
 
-function getPrizeEligibility(
-    prizeId,
-    ticket,
-    calledNumbers
-) {
-    if (!Array.isArray(ticket)) {
-        return false;
-    }
 
-    const markedRows = ticket.map((row) =>
-        Array.isArray(row)
-            ? row.filter((value) =>
-                isMarked(
-                    value,
-                    calledNumbers
-                )
-            ).length
-            : 0
-    );
-
-    const totalMarked =
-        markedRows.reduce(
-            (sum, count) =>
-                sum + count,
-            0
-        );
-
-    switch (prizeId) {
-        case "early-five":
-            return totalMarked >= 5;
-
-        case "top-line":
-            return markedRows[0] === 5;
-
-        case "middle-line":
-            return markedRows[1] === 5;
-
-        case "bottom-line":
-            return markedRows[2] === 5;
-
-        case "four-corners": {
-            const firstRow =
-                ticket[0] || [];
-
-            const lastRow =
-                ticket[2] || [];
-
-            const cornerValues = [
-                firstRow.find(
-                    (value) =>
-                        value !== null &&
-                        value !== undefined
-                ),
-
-                [...firstRow]
-                    .reverse()
-                    .find(
-                        (value) =>
-                            value !== null &&
-                            value !== undefined
-                    ),
-
-                lastRow.find(
-                    (value) =>
-                        value !== null &&
-                        value !== undefined
-                ),
-
-                [...lastRow]
-                    .reverse()
-                    .find(
-                        (value) =>
-                            value !== null &&
-                            value !== undefined
-                    ),
-            ];
-
-            return cornerValues.every(
-                (value) =>
-                    isMarked(
-                        value ?? null,
-                        calledNumbers
-                    )
-            );
-        }
-
-        case "full-house":
-            return totalMarked === 15;
-
-        default:
-            return false;
-    }
-}
-
-function getTicketId(ticket) {
-    return String(
-        ticket?._id ||
-        ticket?.id ||
-        ""
-    );
-}
-
-function getEligibleTickets(
-    prizeId,
-    tickets,
-    calledNumbers,
-    prizeAlreadyClaimed
-) {
-    if (
-        !Array.isArray(tickets) ||
-        prizeAlreadyClaimed
-    ) {
-        return [];
-    }
-
-    return tickets.filter((ticket) => {
-        const ticketId = getTicketId(ticket);
-
-        if (!ticketId) {
-            return false;
-        }
-
-        return getPrizeEligibility(
-            prizeId,
-            ticket?.grid,
-            calledNumbers
-        );
-    });
-}
-
-function hasClaimedPrize(prizeId, claims) {
-    return (claims || []).some(
-        (claim) =>
-            String(claim?.prizeId) === String(prizeId) &&
-            (
-                claim?.status === "pending" ||
-                claim?.status === "verified"
-            )
-    );
-}
-
+// CHANGED: Winner eligibility is evaluated only by the server draw engine; the player UI has no manual-claim path.
 
 function SectionLabel({
     eyebrow,
@@ -418,6 +284,9 @@ function GameRoomHeader({
                     {playerCount} playing
                 </div>
 
+                {/* CHANGED: The game-room navigation shares the same saved theme selector as Home. */}
+                <ThemeSelector />
+
                 <button
                     type="button"
                     className="icon-button"
@@ -427,7 +296,7 @@ function GameRoomHeader({
                             "Room Help",
                             {
                                 description:
-                                    "Numbers are called automatically by the game host. Your registered tickets are automatically marked when numbers are called.",
+                                    "Numbers are called automatically. Your paid tickets are checked for prize patterns and eligible prizes are claimed automatically—no claim button is needed.",
                             }
                         )
                     }
@@ -900,22 +769,11 @@ function TambolaTicket({
 }
 
 
-function PrizePanel({
-    room,
-    tickets,
-    calledNumbers,
-    myClaims,
-    onClaim,
-}) {
+// CHANGED: Render automatic server-awarded prize state only; player claim actions are removed.
+function PrizePanel({ room, winners = [] }) {
     const prizes =
-        Array.isArray(room?.prizes) &&
-            room.prizes.length
-            ? room.prizes
-                .filter(
-                    (prize) =>
-                        prize?.enabled !== false
-                )
-                .map(normalizePrize)
+        Array.isArray(room?.prizes) && room.prizes.length
+            ? room.prizes.filter((prize) => prize?.enabled !== false).map(normalizePrize)
             : fallbackPrizes;
 
     return (
@@ -926,122 +784,40 @@ function PrizePanel({
                 action={
                     <span className="prize-total">
                         <Gift size={14} />
-                        ₹
-                        {Number(
-                            room?.jackpot ||
-                            prizes.reduce(
-                                (total, prize) =>
-                                    total +
-                                    Number(
-                                        prize.amount || 0
-                                    ),
-                                0
-                            )
-                        ).toLocaleString("en-IN")}{" "}
-                        total
+                        ₹{Number(
+                            room?.jackpot || prizes.reduce((total, prize) => total + Number(prize.amount || 0), 0),
+                        ).toLocaleString("en-IN")} total
                     </span>
                 }
             />
 
             <div className="prize-list">
                 {prizes.map((prize, index) => {
-                    const prizeAlreadyClaimed =
-                        hasClaimedPrize(
-                            prize.id,
-                            myClaims
-                        );
-
-                    const eligibleTickets =
-                        getEligibleTickets(
-                            prize.id,
-                            tickets,
-                            calledNumbers,
-                            prizeAlreadyClaimed
-                        );
-
-                    const hasEligibleTicket =
-                        eligibleTickets.length > 0;
-
-                    const status =
-                        prizeAlreadyClaimed
-                            ? "claimed"
-                            : hasEligibleTicket
-                                ? "eligible"
-                                : "locked";
+                    const winner = winners.find(
+                        (item) => String(item?.prizeId) === String(prize.id),
+                    );
+                    const claimed = Boolean(prize.claimed || winner);
+                    const status = claimed ? "claimed" : "locked";
+                    const winnerTicket = winner?.ticketId || winner?.ticketNumber;
 
                     return (
-                        <div
-                            className={`prize-row ${status} accent-${prize.accent}`}
-                            key={prize.id}
-                        >
+                        <div className={`prize-row ${status} accent-${prize.accent}`} key={prize.id}>
                             <div className="prize-icon">
-                                {index ===
-                                    prizes.length - 1 ? (
-                                    <Crown size={17} />
-                                ) : index === 0 ? (
-                                    <Zap size={17} />
-                                ) : (
-                                    <Trophy size={17} />
-                                )}
+                                {index === prizes.length - 1 ? <Crown size={17} /> : index === 0 ? <Zap size={17} /> : <Trophy size={17} />}
                             </div>
-
                             <div className="prize-info">
                                 <strong>{prize.name}</strong>
                                 <span>{prize.detail}</span>
                             </div>
-
                             <div className="prize-reward">
                                 <strong>{prize.reward}</strong>
-
-                                {status === "eligible" ? (
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexWrap: "wrap",
-                                            gap: 6,
-                                            justifyContent: "flex-end",
-                                        }}
-                                    >
-                                        {eligibleTickets.map(
-                                            (ticket) => {
-                                                const ticketId =
-                                                    getTicketId(ticket);
-
-                                                const ticketLabel =
-                                                    ticket?.publicCode ||
-                                                    ticket?.number ||
-                                                    ticketId.slice(-6);
-
-                                                return (
-                                                    <button
-                                                        key={ticketId}
-                                                        type="button"
-                                                        onClick={() =>
-                                                            onClaim(
-                                                                prize,
-                                                                ticket
-                                                            )
-                                                        }
-                                                    >
-                                                        Claim #{ticketLabel}{" "}
-                                                        <ArrowUpRight
-                                                            size={13}
-                                                        />
-                                                    </button>
-                                                );
-                                            }
-                                        )}
-                                    </div>
-                                ) : status === "claimed" ? (
-                                    <span className="claimed-label">
+                                {claimed ? (
+                                    <span className="claimed-label" title={winner ? `${winner.userName || "Player"} • Ticket ${winnerTicket || "—"}` : "Winner recorded"}>
                                         <CheckCircle2 size={13} />
-                                        Claimed
+                                        Claimed{winnerTicket ? ` • Ticket ${winnerTicket}` : ""}
                                     </span>
                                 ) : (
-                                    <span className="locked-label">
-                                        <LockKeyhole size={12} />
-                                        Locked
-                                    </span>
+                                    <span className="locked-label"><LockKeyhole size={12} /> Waiting</span>
                                 )}
                             </div>
                         </div>
@@ -1049,16 +825,42 @@ function PrizePanel({
                 })}
             </div>
 
+            {/* CHANGED: Explain that winners are assigned automatically, one ticket per prize. */}
             <div className="claim-disclaimer">
                 <ShieldCheck size={15} />
-                <span>
-                    Each ticket can claim every prize once as it becomes eligible.
-                    Claiming one prize does not stop the ticket from playing.
-                </span>
+                <span>Prizes are claimed automatically when a paid ticket completes the pattern. Only one ticket can win each prize.</span>
             </div>
         </section>
     );
 }
+
+// CHANGED: Show a celebratory confetti popup with the exact prize name for a verified player win.
+function WinnerCelebration({ winner, onClose }) {
+    if (!winner) return null;
+    const confetti = Array.from({ length: 34 }, (_, index) => index);
+
+    return (
+        <div className="winner-celebration-overlay" role="dialog" aria-modal="true" aria-labelledby="winner-celebration-title">
+            <div className="winner-confetti" aria-hidden="true">
+                {confetti.map((piece) => <span key={piece} style={{ "--confetti-index": piece }} />)}
+            </div>
+            <section className="winner-celebration-modal">
+                <button type="button" className="winner-celebration-close" onClick={onClose} aria-label="Close winner notification">
+                    <X size={18} />
+                </button>
+                <div className="winner-trophy-burst"><Trophy size={30} /></div>
+                <p className="winner-celebration-kicker">WINNER ALERT</p>
+                <h2 id="winner-celebration-title">You've won a prize!</h2>
+                <p className="winner-celebration-prize">{winner.prizeName}</p>
+                <p className="winner-celebration-copy">
+                    Your ticket has been verified for this prize. Congratulations on the win!
+                </p>
+                <button type="button" className="winner-celebration-button" onClick={onClose}>Continue playing</button>
+            </section>
+        </div>
+    );
+}
+
 
 function Leaderboard({
     entries,
@@ -1290,6 +1092,7 @@ export default function GameRoom({
     tickets = [],
     player = null,
 }) {
+    const navigate = useNavigate();
     /*
      * Only valid ticket grids are used for
      * eligibility calculations.
@@ -1426,18 +1229,13 @@ export default function GameRoom({
         setVoiceEnabled,
     ] = useState(false);
 
-    /*
-     * Server-side claim state.
-     */
-    const [
-        myClaims,
-        setMyClaims,
-    ] = useState([]);
-
     const [
         serverWinners,
         setServerWinners,
     ] = useState([]);
+    // CHANGED: Track the latest personal winner so the popup is shown once per winning claim.
+    const [winnerCelebration, setWinnerCelebration] = useState(null);
+    const seenWinnerIds = useRef(new Set());
 
     /*
      * Player count.
@@ -1519,6 +1317,15 @@ export default function GameRoom({
                         data?.room ||
                         {};
 
+                    // CHANGED: If an admin terminates the room, stop showing its stale game page and return the player to Home.
+                    if (nextRoom.status === "closed") {
+                        toast.info("This room has ended", {
+                            description: "Returning to the homepage to find the current room.",
+                        });
+                        navigate("/", { replace: true });
+                        return;
+                    }
+
                     const nextCalledNumbers =
                         Array.isArray(
                             nextRoom.calledNumbers
@@ -1575,14 +1382,6 @@ export default function GameRoom({
                                 : [],
                     });
 
-                    setMyClaims(
-                        Array.isArray(
-                            data?.myClaims
-                        )
-                            ? data.myClaims
-                            : []
-                    );
-
                     setServerWinners(
                         Array.isArray(
                             data?.winners
@@ -1627,7 +1426,7 @@ export default function GameRoom({
                 interval
             );
         };
-    }, [room?.code]);
+    }, [room?.code, navigate]);
 
     /*
      * Player count.
@@ -1829,108 +1628,7 @@ export default function GameRoom({
     }
 
 
-    async function handleClaim(
-        prize,
-        selectedTicket
-    ) {
-        const ticketId =
-            getTicketId(selectedTicket);
-
-        if (!ticketId) {
-            toast.error(
-                "Ticket not found",
-                {
-                    description:
-                        "The selected ticket could not be identified.",
-                }
-            );
-            return;
-        }
-
-        const prizeAlreadyClaimed =
-            hasClaimedPrize(
-                prize.id,
-                myClaims
-            );
-
-        if (prizeAlreadyClaimed) {
-            toast.info(
-                "Prize already claimed",
-                {
-                    description:
-                        `You have already claimed ${prize.name}. Another ticket from your booking cannot claim the same prize.`,
-                }
-            );
-            return;
-        }
-
-        const eligible =
-            getPrizeEligibility(
-                prize.id,
-                selectedTicket?.grid,
-                calledNumbers
-            );
-
-        if (!eligible) {
-            toast.error(
-                "Not eligible yet",
-                {
-                    description:
-                        "That ticket does not currently satisfy this prize pattern.",
-                }
-            );
-            return;
-        }
-
-        try {
-            const { data } =
-                await api.post(
-                    `/rooms/${encodeURIComponent(
-                        room.code
-                    )}/claims`,
-                    {
-                        prizeId:
-                            prize.id,
-                        ticketId,
-                    }
-                );
-
-            if (data?.claim) {
-                setMyClaims(
-                    (items) => [
-                        data.claim,
-                        ...items,
-                    ]
-                );
-            }
-
-            toast.success(
-                `${prize.name} claim submitted`,
-                {
-                    description:
-                        `Ticket ${selectedTicket.publicCode || selectedTicket.number || ticketId} is now reserved for admin verification.`,
-                }
-            );
-        } catch (error) {
-            console.error(
-                "Prize claim error:",
-                error
-            );
-
-            toast.error(
-                "Unable to submit claim",
-                {
-                    description:
-                        error
-                            .response
-                            ?.data
-                            ?.message ||
-                        "The claim could not be submitted.",
-                }
-            );
-        }
-    }
-
+    // CHANGED: Manual player claims were removed; the server awards prizes after each called number.
 
     useEffect(() => {
         if (
@@ -1982,6 +1680,26 @@ export default function GameRoom({
     }, [
         serverWinners,
     ]);
+
+    // CHANGED: Match server-awarded winners to this player's registered ticket IDs.
+    useEffect(() => {
+        if (!serverWinners.length || !tickets.length) return;
+        const playerTicketIds = new Set(
+            tickets.flatMap((ticket) => [ticket?._id, ticket?.id, ticket?.publicCode, ticket?.number]
+                .filter((value) => value !== null && value !== undefined)
+                .map(String)),
+        );
+        const personalWinner = [...serverWinners].reverse().find((winner) => {
+            const winnerTicketId = winner?.ticketId ?? winner?.ticketNumber;
+            return winnerTicketId !== null && winnerTicketId !== undefined
+                && playerTicketIds.has(String(winnerTicketId))
+                && !seenWinnerIds.current.has(String(winner.id));
+        });
+        if (personalWinner) {
+            seenWinnerIds.current.add(String(personalWinner.id));
+            setWinnerCelebration(personalWinner);
+        }
+    }, [serverWinners, tickets]);
 
 
     const leaderboard =
@@ -2078,6 +1796,8 @@ export default function GameRoom({
 
     return (
         <div className="app-shell">
+            {/* CHANGED: Render the winner popup above the live room when this player wins. */}
+            <WinnerCelebration winner={winnerCelebration} onClose={() => setWinnerCelebration(null)} />
             <div className="ambient ambient-one" />
 
             <div className="ambient ambient-two" />
@@ -2182,24 +1902,8 @@ export default function GameRoom({
                         />
 
                         <PrizePanel
-                            room={
-                                {
-                                    ...room,
-                                    ...gameState,
-                                }
-                            }
-                            tickets={
-                                tickets
-                            }
-                            calledNumbers={
-                                calledNumbers
-                            }
-                            myClaims={
-                                myClaims
-                            }
-                            onClaim={
-                                handleClaim
-                            }
+                            room={{ ...room, ...gameState }}
+                            winners={serverWinners}
                         />
                     </div>
 

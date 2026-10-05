@@ -1,4 +1,6 @@
 import Room from "../models/Room.js";
+// CHANGED: Every ball draw runs the server-side automatic prize evaluator.
+import { autoClaimEligiblePrizes } from "./autoPrizeClaims.js";
 
 export async function drawNextBall(roomCode) {
     const code = roomCode
@@ -97,7 +99,9 @@ export async function drawNextBall(roomCode) {
             );
 
         if (updated) {
-            return updated;
+            // CHANGED: Award all newly eligible prizes automatically on the server; no player claim request is needed.
+            await autoClaimEligiblePrizes(updated);
+            return (await Room.findById(updated._id)) || updated;
         }
     }
 

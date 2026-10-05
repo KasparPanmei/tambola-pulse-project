@@ -9,18 +9,14 @@ import { drawNextBall } from "../utils/gameEngine.js";
 
 export async function getActiveRoom(req, res) {
     try {
-        const room = await Room.findOne({
-            status: {
-                $in: [
-                    "upcoming",
-                    "live",
-                    "paused",
-                ],
-            },
-        }).sort({
-            startsAt: 1,
-            createdAt: -1,
-        });
+        // CHANGED: Prefer a live room, then the newest upcoming room, and never return a terminated/closed room.
+        let room = await Room.findOne({ status: "live" }).sort({ createdAt: -1 });
+        if (!room) {
+            room = await Room.findOne({ status: "upcoming" }).sort({ createdAt: -1 });
+        }
+        if (!room) {
+            room = await Room.findOne({ status: "paused" }).sort({ createdAt: -1 });
+        }
 
         if (!room) {
             return res.status(404).json({
@@ -137,6 +133,19 @@ export async function startRoom(req, res) {
             return res.status(404).json({
                 message:
                     `Room ${code} not found`,
+            });
+        }
+
+        const paidBookingCount = await Booking.countDocuments({
+            room: room._id,
+            paymentStatus: "paid",
+            status: "confirmed",
+        });
+
+        // CHANGED: The server independently blocks starting/resuming a room until at least one ticket purchase is paid and confirmed.
+        if (paidBookingCount < 1) {
+            return res.status(400).json({
+                message: "No tickets have been bought yet. The game cannot start until at least one booking is paid and confirmed.",
             });
         }
 
@@ -319,6 +328,14 @@ export async function resetRoom(req, res) {
         room.lastCalledAt = null;
 
         room.gameVersion += 1;
+
+        // CHANGED: Reset each prize's embedded winner slot so a fresh game can award that prize again.
+        room.prizes.forEach((prize) => {
+            prize.claimed = false;
+            prize.claimedByTicket = null;
+            prize.claimedByUser = null;
+            prize.claimedAt = null;
+        });
 
         await room.save();
 
