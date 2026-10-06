@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Clock3, Lock, X, UserRound, Smartphone } from "lucide-react";
+// ADDED: Use the app-wide popup notifications for unavailable full-sheet requests.
+import { toast } from "sonner";
 import api from "../lib/api.js";
 import Countdown from "./Countdown.jsx";
 import TicketCard from "./TicketCard.jsx";
@@ -16,10 +18,21 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
         [method, setMethod] = useState("upi_qr"),
         [loading, setLoading] = useState(false),
         [showAllTickets, setShowAllTickets] = useState(false),
+        // ADDED: Keep a refreshable copy of inventory so full-sheet checks use live availability.
+        [availableTickets, setAvailableTickets] = useState(tickets),
+        // ADDED: Prevent duplicate full-sheet inventory checks.
+        [checkingFullSheet, setCheckingFullSheet] = useState(false),
         [error, setError] = useState(""),
         // CHANGED: Retain the verified profile name so an edited name cannot reuse that phone at confirmation.
         [verifiedIdentity, setVerifiedIdentity] = useState(null);
     const amount = selected.length * room.ticketPrice;
+    // ADDED: Show a popup when a complete six-ticket sheet is no longer available.
+    const notifyFullSheetUnavailable = () => toast.warning("Full sheet is no longer available", {
+        description: "There are fewer than 6 tickets left. Please choose from the available tickets instead.",
+        duration: 5000,
+    });
+    // ADDED: Keep the displayed ticket list synchronized with refreshed parent inventory.
+    useEffect(() => setAvailableTickets(tickets), [tickets]);
     useEffect(() => {
         try {
             const user = JSON.parse(localStorage.getItem("tp_user") || "null");
@@ -51,7 +64,34 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                     : a,
         );
     };
-    const bundle = (n) => setSelected(tickets.slice(0, n));
+    // MODIFIED: Recheck server inventory before allowing the six-ticket Full Sheet bundle.
+    const bundle = async (n) => {
+        setError("");
+        if (n !== 6) {
+            setSelected(availableTickets.slice(0, n));
+            return;
+        }
+        setCheckingFullSheet(true);
+        try {
+            const { data } = await api.get(`/rooms/${encodeURIComponent(room.code)}`);
+            const latestTickets = Array.isArray(data?.tickets) ? data.tickets : [];
+            setAvailableTickets(latestTickets);
+            if (latestTickets.length < 6) {
+                const availableIds = new Set(latestTickets.map((ticket) => ticket._id));
+                setSelected((current) => current.filter((ticket) => availableIds.has(ticket._id)));
+                // MODIFIED: Replace the inline warning with a popup notification.
+                notifyFullSheetUnavailable();
+                return;
+            }
+            setSelected(latestTickets.slice(0, 6));
+        } catch (e) {
+            // ADDED: Preserve the full-sheet warning if the last known inventory is already below six.
+            if (availableTickets.length < 6) notifyFullSheetUnavailable();
+            else setError(e.response?.data?.message || "Could not check the latest ticket availability. Please try again.");
+        } finally {
+            setCheckingFullSheet(false);
+        }
+    };
     async function send() {
         try {
             setError("");
@@ -99,6 +139,13 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
 
         if (!selected.length) {
             setError("Select at least one available ticket.");
+            return;
+        }
+
+        // ADDED: Do not submit a six-ticket purchase when refreshed inventory is below six.
+        if (selected.length === 6 && availableTickets.length < 6) {
+            // MODIFIED: Keep the last-line full-sheet safeguard as a popup, not an inline error.
+            notifyFullSheetUnavailable();
             return;
         }
 
@@ -217,6 +264,22 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
 
 
             if (status === 409) {
+                // ADDED: Recheck inventory after a conflict so a now-unavailable full sheet gets the requested popup.
+                if (selected.length === 6) {
+                    try {
+                        const { data } = await api.get(`/rooms/${encodeURIComponent(room.code)}`);
+                        const latestTickets = Array.isArray(data?.tickets) ? data.tickets : [];
+                        setAvailableTickets(latestTickets);
+                        if (latestTickets.length < 6) {
+                            const availableIds = new Set(latestTickets.map((ticket) => ticket._id));
+                            setSelected((current) => current.filter((ticket) => availableIds.has(ticket._id)));
+                            notifyFullSheetUnavailable();
+                            return;
+                        }
+                    } catch {
+                        // Keep the server conflict message below if inventory could not be refreshed.
+                    }
+                }
                 setError(
                     serverMessage ||
                     "One of your selected tickets is no longer available. Please select another ticket."
@@ -311,16 +374,20 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                                     {n > 1 ? "s" : ""}
                                 </button>
                             ))}
+                            {/* MODIFIED: Show a checking state while live inventory is refreshed. */}
                             <button
                                 className={`bundle ${selected.length === 6 ? "selected" : ""}`}
                                 onClick={() => bundle(6)}
+                                aria-disabled={checkingFullSheet}
+                                disabled={checkingFullSheet}
                             >
-                                Full Sheet (6)
+                                {checkingFullSheet ? "Checking availability…" : "Full Sheet (6)"}
                             </button>
                         </div>
                     </div>
                     <div className="ticket-list">
-                        {(showAllTickets ? tickets : tickets.slice(0, 4)).map((t) => (
+                        {/* MODIFIED: Render from the refreshed available-ticket list. */}
+                        {(showAllTickets ? availableTickets : availableTickets.slice(0, 4)).map((t) => (
                             <TicketCard
                                 key={t._id}
                                 ticket={t}
@@ -329,7 +396,7 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                             />
                         ))}
                     </div>
-                    {tickets.length > 4 && (
+                    {availableTickets.length > 4 && (
                         <button
                             type="button"
                             className="btn surface"
@@ -341,7 +408,7 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                         >
                             {showAllTickets
                                 ? "Show Less"
-                                : `Show More Tickets (${tickets.length - 4})`}
+                                : `Show More Tickets (${availableTickets.length - 4})`}
                         </button>
                     )}
                     <div className="card pad stack">

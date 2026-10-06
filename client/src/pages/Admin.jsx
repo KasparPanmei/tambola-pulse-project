@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import adminApi from "../lib/adminApi.js";
+// ADDED: Music controls let admins choose and operate a shared room track.
 import {
     Activity,
     AlertTriangle,
@@ -16,21 +17,36 @@ import {
     History,
     Hash,
     LayoutDashboard,
+    ListMusic,
     Menu,
+    Music2,
     Pause,
     Phone,
     Play,
     RefreshCcw,
+    Search,
     Settings,
     ShieldCheck,
+    SkipBack,
+    SkipForward,
     Ticket,
     Trophy,
+    Upload,
     UserRound,
     Users,
+    Volume2,
     X,
     XCircle,
     Zap,
 } from "lucide-react";
+
+// ADDED: Format player progress and duration as familiar minutes:seconds values.
+function formatMusicTime(seconds) {
+    const value = Number(seconds);
+    if (!Number.isFinite(value) || value < 0) return "0:00";
+    const total = Math.floor(value);
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
 
 const historyRows = [
     {
@@ -952,6 +968,18 @@ export default function Admin() {
     }, [navigate]);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    // ADDED: Refs connect the header file picker and local audio preview to room playback.
+    const musicInputRef = useRef(null);
+    const adminMusicRef = useRef(null);
+    // ADDED: Debounce room-wide volume updates while an admin drags the slider.
+    const musicVolumeUpdateTimerRef = useRef(null);
+    // ADDED: Debounce server updates while the admin seeks through the current track.
+    const musicPositionUpdateTimerRef = useRef(null);
+    const [musicLibrary, setMusicLibrary] = useState([]);
+    const [musicLibraryOpen, setMusicLibraryOpen] = useState(false);
+    const [musicSearch, setMusicSearch] = useState("");
+    const [musicCurrentTime, setMusicCurrentTime] = useState(0);
+    const [musicDuration, setMusicDuration] = useState(0);
     const [activeSection, setActiveSection] =
         useState("overview");
 
@@ -1135,7 +1163,7 @@ export default function Admin() {
     const totalBookings = dashboardStats.totalBookings;
     const totalRevenue = dashboardStats.revenue;
 
-    const loadAdminData = async ({ silent = false } = {}) => {
+   const loadAdminData = async ({ silent = false } = {}) => {
         if (!roomCode) {
             setRoom(null);
             setTickets([]);
@@ -1640,6 +1668,229 @@ export default function Admin() {
         } catch (error) { console.error("Generate tickets error:", error); setLastAction(error.response?.data?.message || "Failed to generate tickets."); }
     }
 
+    // ADDED: Load all saved server-side uploads, including files uploaded before the library existed.
+    async function refreshMusicLibrary({ quiet = false } = {}) {
+        try {
+            const { data } = await adminApi.get("/admin/music/library");
+            setMusicLibrary(Array.isArray(data?.tracks) ? data.tracks : []);
+        } catch (error) {
+            if (!quiet) setLastAction(error.response?.data?.message || "Unable to load the music library.");
+        }
+    }
+
+    function currentMusicTrackIndex() {
+        return musicLibrary.findIndex((track) => track.url === room?.musicUrl);
+    }
+
+    // ADDED: Select a saved song, start playback, and synchronize the new track with the room.
+    async function selectRoomMusic(track) {
+        if (!roomCode || !track?._id) {
+            setLastAction("Create or select a room before playing music.");
+            return;
+        }
+        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
+        const audio = adminMusicRef.current;
+        if (audio) {
+            const configuredApi = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+            const apiOrigin = new URL(configuredApi, window.location.origin);
+            audio.pause();
+            audio.src = new URL(track.url, apiOrigin).href;
+            audio.currentTime = 0;
+            audio.load();
+            audio.play()?.catch(() => {});
+        }
+        try {
+            const { data } = await adminApi.post("/admin/music/select", { roomCode, trackId: track._id });
+            setRoom(data.room);
+            setMusicCurrentTime(0);
+            setMusicDuration(0);
+            setLastAction(data.message || `Now playing: ${track.title}`);
+        } catch (error) {
+            audio?.pause();
+            setLastAction(error.response?.data?.message || "Unable to play the selected track.");
+        }
+    }
+
+    // ADDED: Playlist transport wraps to the next track and starts playback for everyone.
+    async function playNextRoomMusic() {
+        if (musicLibrary.length === 0) {
+            setMusicLibraryOpen(true);
+            return;
+        }
+        const currentIndex = currentMusicTrackIndex();
+        const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % musicLibrary.length;
+        await selectRoomMusic(musicLibrary[nextIndex]);
+    }
+
+    // ADDED: Previous rewinds the current track when it has played for more than three seconds.
+    async function playPreviousRoomMusic() {
+        const audio = adminMusicRef.current;
+        if (audio && audio.currentTime > 3) {
+            saveRoomMusicPosition(0);
+            return;
+        }
+        if (musicLibrary.length === 0) return;
+        const currentIndex = currentMusicTrackIndex();
+        const previousIndex = currentIndex < 0
+            ? musicLibrary.length - 1
+            : (currentIndex - 1 + musicLibrary.length) % musicLibrary.length;
+        await selectRoomMusic(musicLibrary[previousIndex]);
+    }
+
+    // ADDED: Apply a seek locally and debounce its room-wide synchronization request.
+    function saveRoomMusicPosition(position) {
+        const target = Math.max(0, Math.min(Number.isFinite(musicDuration) && musicDuration > 0 ? musicDuration : Number.MAX_SAFE_INTEGER, Number(position) || 0));
+        setMusicCurrentTime(target);
+        const audio = adminMusicRef.current;
+        if (audio && Number.isFinite(audio.duration)) audio.currentTime = Math.min(target, audio.duration);
+        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
+        musicPositionUpdateTimerRef.current = window.setTimeout(async () => {
+            try {
+                const { data } = await adminApi.post("/admin/music/control", {
+                    roomCode,
+                    playing: Boolean(room?.musicPlaying),
+                    currentTime: target,
+                });
+                setRoom(data.room);
+            } catch (error) {
+                setLastAction(error.response?.data?.message || "Unable to seek the room music.");
+            }
+        }, 250);
+    }
+
+    function seekRoomMusic(event) {
+        saveRoomMusicPosition(Number(event.target.value));
+    }
+
+    // ADDED: Upload a selected local audio file for all room players to access.
+    async function uploadRoomMusic(event) {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file) return;
+        if (!roomCode) {
+            setLastAction("Create or select a room before choosing background music.");
+            return;
+        }
+        if (file.size > 25 * 1024 * 1024) {
+            setLastAction("Music files must be 25 MB or smaller.");
+            return;
+        }
+        try {
+            const query = new URLSearchParams({ roomCode, fileName: file.name });
+            const { data } = await adminApi.post(`/admin/music/upload?${query}`, file, {
+                headers: { "Content-Type": "application/octet-stream" },
+            });
+            setRoom(data.room);
+            setMusicCurrentTime(0);
+            setMusicDuration(0);
+            await refreshMusicLibrary({ quiet: true });
+            setLastAction(data.message || "Background music uploaded.");
+        } catch (error) {
+            setLastAction(error.response?.data?.message || "Unable to upload background music.");
+        }
+    }
+
+    // ADDED: Start or pause playback for the admin and the players in this room.
+    async function toggleRoomMusic() {
+        if (!room?.musicUrl) {
+            setMusicLibraryOpen(true);
+            refreshMusicLibrary({ quiet: true });
+            return;
+        }
+        const nextPlaying = !room.musicPlaying;
+        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
+        const audio = adminMusicRef.current;
+        const currentTime = audio?.readyState ? audio.currentTime : Number(room.musicPosition) || 0;
+        if (nextPlaying) {
+            if (audio && audio.readyState) audio.currentTime = currentTime;
+            audio?.play()?.catch(() => {});
+        } else {
+            audio?.pause();
+        }
+        try {
+            const { data } = await adminApi.post("/admin/music/control", {
+                roomCode,
+                playing: nextPlaying,
+                currentTime,
+            });
+            setRoom(data.room);
+            setLastAction(data.message || "Background music updated.");
+        } catch (error) {
+            if (nextPlaying) adminMusicRef.current?.pause();
+            setLastAction(error.response?.data?.message || "Unable to update background music.");
+        }
+    }
+
+    // ADDED: Change the room master volume immediately, then persist the latest slider value.
+    function updateRoomMusicVolume(event) {
+        const volume = Math.max(0, Math.min(1, Number(event.target.value) / 100));
+        setRoom((current) => current ? { ...current, musicVolume: volume } : current);
+        if (adminMusicRef.current) adminMusicRef.current.volume = volume;
+        if (musicVolumeUpdateTimerRef.current) window.clearTimeout(musicVolumeUpdateTimerRef.current);
+        musicVolumeUpdateTimerRef.current = window.setTimeout(async () => {
+            try {
+                const { data } = await adminApi.post("/admin/music/control", {
+                    roomCode,
+                    volume,
+                });
+                setRoom(data.room);
+            } catch (error) {
+                setLastAction(error.response?.data?.message || "Unable to update room music volume.");
+            }
+        }, 250);
+    }
+
+    // ADDED: Keep the admin audio player aligned with the shared room track and seek timeline.
+    useEffect(() => {
+        const audio = adminMusicRef.current;
+        if (!audio) return;
+        audio.volume = Number.isFinite(Number(room?.musicVolume)) ? Math.max(0, Math.min(1, Number(room.musicVolume))) : 1;
+        const configuredApi = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+        const apiOrigin = new URL(configuredApi, window.location.origin);
+        const source = room?.musicUrl ? new URL(room.musicUrl, apiOrigin).href : "";
+        if (!source) {
+            audio.pause();
+            audio.removeAttribute("src");
+            return;
+        }
+        if (audio.src !== source) {
+            audio.src = source;
+            audio.load();
+        }
+        if (room?.musicPlaying) {
+            const alignAudio = () => {
+                if (!room.musicUpdatedAt) return;
+                const elapsed = Math.max(0, (Date.now() - new Date(room.musicUpdatedAt).getTime()) / 1000);
+                const position = Math.max(0, Number(room.musicPosition) || 0) + elapsed;
+                const target = Number.isFinite(audio.duration) && audio.duration > 0 ? position % audio.duration : position;
+                if (Number.isFinite(target) && Math.abs(audio.currentTime - target) > 3) {
+                    try { audio.currentTime = target; } catch { /* metadata is not ready yet */ }
+                }
+            };
+            if (audio.readyState >= 1) alignAudio();
+            else audio.addEventListener("loadedmetadata", alignAudio, { once: true });
+            audio.play()?.catch(() => {});
+            return () => audio.removeEventListener("loadedmetadata", alignAudio);
+        }
+        audio.pause();
+        const restorePosition = () => {
+            const saved = Math.max(0, Number(room?.musicPosition) || 0);
+            if (Number.isFinite(audio.duration) && audio.duration > 0) audio.currentTime = Math.min(saved, audio.duration);
+        };
+        if (audio.readyState >= 1) restorePosition();
+        else audio.addEventListener("loadedmetadata", restorePosition, { once: true });
+        return () => audio.removeEventListener("loadedmetadata", restorePosition);
+    }, [room?.musicUrl, room?.musicPlaying, room?.musicUpdatedAt, room?.musicPosition, room?.musicVolume]);
+
+    // ADDED: Load the saved library once and clear delayed playback updates on unmount.
+    useEffect(() => {
+        refreshMusicLibrary({ quiet: true });
+        return () => {
+            if (musicVolumeUpdateTimerRef.current) window.clearTimeout(musicVolumeUpdateTimerRef.current);
+            if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
+        };
+    }, []);
+
     if (loading) {
         return (
             <div className="admin-page">
@@ -1902,6 +2153,153 @@ export default function Admin() {
                     </div>
 
                     <div className="admin-header-right">
+                        {/* ADDED: Local music selection and room-wide playback controls in the admin header. */}
+                        <input
+                            ref={musicInputRef}
+                            type="file"
+                            accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm"
+                            onChange={uploadRoomMusic}
+                            style={{ display: "none" }}
+                            aria-label="Choose background music"
+                        />
+                        {/* ADDED: Hidden audio element drives the shared library player's transport and progress controls. */}
+                        <audio
+                            ref={adminMusicRef}
+                            preload="metadata"
+                            aria-hidden="true"
+                            onTimeUpdate={(event) => setMusicCurrentTime(event.currentTarget.currentTime || 0)}
+                            onLoadedMetadata={(event) => {
+                                const audio = event.currentTarget;
+                                setMusicDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+                                setMusicCurrentTime(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
+                            }}
+                            onEnded={playNextRoomMusic}
+                        />
+                        <button
+                            type="button"
+                            className="admin-music-button"
+                            onClick={toggleRoomMusic}
+                            disabled={!roomCode}
+                            title={room?.musicTitle ? `${room.musicPlaying ? "Pause" : "Play"}: ${room.musicTitle}` : "Choose a music file to play for the room"}
+                        >
+                            {room?.musicPlaying ? <Pause size={15} /> : <Music2 size={15} />}
+                            <span>{room?.musicPlaying ? "Pause music" : room?.musicUrl ? "Play music" : "Play music"}</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="admin-header-button admin-music-pick"
+                            onClick={() => musicInputRef.current?.click()}
+                            disabled={!roomCode}
+                            aria-label="Choose a different music file"
+                            title={room?.musicTitle ? `Change track (${room.musicTitle})` : "Choose a music file"}
+                        >
+                            <Upload size={16} />
+                        </button>
+                        {/* ADDED: Admin master-volume slider is synchronized to every player in the room. */}
+                        <div className="admin-music-volume">
+                            <Volume2 size={15} aria-hidden="true" />
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={Math.round(Number(room?.musicVolume ?? 1) * 100)}
+                                onChange={updateRoomMusicVolume}
+                                disabled={!roomCode}
+                                aria-label="Background music volume for all players"
+                                title="Set background music volume for all players"
+                            />
+                            <span>{Math.round(Number(room?.musicVolume ?? 1) * 100)}%</span>
+                        </div>
+                        {/* ADDED: Library dropdown combines current-track transport with access to uploaded songs. */}
+                        <div className="admin-music-library-anchor">
+                            <button
+                                type="button"
+                                className="admin-header-button admin-music-library-toggle"
+                                onClick={() => {
+                                    setMusicLibraryOpen((open) => !open);
+                                    refreshMusicLibrary({ quiet: true });
+                                }}
+                                aria-expanded={musicLibraryOpen}
+                                aria-label="Open music library and player"
+                                title="Music library and player"
+                            >
+                                <ListMusic size={16} />
+                            </button>
+                            {musicLibraryOpen && (
+                                <section className="admin-music-library-panel" aria-label="Music library and player">
+                                    <div className="admin-music-library-heading">
+                                        <div>
+                                            <strong>Music library</strong>
+                                            <small>{musicLibrary.length} saved {musicLibrary.length === 1 ? "track" : "tracks"}</small>
+                                        </div>
+                                        <button type="button" className="admin-music-library-close" onClick={() => setMusicLibraryOpen(false)} aria-label="Close music library">
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="admin-music-current-track">
+                                        <Music2 size={16} />
+                                        <span title={room?.musicTitle || "No track selected"}>{room?.musicTitle || "No track selected"}</span>
+                                    </div>
+                                    <div className="admin-music-transport">
+                                        <button type="button" onClick={playPreviousRoomMusic} disabled={!musicLibrary.length} aria-label="Previous track" title="Previous track">
+                                            <SkipBack size={16} />
+                                        </button>
+                                        <button type="button" className="admin-music-main-transport" onClick={toggleRoomMusic} disabled={!roomCode} aria-label={room?.musicPlaying ? "Pause music" : "Play music"} title={room?.musicPlaying ? "Pause" : "Play"}>
+                                            {room?.musicPlaying ? <Pause size={17} /> : <Play size={17} />}
+                                        </button>
+                                        <button type="button" onClick={playNextRoomMusic} disabled={!musicLibrary.length} aria-label="Next track" title="Next track">
+                                            <SkipForward size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="admin-music-progress">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max={Math.max(musicDuration, 1)}
+                                            step="0.1"
+                                            value={Math.min(musicCurrentTime, musicDuration || musicCurrentTime)}
+                                            onChange={seekRoomMusic}
+                                            disabled={!room?.musicUrl || !musicDuration}
+                                            aria-label="Seek music playback"
+                                        />
+                                        <div><span>{formatMusicTime(musicCurrentTime)}</span><span>{formatMusicTime(musicDuration)}</span></div>
+                                    </div>
+                                    <button type="button" className="admin-music-library-upload" onClick={() => musicInputRef.current?.click()} disabled={!roomCode}>
+                                        <Upload size={14} /> Add music from this device
+                                    </button>
+                                    <label className="admin-music-library-search">
+                                        <Search size={15} />
+                                        <input
+                                            type="search"
+                                            value={musicSearch}
+                                            onChange={(event) => setMusicSearch(event.target.value)}
+                                            placeholder="Search your library"
+                                            aria-label="Search music library"
+                                        />
+                                    </label>
+                                    <div className="admin-music-library-list">
+                                        {musicLibrary
+                                            .filter((track) => String(track.title || "").toLowerCase().includes(musicSearch.trim().toLowerCase()))
+                                            .map((track, index) => (
+                                                <button
+                                                    type="button"
+                                                    key={track._id || track.fileName || `${track.url}-${index}`}
+                                                    className={`admin-music-library-track ${track.url === room?.musicUrl ? "active" : ""}`}
+                                                    onClick={() => selectRoomMusic(track)}
+                                                    disabled={!roomCode}
+                                                    title={`Play ${track.title}`}
+                                                >
+                                                    <Music2 size={14} />
+                                                    <span>{track.title}</span>
+                                                    {track.url === room?.musicUrl && room?.musicPlaying ? <span className="admin-music-playing-indicator">PLAYING</span> : null}
+                                                </button>
+                                            ))}
+                                        {musicLibrary.length === 0 && <p className="admin-music-library-empty">No saved music yet. Add a song from your device.</p>}
+                                        {musicLibrary.length > 0 && !musicLibrary.some((track) => String(track.title || "").toLowerCase().includes(musicSearch.trim().toLowerCase())) && <p className="admin-music-library-empty">No tracks match that search.</p>}
+                                    </div>
+                                </section>
+                            )}
+                        </div>
                         <div className="admin-escrow">
                             <span>ESCROW</span>
                             <strong>₹{room?.jackpot ?? 0}</strong>
@@ -2645,13 +3043,13 @@ export default function Admin() {
                                                         <td>
                                                             <div className="ticket-pills">
                                                                 {(booking.tickets || []).map(
-                                                                    (
-                                                                        ticket,
-                                                                    ) => (
+                                                                    (ticket, index) => (
                                                                         <span
-                                                                            key={
-                                                                                ticket
-                                                                            }
+                                                                            // MODIFIED: Use a stable scalar key; ticket objects themselves stringify to `[object Object]`.
+                                                                            key={`${typeof ticket === "string"
+                                                                                ? ticket
+                                                                                : ticket?._id?.toString?.() || ticket?.id?.toString?.() || ticket?.publicCode || ticket?.number || "ticket"
+                                                                                }-${index}`}
                                                                         >
                                                                             {typeof ticket === "string"
                                                                                 ? ticket.split("-")[2]

@@ -1,4 +1,6 @@
 import Room from "../models/Room.js";
+// ADDED: Check the authoritative full-house award and stop the caller after it is verified.
+import PrizeClaim from "../models/PrizeClaim.js";
 // CHANGED: Every ball draw runs the server-side automatic prize evaluator.
 import { autoClaimEligiblePrizes } from "./autoPrizeClaims.js";
 
@@ -101,6 +103,19 @@ export async function drawNextBall(roomCode) {
         if (updated) {
             // CHANGED: Award all newly eligible prizes automatically on the server; no player claim request is needed.
             await autoClaimEligiblePrizes(updated);
+            // ADDED: The claim record is the source of truth for ending the game and publishing its winner.
+            const fullHouseWinner = await PrizeClaim.exists({
+                room: updated._id,
+                prizeId: "full-house",
+                status: "verified",
+            });
+            if (fullHouseWinner) {
+                // ADDED: Close the room and stop both number calling and room music after the winner is set.
+                await Room.updateOne(
+                    { _id: updated._id, status: "live" },
+                    { $set: { status: "closed", autoCaller: false, musicPlaying: false, musicUpdatedAt: new Date() } },
+                );
+            }
             return (await Room.findById(updated._id)) || updated;
         }
     }

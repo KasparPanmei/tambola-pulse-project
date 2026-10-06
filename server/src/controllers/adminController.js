@@ -671,6 +671,7 @@ export async function terminateRoom(
     res,
 ) {
     try {
+        // CHANGED: Mark the terminated room and every historical room closed before any later homepage active-room lookup.
         const room =
             await Room.findOne({
                 code: req.params.roomCode,
@@ -682,9 +683,22 @@ export async function terminateRoom(
             });
         }
 
-        room.status = "closed";
+        // CHANGED: Close all stored rooms so an older public-status record cannot reappear on the homepage.
+        await Room.updateMany(
+            {},
+            {
+                $set: {
+                    status: "closed",
+                    autoCaller: false,
+                },
+            },
+        );
 
+        room.status = "closed";
         await room.save();
+
+        // CHANGED: Do not let a client cache the termination response or its previous room state.
+        res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
 
         res.json({
             message: "Game terminated",

@@ -36,8 +36,8 @@ export default function Home() {
                 params: { _ts: Date.now() },
             });
 
-            // CHANGED: Treat every terminated-room status as empty instead of rendering the previous room.
-            if (!data?.room || ["closed", "terminated"].includes(data.room.status)) {
+            // CHANGED: Render room tickets/countdowns only for live or upcoming rooms; closed/paused/unknown states are treated as no public room.
+            if (!data?.room || !["live", "upcoming"].includes(data.room.status)) {
                 setRoom(null);
                 setTickets([]);
             } else {
@@ -111,222 +111,222 @@ export default function Home() {
             active={checkout}
             onConfirm={() => setCheckout(false)}
         >
-            <div className="app">
+        <div className="app">
 
-                <Header />
+            <Header />
 
-                <main className="page">
-                    {error && (
-                        <div
-                            className="small"
-                            style={{
-                                color: "#ffb4ab",
-                                marginBottom: 10,
-                            }}
-                        >
-                            {error}
-                        </div>
-                    )}
-
-                    {loading && !room && (
-                        <section className="card hero">
-                            <div className="small muted">
-                                Loading active game...
-                            </div>
-                        </section>
-                    )}
-
-
-                    {!loading && !room && (
-                        // CHANGED: Make room termination visible as a clean no-active-room state.
-                        <section className="card hero no-active-room">
-                            <div className="section-title">No active room right now</div>
-                            <div className="small muted">The previous room has ended. Please check back when the next game room is available.</div>
-                        </section>
-                    )}
-
-                    {room && (
-                        <section className="card hero">
-
-                            {/* Room status + countdown */}
-                            <div className="row">
-
-                                <span className="label live">
-                                    <span className="dot" />
-
-                                    {room.status === "live"
-                                        ? "Live Room"
-                                        : "Upcoming Room"}
-
-                                    {" "}#{room.code}
-                                </span>
-
-                                <span className="pill">
-                                    {room.status === "live"
-                                        ? "Live Now"
-                                        : "Starts in "}
-
-                                    {room.status !== "live" && (
-                                        <Countdown
-                                            target={
-                                                new Date(
-                                                    room.startsAt
-                                                )
-                                            }
-                                        />
-                                    )}
-                                </span>
-
-                            </div>
-
-
-                            {/* Room title */}
-                            <div className="title">
-                                {room.title}
-                            </div>
-
-
-                            {/* Description */}
-                            <div className="small muted">
-                                {room.description}
-                            </div>
-
-                            <div className="metrics">
-
-                                <div className="metric">
-                                    <Dices
-                                        size={18}
-                                        color="var(--pl)"
-                                    />
-
-                                    {room.balls || 90} Balls Classical
-                                </div>
-
-
-                                <div className="metric">
-                                    <Award
-                                        size={18}
-                                        color="var(--amber)"
-                                    />
-
-                                    ₹
-                                    {Number(
-                                        room.jackpot || 0
-                                    ).toLocaleString()}
-
-                                    {" "}Bumper
-                                </div>
-
-
-                                <div className="metric">
-                                    <Gauge
-                                        size={18}
-                                        color="var(--green)"
-                                    />
-
-                                    Automatic prize claims
-                                </div>
-
-
-                                <div className="metric">
-                                    <CheckCircle2
-                                        size={18}
-                                        color="var(--sec)"
-                                    />
-
-                                    100% UPI Cashout
-                                </div>
-
-                            </div>
-
-                            <button
-                                className="btn primary"
-                                onClick={() =>
-                                    setCheckout(true)
-                                }
-                                // CHANGED: Ticket selection is available only before the admin starts the game.
-                                disabled={room.status !== "upcoming" || tickets.length === 0}
-                            >
-                                {room.status !== "upcoming"
-                                    ? "Ticket Sales Closed"
-                                    : tickets.length > 0
-                                        ? `Select Tickets • ₹${room.ticketPrice}/-`
-                                        : "Tickets Sold Out"}
-                            </button>
-
-                        </section>
-                    )}
-
-                    {room?.status === "upcoming" && (
-                        // CHANGED: Add a conspicuous pre-game countdown and Join Room action directly below the ticket hero card.
-                        <section className="home-upcoming-room-card" aria-label="Upcoming game room">
-                            <div className="home-upcoming-room-copy">
-                                <span className="home-upcoming-eyebrow">NEXT GAME STARTS IN</span>
-                                <strong className="home-upcoming-countdown">
-                                    <Countdown target={new Date(room.startsAt)} />
-                                </strong>
-                                <span className="home-upcoming-room-code">Room #{room.code}</span>
-                            </div>
-                            <button
-                                type="button"
-                                className="home-join-room-button"
-                                onClick={() => setJoinRoomOpen(true)}
-                            >
-                                <DoorOpen size={20} />
-                                Join Room
-                            </button>
-                        </section>
-                    )}
-
-
-                    <section
-                        className="card pad"
+            <main className="page">
+                {error && (
+                    <div
+                        className="small"
                         style={{
-                            marginTop: 12,
+                            color: "#ffb4ab",
+                            marginBottom: 10,
                         }}
                     >
+                        {error}
+                    </div>
+                )}
 
-                        <div className="label muted">
-                            Ticket Feed
+                {loading && !room && (
+                    <section className="card hero">
+                        <div className="small muted">
+                            Loading active game...
+                        </div>
+                    </section>
+                )}
+
+
+                {!loading && !room && (
+                    // CHANGED: Make room termination visible as a clean no-active-room state.
+                    <section className="card hero no-active-room">
+                        <div className="section-title">No active room right now</div>
+                        <div className="small muted">The previous room has ended. Please check back when the next game room is available.</div>
+                    </section>
+                )}
+
+                {room && (
+                    <section className="card hero">
+
+                        {/* Room status + countdown */}
+                        <div className="row">
+
+                            <span className="label live">
+                                <span className="dot" />
+
+                                {room.status === "live"
+                                    ? "Live Room"
+                                    : "Upcoming Room"}
+
+                                {" "}#{room.code}
+                            </span>
+
+                            <span className="pill">
+                                {room.status === "live"
+                                    ? "Live Now"
+                                    : "Starts in "}
+
+                                {room.status !== "live" && (
+                                    <Countdown
+                                        target={
+                                            new Date(
+                                                room.startsAt
+                                            )
+                                        }
+                                    />
+                                )}
+                            </span>
+
                         </div>
 
-                        <div
-                            className="small muted"
-                            style={{
-                                marginTop: 5,
-                            }}
+
+                        {/* Room title */}
+                        <div className="title">
+                            {room.title}
+                        </div>
+
+
+                        {/* Description */}
+                        <div className="small muted">
+                            {room.description}
+                        </div>
+
+                        <div className="metrics">
+
+                            <div className="metric">
+                                <Dices
+                                    size={18}
+                                    color="var(--pl)"
+                                />
+
+                                {room.balls || 90} Balls Classical
+                            </div>
+
+
+                            <div className="metric">
+                                <Award
+                                    size={18}
+                                    color="var(--amber)"
+                                />
+
+                                ₹
+                                {Number(
+                                    room.jackpot || 0
+                                ).toLocaleString()}
+
+                                {" "}Bumper
+                            </div>
+
+
+                            <div className="metric">
+                                <Gauge
+                                    size={18}
+                                    color="var(--green)"
+                                />
+
+                                Automatic prize claims
+                            </div>
+
+
+                            <div className="metric">
+                                <CheckCircle2
+                                    size={18}
+                                    color="var(--sec)"
+                                />
+
+                                100% UPI Cashout
+                            </div>
+
+                        </div>
+
+                        <button
+                            className="btn primary"
+                            onClick={() =>
+                                setCheckout(true)
+                            }
+                            // CHANGED: Ticket selection is available only before the admin starts the game.
+                            disabled={room.status !== "upcoming" || tickets.length === 0}
                         >
-                            {tickets.length > 0
-                                ? `${tickets.length} tickets currently available. Select available tickets to open the secure checkout flow.`
-                                : "No tickets are currently available."}
-                        </div>
+                            {room.status !== "upcoming"
+                                ? "Ticket Sales Closed"
+                                : tickets.length > 0
+                                ? `Select Tickets • ₹${room.ticketPrice}/-`
+                                : "Tickets Sold Out"}
+                        </button>
 
                     </section>
+                )}
 
-                </main>
+                {room?.status === "upcoming" && (
+                    // CHANGED: Add a conspicuous pre-game countdown and Join Room action directly below the ticket hero card.
+                    <section className="home-upcoming-room-card" aria-label="Upcoming game room">
+                        <div className="home-upcoming-room-copy">
+                            <span className="home-upcoming-eyebrow">NEXT GAME STARTS IN</span>
+                            <strong className="home-upcoming-countdown">
+                                <Countdown target={new Date(room.startsAt)} />
+                            </strong>
+                            <span className="home-upcoming-room-code">Room #{room.code}</span>
+                        </div>
+                        <button
+                            type="button"
+                            className="home-join-room-button"
+                            onClick={() => setJoinRoomOpen(true)}
+                        >
+                            <DoorOpen size={20} />
+                            Join Room
+                        </button>
+                    </section>
+                )}
 
 
-                <BottomNav />
+                <section
+                    className="card pad"
+                    style={{
+                        marginTop: 12,
+                    }}
+                >
 
-                {checkout && room && (
-                    <CheckoutModal
-                        room={room}
-                        tickets={tickets}
-                        onClose={() =>
-                            setCheckout(false)
-                        }
-                        onPayment={(booking) => {
-                            setCheckout(false);
-                            setBooking(booking);
+                    <div className="label muted">
+                        Ticket Feed
+                    </div>
+
+                    <div
+                        className="small muted"
+                        style={{
+                            marginTop: 5,
                         }}
-                    />
-                )}
+                    >
+                        {tickets.length > 0
+                            ? `${tickets.length} tickets currently available. Select available tickets to open the secure checkout flow.`
+                            : "No tickets are currently available."}
+                    </div>
 
-                {joinRoomOpen && (
-                    <JoinRoomModal onClose={() => setJoinRoomOpen(false)} />
-                )}
+                </section>
 
-            </div>
+            </main>
+
+
+            <BottomNav />
+
+            {checkout && room && (
+                <CheckoutModal
+                    room={room}
+                    tickets={tickets}
+                    onClose={() =>
+                        setCheckout(false)
+                    }
+                    onPayment={(booking) => {
+                        setCheckout(false);
+                        setBooking(booking);
+                    }}
+                />
+            )}
+
+            {joinRoomOpen && (
+                <JoinRoomModal onClose={() => setJoinRoomOpen(false)} />
+            )}
+
+        </div>
         </BackConfirmationGuard>
     );
 }

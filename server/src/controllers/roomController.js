@@ -9,19 +9,22 @@ import { drawNextBall } from "../utils/gameEngine.js";
 
 export async function getActiveRoom(req, res) {
     try {
-        // CHANGED: Prefer a live room, then the newest upcoming room, and never return a terminated/closed room.
+        // CHANGED: Prevent browsers and proxies from serving the room that existed before termination.
+        res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        res.set("Pragma", "no-cache");
+        res.set("Expires", "0");
+
+        // CHANGED: The public homepage only shows live or upcoming rooms; paused rooms must not resurrect old tickets/countdowns after termination.
         let room = await Room.findOne({ status: "live" }).sort({ createdAt: -1 });
         if (!room) {
             room = await Room.findOne({ status: "upcoming" }).sort({ createdAt: -1 });
         }
-        if (!room) {
-            room = await Room.findOne({ status: "paused" }).sort({ createdAt: -1 });
-        }
 
         if (!room) {
-            return res.status(404).json({
-                message:
-                    "No active game room found",
+            // CHANGED: No active room is a valid homepage state, not an API error that should create an uncaught Axios rejection.
+            return res.json({
+                room: null,
+                tickets: [],
             });
         }
 
@@ -133,6 +136,13 @@ export async function startRoom(req, res) {
             return res.status(404).json({
                 message:
                     `Room ${code} not found`,
+            });
+        }
+
+        // ADDED: A full-house-ended game must be reset before it can be started again.
+        if (room.status === "closed" && await PrizeClaim.exists({ room: room._id, prizeId: "full-house", status: "verified" })) {
+            return res.status(409).json({
+                message: "This game has ended with a full house. Reset the room before starting another game.",
             });
         }
 
@@ -255,10 +265,19 @@ export async function terminateRoom(
             });
         }
 
+        // CHANGED: This application exposes one public room at a time, so termination closes every stored room record and prevents any historical room from replacing the terminated one.
+        await Room.updateMany(
+            {},
+            {
+                $set: {
+                    status: "closed",
+                    autoCaller: false,
+                },
+            },
+        );
+
         room.status = "closed";
-
         room.autoCaller = false;
-
         await room.save();
 
         return res.json({
@@ -532,6 +551,38 @@ export async function getPlayerRoomState(
 
                 gameVersion:
                     room.gameVersion,
+
+                // ADDED: Publish room music state and the verified full-house winner to all players.
+                musicUrl:
+                    room.musicUrl,
+
+                musicTitle:
+                    room.musicTitle,
+
+                // ADDED: Propagate the active library track and seek position to players.
+                musicTrackId:
+                    room.musicTrackId,
+
+                musicPosition:
+                    room.musicPosition ?? 0,
+
+                musicPlaying:
+                    room.musicPlaying,
+
+                // ADDED: Send the admin's master volume to all player clients.
+                musicVolume:
+                    room.musicVolume ?? 1,
+
+                musicUpdatedAt:
+                    room.musicUpdatedAt,
+
+                fullHouseWinner: (() => {
+                    const winner = winners.find((claim) => claim.prizeId === "full-house");
+                    return winner ? {
+                        name: winner.user?.name || "Player",
+                        ticketId: winner.ticket?.publicCode || winner.ticket?._id,
+                    } : null;
+                })(),
 
                 prizes:
                     room.prizes || [],

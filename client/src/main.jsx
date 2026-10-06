@@ -21,7 +21,8 @@ function App() {
                 />
             </Routes>
             <Toaster
-                position="top-right"
+                // MODIFIED: Top-center placement makes Full Sheet availability warnings drop down from the top.
+                position="top-center"
                 richColors
             />
         </BrowserRouter>

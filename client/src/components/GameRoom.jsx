@@ -22,6 +22,7 @@ import {
     Trophy,
     Users,
     Volume2,
+    VolumeX,
     WandSparkles,
     Zap,
     X,
@@ -183,7 +184,12 @@ function GameRoomHeader({
     player,
     status,
     playerCount,
+    localMusicVolume,
+    localMusicMuted,
+    onLocalMusicVolumeChange,
+    onToggleLocalMusicMute,
 }) {
+    const [musicControlsOpen, setMusicControlsOpen] = useState(false);
     const copyRoom = async () => {
         try {
             await navigator.clipboard?.writeText(
@@ -286,6 +292,41 @@ function GameRoomHeader({
 
                 {/* CHANGED: The game-room navigation shares the same saved theme selector as Home. */}
                 <ThemeSelector />
+
+                {/* ADDED: Let each player mute or lower room music on their own device. */}
+                <div className="room-music-volume-control">
+                    <button
+                        type="button"
+                        className="icon-button room-music-volume-button"
+                        aria-label="Open room music volume controls"
+                        aria-expanded={musicControlsOpen}
+                        onClick={() => setMusicControlsOpen((open) => !open)}
+                        title="Room music volume"
+                    >
+                        {localMusicMuted || localMusicVolume === 0 ? <VolumeX size={17} /> : <Volume2 size={17} />}
+                            </button>
+                            {musicControlsOpen && (
+                                <div className="room-music-volume-popover" role="group" aria-label="Room music volume controls">
+                                    <strong>Room music</strong>
+                                    <button type="button" className="room-music-mute-button" onClick={onToggleLocalMusicMute}>
+                                        {localMusicMuted || localMusicVolume === 0 ? "Turn music on" : "Mute music"}
+                            </button>
+                            <label htmlFor="player-room-music-volume">This device</label>
+                            <div className="room-music-volume-row">
+                                <input
+                                    id="player-room-music-volume"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={Math.round(localMusicVolume * 100)}
+                                    onChange={(event) => onLocalMusicVolumeChange(Number(event.target.value) / 100)}
+                                    aria-label="Music volume on this device"
+                                />
+                                <span>{Math.round(localMusicVolume * 100)}%</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 <button
                     type="button"
@@ -861,6 +902,23 @@ function WinnerCelebration({ winner, onClose }) {
     );
 }
 
+// ADDED: Require every player to acknowledge the game end and announce the Full House winner.
+function GameEndedCelebration({ winner, onLeave }) {
+    if (!winner) return null;
+    return (
+        <div className="game-ended-overlay" role="dialog" aria-modal="true" aria-labelledby="game-ended-title">
+            <section className="game-ended-modal">
+                <div className="winner-trophy-burst"><Trophy size={30} /></div>
+                <p className="winner-celebration-kicker">FULL HOUSE</p>
+                <h2 id="game-ended-title">Full House has been won!</h2>
+                <p className="game-ended-winner">{winner.name || "Player"}</p>
+                <p className="game-ended-copy">The game has ended. Please leave the room to continue.</p>
+                <button type="button" className="winner-celebration-button" onClick={onLeave}>Leave room</button>
+            </section>
+        </div>
+    );
+}
+
 
 function Leaderboard({
     entries,
@@ -1148,6 +1206,15 @@ export default function GameRoom({
             )
                 ? room.prizes
                 : [],
+        // ADDED: Room-synchronized background-music metadata.
+        musicUrl: room?.musicUrl || "",
+        musicTitle: room?.musicTitle || "",
+        musicPlaying: Boolean(room?.musicPlaying),
+        musicUpdatedAt: room?.musicUpdatedAt || null,
+        // ADDED: Shared seek/resume offset for the room's current track.
+        musicPosition: Number(room?.musicPosition) || 0,
+        // ADDED: Admin-controlled room-wide music volume; player-local volume remains independent.
+        musicVolume: Number.isFinite(Number(room?.musicVolume)) ? Math.max(0, Math.min(1, Number(room.musicVolume))) : 1,
     }));
 
     /*
@@ -1207,6 +1274,15 @@ export default function GameRoom({
                         ? room.prizes
                         : previous.prizes ||
                         [],
+                // ADDED: Keep background music synchronized with the current room.
+                musicUrl: room?.musicUrl || "",
+                musicTitle: room?.musicTitle || "",
+                musicPlaying: Boolean(room?.musicPlaying),
+                musicUpdatedAt: room?.musicUpdatedAt || null,
+                // ADDED: Keep the player's track position aligned with the room state.
+                musicPosition: Number(room?.musicPosition) || 0,
+                // ADDED: Keep the shared admin volume in sync with room data.
+                musicVolume: Number.isFinite(Number(room?.musicVolume)) ? Math.max(0, Math.min(1, Number(room.musicVolume))) : 1,
             })
         );
     }, [
@@ -1219,6 +1295,12 @@ export default function GameRoom({
         room?.gameStartedAt,
         room?.gameVersion,
         room?.prizes,
+        room?.musicUrl,
+        room?.musicTitle,
+        room?.musicPlaying,
+        room?.musicUpdatedAt,
+        room?.musicPosition,
+        room?.musicVolume,
     ]);
 
     /*
@@ -1227,7 +1309,8 @@ export default function GameRoom({
     const [
         voiceEnabled,
         setVoiceEnabled,
-    ] = useState(false);
+    // MODIFIED: Spoken number calling is enabled automatically on room entry.
+    ] = useState(true);
 
     const [
         serverWinners,
@@ -1236,6 +1319,12 @@ export default function GameRoom({
     // CHANGED: Track the latest personal winner so the popup is shown once per winning claim.
     const [winnerCelebration, setWinnerCelebration] = useState(null);
     const seenWinnerIds = useRef(new Set());
+    // ADDED: Shared full-house result and background audio element.
+    const [gameEndWinner, setGameEndWinner] = useState(room?.fullHouseWinner || null);
+    const backgroundMusicRef = useRef(null);
+    // ADDED: Player-local audio controls do not change the admin's shared master volume.
+    const [localMusicVolume, setLocalMusicVolume] = useState(1);
+    const [localMusicMuted, setLocalMusicMuted] = useState(false);
 
     /*
      * Player count.
@@ -1317,13 +1406,16 @@ export default function GameRoom({
                         data?.room ||
                         {};
 
-                    // CHANGED: If an admin terminates the room, stop showing its stale game page and return the player to Home.
-                    if (nextRoom.status === "closed") {
+                    // ADDED: Announce full-house closure to all players before they leave the room.
+                    if (nextRoom.status === "closed" && !nextRoom.fullHouseWinner) {
                         toast.info("This room has ended", {
                             description: "Returning to the homepage to find the current room.",
                         });
                         navigate("/", { replace: true });
                         return;
+                    }
+                    if (nextRoom.status === "closed" && nextRoom.fullHouseWinner) {
+                        setGameEndWinner(nextRoom.fullHouseWinner);
                     }
 
                     const nextCalledNumbers =
@@ -1380,6 +1472,15 @@ export default function GameRoom({
                             )
                                 ? nextRoom.prizes
                                 : [],
+                        // ADDED: Apply admin music controls received through room-state polling.
+                        musicUrl: nextRoom.musicUrl || "",
+                        musicTitle: nextRoom.musicTitle || "",
+                        musicPlaying: Boolean(nextRoom.musicPlaying),
+                        musicUpdatedAt: nextRoom.musicUpdatedAt || null,
+                        // ADDED: Receive seek/resume position for room-wide playback.
+                        musicPosition: Number(nextRoom.musicPosition) || 0,
+                        // ADDED: Receive the admin's shared music volume on each room-state refresh.
+                        musicVolume: Number.isFinite(Number(nextRoom.musicVolume)) ? Math.max(0, Math.min(1, Number(nextRoom.musicVolume))) : 1,
                     });
 
                     setServerWinners(
@@ -1427,6 +1528,57 @@ export default function GameRoom({
             );
         };
     }, [room?.code, navigate]);
+
+    // ADDED: Play the admin-selected room track and align players to its shared start time.
+    useEffect(() => {
+        const audio = backgroundMusicRef.current;
+        if (!audio) return;
+        const configuredApi = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+        const apiOrigin = new URL(configuredApi, window.location.origin);
+        const source = gameState.musicUrl ? new URL(gameState.musicUrl, apiOrigin).href : "";
+        const sharedVolume = Number.isFinite(Number(gameState.musicVolume)) ? Math.max(0, Math.min(1, Number(gameState.musicVolume))) : 1;
+        audio.volume = localMusicMuted ? 0 : sharedVolume * localMusicVolume;
+
+        if (!source) {
+            audio.pause();
+            audio.removeAttribute("src");
+            return;
+        }
+        if (audio.src !== source) {
+            audio.src = source;
+            audio.load();
+        }
+        if (gameState.musicPlaying) {
+            const alignAudio = () => {
+                if (!gameState.musicUpdatedAt) return;
+                const elapsed = Math.max(0, (Date.now() - new Date(gameState.musicUpdatedAt).getTime()) / 1000);
+                const trackPosition = Math.max(0, Number(gameState.musicPosition) || 0) + elapsed;
+                const target = Number.isFinite(audio.duration) && audio.duration > 0 ? trackPosition % audio.duration : trackPosition;
+                if (Number.isFinite(target) && Math.abs(audio.currentTime - target) > 0.75) {
+                    try { audio.currentTime = target; } catch { /* metadata is not ready yet */ }
+                }
+            };
+            if (audio.readyState >= 1) alignAudio();
+            else audio.addEventListener("loadedmetadata", alignAudio, { once: true });
+            audio.play()?.catch(() => {});
+            return () => audio.removeEventListener("loadedmetadata", alignAudio);
+        } else {
+            audio.pause();
+            // ADDED: Apply paused seeks too, so the next Play resumes from the admin-selected point.
+            const restorePausedPosition = () => {
+                const saved = Math.max(0, Number(gameState.musicPosition) || 0);
+                const target = Number.isFinite(audio.duration) && audio.duration > 0
+                    ? Math.min(saved, audio.duration)
+                    : saved;
+                if (Math.abs(audio.currentTime - target) > 0.75) {
+                    try { audio.currentTime = target; } catch { /* metadata is not ready yet */ }
+                }
+            };
+            if (audio.readyState >= 1) restorePausedPosition();
+            else audio.addEventListener("loadedmetadata", restorePausedPosition, { once: true });
+            return () => audio.removeEventListener("loadedmetadata", restorePausedPosition);
+        }
+    }, [gameState.musicUrl, gameState.musicPlaying, gameState.musicUpdatedAt, gameState.musicPosition, gameState.musicVolume, localMusicVolume, localMusicMuted]);
 
     /*
      * Player count.
@@ -1796,8 +1948,12 @@ export default function GameRoom({
 
     return (
         <div className="app-shell">
+            {/* ADDED: Hidden audio player receives room-wide admin music. */}
+            <audio ref={backgroundMusicRef} loop preload="none" aria-hidden="true" />
             {/* CHANGED: Render the winner popup above the live room when this player wins. */}
             <WinnerCelebration winner={winnerCelebration} onClose={() => setWinnerCelebration(null)} />
+            {/* ADDED: Full-house result overlay stays open until the player leaves the room. */}
+            <GameEndedCelebration winner={gameEndWinner} onLeave={() => navigate("/", { replace: true })} />
             <div className="ambient ambient-one" />
 
             <div className="ambient ambient-two" />
@@ -1809,6 +1965,20 @@ export default function GameRoom({
                 playerCount={
                     playerCount
                 }
+                localMusicVolume={localMusicVolume}
+                localMusicMuted={localMusicMuted}
+                onLocalMusicVolumeChange={(value) => {
+                    setLocalMusicVolume(value);
+                    if (value > 0) setLocalMusicMuted(false);
+                }}
+                onToggleLocalMusicMute={() => {
+                    if (localMusicMuted || localMusicVolume === 0) {
+                        setLocalMusicMuted(false);
+                        if (localMusicVolume === 0) setLocalMusicVolume(1);
+                    } else {
+                        setLocalMusicMuted(true);
+                    }
+                }}
             />
 
             <main className="page-content">

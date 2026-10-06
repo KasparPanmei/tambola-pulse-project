@@ -1,4 +1,7 @@
 import { Router } from "express";
+// ADDED: Raw audio upload parser and room music endpoint handlers.
+import express from "express";
+import { controlRoomMusic, getMusicLibrary, selectRoomMusic, uploadRoomMusic } from "../controllers/musicController.js";
 
 import {
     getAdminDashboard,
@@ -38,6 +41,22 @@ router.use(
     requireAuth,
     requireAdmin
 );
+
+// ADDED: These routes remain protected by the router-level admin authentication above.
+router.post(
+    "/music/upload",
+    express.raw({ type: "application/octet-stream", limit: "25mb" }),
+    uploadRoomMusic,
+);
+
+router.post(
+    "/music/control",
+    controlRoomMusic,
+);
+
+// ADDED: Admin music-library browse and track-selection APIs.
+router.get("/music/library", getMusicLibrary);
+router.post("/music/select", selectRoomMusic);
 
 // Dashboard
 router.get(

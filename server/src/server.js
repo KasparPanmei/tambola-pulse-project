@@ -2,6 +2,9 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+// ADDED: Resolve the server-owned upload folder used for room music assets.
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import roomRoutes from "./routes/roomRoutes.js";
@@ -10,8 +13,11 @@ import adminRoutes from "./routes/adminRoutes.js";
 import { startGameEngine } from "./utils/gameEngine.js";
 const app = express(),
   PORT = process.env.PORT || 5000;
+const serverDirectory = path.dirname(fileURLToPath(import.meta.url));
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
 app.use(express.json());
+// ADDED: Make uploaded room tracks available to authorized clients by their room music URL.
+app.use("/media/music", express.static(path.join(serverDirectory, "uploads", "music"), { fallthrough: false }));
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60000, limit: 30 }));
 app.get("/api/health", (_, res) => res.json({ ok: true }));
 app.use("/api/auth", authRoutes);

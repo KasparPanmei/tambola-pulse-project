@@ -3,13 +3,14 @@ import { Palette } from "lucide-react";
 
 // CHANGED: Preserve the original palette and offer three dark plus two light alternatives.
 const themes = [
-    { id: "midnight", label: "Original" },
+    { id: "light-cool", label: "Theme" },
+    { id: "midnight", label: "Dark mode" },
     { id: "lagoon", label: "Lagoon" },
     { id: "forest", label: "Forest" },
     { id: "rose", label: "Rose" },
     // CHANGED: Add a warm ivory light theme and a cool blue-tinted light theme.
     { id: "light-soft", label: "Soft Light" },
-    { id: "light-cool", label: "Cool Light" },
+    
 ];
 
 export default function ThemeSelector() {

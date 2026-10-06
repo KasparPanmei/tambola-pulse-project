@@ -147,6 +147,48 @@ const s = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+
+        // ADDED: Shared admin-selected audio track and playback synchronization state.
+        musicUrl: {
+            type: String,
+            default: "",
+        },
+
+        musicTitle: {
+            type: String,
+            default: "",
+        },
+
+        // ADDED: Track identity and resume/seek offset shared with player clients.
+        musicTrackId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "MusicTrack",
+            default: null,
+        },
+
+        musicPosition: {
+            type: Number,
+            min: 0,
+            default: 0,
+        },
+
+        musicPlaying: {
+            type: Boolean,
+            default: false,
+        },
+
+        // ADDED: Admin master volume shared with every player in this room (0 muted to 1 full volume).
+        musicVolume: {
+            type: Number,
+            min: 0,
+            max: 1,
+            default: 1,
+        },
+
+        musicUpdatedAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,
