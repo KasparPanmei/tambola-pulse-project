@@ -7924,3 +7924,255 @@ button {
     display: none;
   }
 }
+
+/* ADDED: Classic Tambola ticket-paper colors, picker swatches, and readable marked-number states. */
+.ticket-color-yellow { --ticket-paper: #fff2a8; --ticket-ink: #4b3b05; --ticket-line: #d5bd57; }
+.ticket-color-pink { --ticket-paper: #ffd9e7; --ticket-ink: #652541; --ticket-line: #db9bb4; }
+.ticket-color-green { --ticket-paper: #d9f4d2; --ticket-ink: #1d542d; --ticket-line: #9fc992; }
+.ticket-color-blue { --ticket-paper: #d9edff; --ticket-ink: #163c69; --ticket-line: #9abbd8; }
+.ticket-color-white { --ticket-paper: #fff; --ticket-ink: #273347; --ticket-line: #c7ced7; }
+.ticket-color-purple { --ticket-paper: #e9ddff; --ticket-ink: #45286c; --ticket-line: #b7a0db; }
+.ticket-color-orange { --ticket-paper: #ffe0bf; --ticket-ink: #66340f; --ticket-line: #d7aa7e; }
+.ticket.ticket-color-yellow, .ticket.ticket-color-pink, .ticket.ticket-color-green,
+.ticket.ticket-color-blue, .ticket.ticket-color-white, .ticket.ticket-color-purple,
+.ticket.ticket-color-orange { background: var(--ticket-paper); border: 2px solid var(--ticket-line); color: var(--ticket-ink); }
+.ticket-color-yellow .ticket-head, .ticket-color-pink .ticket-head,
+.ticket-color-green .ticket-head, .ticket-color-blue .ticket-head,
+.ticket-color-white .ticket-head, .ticket-color-purple .ticket-head,
+.ticket-color-orange .ticket-head { color: var(--ticket-ink); }
+.ticket-color-yellow .tgrid, .ticket-color-pink .tgrid, .ticket-color-green .tgrid,
+.ticket-color-blue .tgrid, .ticket-color-white .tgrid, .ticket-color-purple .tgrid,
+.ticket-color-orange .tgrid { background: var(--ticket-paper); }
+.ticket-color-yellow .cell.filled, .ticket-color-pink .cell.filled,
+.ticket-color-green .cell.filled, .ticket-color-blue .cell.filled,
+.ticket-color-white .cell.filled, .ticket-color-purple .cell.filled,
+.ticket-color-orange .cell.filled { background: var(--ticket-paper); color: var(--ticket-ink); box-shadow: inset 0 0 0 1px var(--ticket-line); }
+.ticket-color-yellow .ticket-grid, .ticket-color-pink .ticket-grid,
+.ticket-color-green .ticket-grid, .ticket-color-blue .ticket-grid,
+.ticket-color-white .ticket-grid, .ticket-color-purple .ticket-grid,
+.ticket-color-orange .ticket-grid { background: var(--ticket-paper); border-color: var(--ticket-line); }
+.ticket-color-yellow .ticket-cell.filled, .ticket-color-pink .ticket-cell.filled,
+.ticket-color-green .ticket-cell.filled, .ticket-color-blue .ticket-cell.filled,
+.ticket-color-white .ticket-cell.filled, .ticket-color-purple .ticket-cell.filled,
+.ticket-color-orange .ticket-cell.filled { background: var(--ticket-paper); border-color: var(--ticket-line); color: var(--ticket-ink); }
+.ticket-color-yellow .ticket-cell.blank, .ticket-color-pink .ticket-cell.blank,
+.ticket-color-green .ticket-cell.blank, .ticket-color-blue .ticket-cell.blank,
+.ticket-color-white .ticket-cell.blank, .ticket-color-purple .ticket-cell.blank,
+.ticket-color-orange .ticket-cell.blank,
+.ticket-color-yellow .cell.empty, .ticket-color-pink .cell.empty,
+.ticket-color-green .cell.empty, .ticket-color-blue .cell.empty,
+.ticket-color-white .cell.empty, .ticket-color-purple .cell.empty,
+.ticket-color-orange .cell.empty {
+  /* MODIFIED: Keep blank cells the same paper color as the selected ticket instead of dark gray. */
+  background: var(--ticket-paper);
+  border-color: var(--ticket-line);
+  color: var(--ticket-line);
+  box-shadow: inset 0 0 0 1px var(--ticket-line);
+}
+.ticket-color-yellow .ticket-cell.marked, .ticket-color-pink .ticket-cell.marked,
+.ticket-color-green .ticket-cell.marked, .ticket-color-blue .ticket-cell.marked,
+.ticket-color-white .ticket-cell.marked, .ticket-color-purple .ticket-cell.marked,
+.ticket-color-orange .ticket-cell.marked { background: #4edea3; color: #092b1d; box-shadow: inset 0 0 0 2px #14935f; }
+.ticket-color-picker { border: 1px solid var(--line); }
+.ticket-color-trigger { min-height: 36px; }
+.ticket-color-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.ticket-color-option { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 7px 11px; background: var(--s0); color: var(--text); font-size: 12px; }
+.ticket-color-option.active { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber); }
+.ticket-color-dot { display: inline-block; width: 16px; height: 16px; border: 1px solid #0003; border-radius: 50%; flex: none; }
+.color-yellow { background: #ffe35c; } .color-pink { background: #ff9fc5; }
+.color-green { background: #91dd79; } .color-blue { background: #79c4ff; }
+.color-white { background: #fff; } .color-purple { background: #be9bff; }
+.color-orange { background: #ffad5c; }
+.ticket-color-yellow.ticket-card, .ticket-color-pink.ticket-card, .ticket-color-green.ticket-card,
+.ticket-color-blue.ticket-card, .ticket-color-white.ticket-card, .ticket-color-purple.ticket-card,
+.ticket-color-orange.ticket-card { background: var(--ticket-paper); border: 2px solid var(--ticket-line); color: var(--ticket-ink); }
+.ticket-color-yellow.ticket-card .ticket-topline h2, .ticket-color-pink.ticket-card .ticket-topline h2,
+.ticket-color-green.ticket-card .ticket-topline h2, .ticket-color-blue.ticket-card .ticket-topline h2,
+.ticket-color-white.ticket-card .ticket-topline h2, .ticket-color-purple.ticket-card .ticket-topline h2,
+.ticket-color-orange.ticket-card .ticket-topline h2 { color: var(--ticket-ink); }
+
+/* MODIFIED: On phones, prioritize the caller, then a prominent player ticket section, then prizes. */
+@media (max-width: 760px) {
+  .room-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "caller"
+      "tickets"
+      "prizes"
+      "board"
+      "insights";
+    gap: 14px;
+  }
+  /* MODIFIED: Flatten the rail so its caller and prize panels can occupy separate ordered rows. */
+  .caller-rail {
+    display: contents;
+  }
+  .caller-rail > .caller-card {
+    grid-area: caller;
+  }
+  .caller-rail > .prize-card {
+    grid-area: prizes;
+  }
+  .player-tickets-section {
+    grid-area: tickets;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 16px;
+    background: linear-gradient(155deg, rgba(79, 70, 229, 0.12), var(--sl) 55%);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  }
+  .player-tickets-section .ticket-heading-row {
+    padding: 0 2px 10px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  }
+  .player-tickets-section .section-heading {
+    align-items: center;
+    margin-bottom: 0;
+  }
+  .board-rail {
+    grid-area: board;
+  }
+  .insight-rail {
+    grid-area: insights;
+  }
+  /* MODIFIED: Make the caller's number visible without letting it dominate the screen. */
+  .caller-header {
+    min-height: 0;
+    padding: 9px 12px;
+  }
+  .caller-stage {
+    min-height: 0;
+    padding: 10px;
+  }
+  .number-orb {
+    width: 78px;
+    height: 78px;
+  }
+  .number-orb strong {
+    font-size: 36px;
+  }
+  .caller-history {
+    padding: 9px 12px;
+  }
+  .recent-label {
+    margin-bottom: 5px;
+  }
+  .recent-pill {
+    width: 27px;
+    height: 27px;
+  }
+  .voice-note {
+    margin-top: 6px;
+  }
+  .caller-footer {
+    padding: 7px 9px;
+  }
+}
+
+/* MODIFIED: Desktop GameRoom order is caller, compact ticket grid, then supporting sections. */
+@media (min-width: 1081px) {
+  .room-layout {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-areas:
+      "caller caller caller caller caller caller caller caller caller caller caller caller"
+      "tickets tickets tickets tickets tickets tickets tickets tickets tickets tickets tickets tickets"
+      "prizes prizes prizes prizes board board board board insights insights insights insights";
+    align-items: start;
+    gap: 18px;
+  }
+  /* MODIFIED: Let the caller and prizes take independent places in the desktop grid. */
+  .caller-rail {
+    display: contents;
+  }
+  .caller-rail > .caller-card {
+    grid-area: caller;
+  }
+  .caller-rail > .prize-card {
+    grid-area: prizes;
+  }
+  /* MODIFIED: Show purchased tickets side by side instead of in a narrow vertical rail. */
+  .player-tickets-section {
+    grid-area: tickets;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+    align-items: start;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 16px;
+    background: linear-gradient(155deg, rgba(79, 70, 229, 0.1), var(--sl) 58%);
+  }
+  .player-tickets-section .ticket-heading-row {
+    grid-column: 1 / -1;
+    padding: 0 2px 10px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  }
+  .player-tickets-section > .ticket-card {
+    width: 100%;
+    min-width: 0;
+    padding: 14px;
+  }
+  .board-rail {
+    grid-area: board;
+  }
+  .insight-rail {
+    grid-area: insights;
+    display: flex;
+  }
+}
+
+/* MODIFIED: Put a compact Number Caller on the left and the Tickets section on its right on desktop. */
+@media (min-width: 1081px) {
+  .room-layout {
+    grid-template-areas:
+      "caller caller caller caller tickets tickets tickets tickets tickets tickets tickets tickets"
+      "prizes prizes prizes prizes board board board board insights insights insights insights";
+  }
+  /* MODIFIED: Reduce caller height and number size so it no longer dominates the desktop view. */
+  .caller-rail > .caller-card .caller-header {
+    min-height: 48px;
+    padding: 10px 13px;
+  }
+  .caller-rail > .caller-card .caller-stage {
+    min-height: 132px;
+    padding: 10px;
+  }
+  .caller-rail > .caller-card .number-orb {
+    width: 100px;
+    height: 100px;
+  }
+  .caller-rail > .caller-card .number-orb::before {
+    inset: 8px;
+  }
+  .caller-rail > .caller-card .number-orb::after {
+    inset: 17px;
+  }
+  .caller-rail > .caller-card .number-orb strong {
+    font-size: 44px;
+  }
+  .caller-rail > .caller-card .caller-history {
+    padding: 10px 13px;
+  }
+  .caller-rail > .caller-card .recent-label {
+    margin-bottom: 6px;
+  }
+  .caller-rail > .caller-card .recent-pill {
+    width: 27px;
+    height: 27px;
+  }
+  .caller-rail > .caller-card .caller-footer {
+    padding: 8px 10px;
+  }
+  /* MODIFIED: Use the wider right-side area for two-or-more ticket cards per row. */
+  .player-tickets-section {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: 12px;
+    padding: 14px;
+  }
+  .player-tickets-section > .ticket-card {
+    padding: 12px;
+  }
+}

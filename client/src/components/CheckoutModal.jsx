@@ -9,6 +9,9 @@ import TicketCard from "./TicketCard.jsx";
 export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
 
     const [selected, setSelected] = useState([]),
+        // ADDED: Keep the player's chosen paper color for this ticket order.
+        [ticketColor, setTicketColor] = useState("yellow"),
+        [showColorOptions, setShowColorOptions] = useState(false),
         [name, setName] = useState(""),
         [phone, setPhone] = useState("+91 98765 43210"),
         [otp, setOtp] = useState(["", "", "", "", "", ""]),
@@ -206,6 +209,8 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             const bookingResponse = await api.post("/bookings", {
                 roomCode: room.code,
                 ticketIds,
+                // ADDED: Persist the selected color through the booking API.
+                ticketColor,
                 paymentMethod: method,
                 name: name.trim(),
             });
@@ -385,13 +390,35 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                             </button>
                         </div>
                     </div>
+                    {/* ADDED: Color chooser for the seven classic Tambola ticket shades. */}
+                    <div className="ticket-color-picker card pad stack">
+                        <div className="row">
+                            <div>
+                                <div className="label">Ticket Color</div>
+                                <div className="small muted">Choose a classic Tambola ticket shade</div>
+                            </div>
+                            <button type="button" className="btn surface ticket-color-trigger" onClick={() => setShowColorOptions((open) => !open)} aria-expanded={showColorOptions}>
+                                <span className={`ticket-color-dot color-${ticketColor}`} />
+                                {ticketColor[0].toUpperCase() + ticketColor.slice(1)}
+                            </button>
+                        </div>
+                        {showColorOptions && <div className="ticket-color-options" role="group" aria-label="Ticket color">
+                            {["yellow", "pink", "green", "blue", "white", "purple", "orange"].map((color) => (
+                                <button key={color} type="button" className={`ticket-color-option ${ticketColor === color ? "active" : ""}`} onClick={() => { setTicketColor(color); setShowColorOptions(false); }} aria-pressed={ticketColor === color}>
+                                    <span className={`ticket-color-dot color-${color}`} />{color[0].toUpperCase() + color.slice(1)}
+                                </button>
+                            ))}
+                        </div>}
+                    </div>
                     <div className="ticket-list">
                         {/* MODIFIED: Render from the refreshed available-ticket list. */}
+                        {/* MODIFIED: Preview ticket cards using the currently selected color. */}
                         {(showAllTickets ? availableTickets : availableTickets.slice(0, 4)).map((t) => (
                             <TicketCard
                                 key={t._id}
                                 ticket={t}
                                 selected={ids.has(t._id)}
+                                ticketColor={ticketColor}
                                 onToggle={toggle}
                             />
                         ))}

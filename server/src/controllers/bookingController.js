@@ -14,6 +14,8 @@ const clean = (t) => ({
     number: t.number,
     publicCode: t.publicCode,
     grid: t.grid,
+    // ADDED: Return the saved ticket paper color to checkout and live-game clients.
+    ticketColor: t.ticketColor || "yellow",
 });
 
 async function release() {
@@ -164,6 +166,8 @@ export async function createBooking(req, res) {
             ticketIds,
             paymentMethod = "upi_qr",
             name,
+            // ADDED: Accept the player's chosen ticket color, defaulting old clients to yellow.
+            ticketColor = "yellow",
         } = req.body;
 
         if (
@@ -177,6 +181,12 @@ export async function createBooking(req, res) {
                 message:
                     "Invalid payment method",
             });
+        }
+
+        // ADDED: Restrict color values to the seven colors offered in checkout.
+        const allowedTicketColors = new Set(["yellow", "pink", "green", "blue", "white", "purple", "orange"]);
+        if (!allowedTicketColors.has(String(ticketColor))) {
+            return res.status(400).json({ message: "Invalid ticket color" });
         }
 
         if (
@@ -282,6 +292,8 @@ export async function createBooking(req, res) {
             {
                 $set: {
                     booking: b._id,
+                    // MODIFIED: Save the selected color with every ticket in this booking.
+                    ticketColor,
                 },
             },
         );
@@ -804,7 +816,8 @@ export async function joinRoom(req, res) {
             .populate({
                 path: "tickets",
                 select:
-                    "_id number publicCode grid status",
+                    // MODIFIED: Include saved color when loading a player's tickets for the live game.
+                    "_id number publicCode grid status ticketColor",
             });
 
         if (!booking) {
