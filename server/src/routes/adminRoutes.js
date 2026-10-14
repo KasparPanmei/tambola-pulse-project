@@ -11,6 +11,8 @@ import {
     getAdminPayments,
     getAdminRoom,
     createRoom,
+    approveManualPayment,
+    rejectManualPayment,
 } from "../controllers/adminController.js";
 
 import {
@@ -137,6 +139,15 @@ router.post(
 router.post(
     "/claims/:claimId/reject",
     rejectClaim
+);
+router.post(
+    "/payments/:reference/approve",
+    approveManualPayment,
+);
+
+router.post(
+    "/payments/:reference/reject",
+    rejectManualPayment,
 );
 
 export default router;

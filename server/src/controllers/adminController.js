@@ -3,7 +3,6 @@ import Ticket from "../models/Ticket.js";
 import Booking from "../models/Booking.js";
 import { generateTicket } from "../utils/tickets.js";
 
-
 export async function getAdminDashboard(req, res) {
     try {
         const room = await Room.findOne({
@@ -457,7 +456,10 @@ export async function getAdminPayments(req, res) {
                 "number publicCode status",
             )
             .select(
-                "reference amount fee total paymentMethod paymentStatus status razorpayPaymentId upiReference createdAt updatedAt user tickets",
+                "reference amount fee total paymentMethod paymentStatus status " +
+                "upiReference manualPaymentSubmitted paymentSubmittedAt " +
+                "paymentVerifiedAt paymentVerifiedBy paymentRejectionReason " +
+                "createdAt updatedAt user tickets"
             )
             .sort({
                 createdAt: -1,
@@ -713,6 +715,146 @@ export async function terminateRoom(
         res.status(500).json({
             message:
                 "Failed to terminate game",
+        });
+    }
+}
+
+export async function approveManualPayment(req, res) {
+    try {
+        const { reference } = req.params;
+
+        const booking = await Booking.findOne({ reference });
+
+        if (!booking) {
+            return res.status(404).json({
+                message: "Booking not found",
+            });
+        }
+
+        if (
+            booking.paymentStatus === "paid" &&
+            booking.status === "confirmed"
+        ) {
+            return res.status(409).json({
+                message: "This booking has already been approved",
+            });
+        }
+
+        if (
+            booking.paymentStatus !== "pending" ||
+            booking.status !== "pending"
+        ) {
+            return res.status(409).json({
+                message: "This booking is no longer pending",
+            });
+        }
+
+        if (!booking.manualPaymentSubmitted) {
+            return res.status(400).json({
+                message:
+                    "The player has not submitted the manual payment confirmation",
+            });
+        }
+
+        // Only approve after independently verifying the UPI payment.
+        booking.paymentStatus = "paid";
+        booking.status = "confirmed";
+        booking.paymentVerifiedAt = new Date();
+        booking.paymentVerifiedBy = req.auth?.sub;
+        booking.paymentRejectionReason = "";
+
+        await booking.save();
+
+        // Make all tickets in this booking officially booked.
+        await Ticket.updateMany(
+            {
+                _id: { $in: booking.tickets },
+                room: booking.room,
+            },
+            {
+                $set: {
+                    status: "booked",
+                    heldUntil: null,
+                    heldBy: null,
+                    booking: booking._id,
+                },
+            },
+        );
+
+        return res.json({
+            message: "Payment verified and booking approved",
+            booking,
+        });
+    } catch (error) {
+        console.error("Approve manual payment error:", error);
+
+        return res.status(500).json({
+            message: error.message || "Failed to approve payment",
+        });
+    }
+}
+
+export async function rejectManualPayment(req, res) {
+    try {
+        const { reference } = req.params;
+        const reason =
+            String(req.body?.reason || "").trim();
+
+        if (!reason) {
+            return res.status(400).json({
+                message: "Please provide a rejection reason",
+            });
+        }
+
+        const booking = await Booking.findOne({ reference });
+
+        if (!booking) {
+            return res.status(404).json({
+                message: "Booking not found",
+            });
+        }
+
+        if (
+            booking.paymentStatus !== "pending" ||
+            booking.status !== "pending"
+        ) {
+            return res.status(409).json({
+                message: "Only pending bookings can be rejected",
+            });
+        }
+
+        booking.paymentStatus = "failed";
+        booking.status = "cancelled";
+        booking.paymentRejectionReason = reason;
+
+        await booking.save();
+
+        // Release the rejected booking's tickets for other players.
+        await Ticket.updateMany(
+            {
+                _id: { $in: booking.tickets },
+                room: booking.room,
+                booking: booking._id,
+            },
+            {
+                $set: {
+                    status: "available",
+                    heldUntil: null,
+                    heldBy: null,
+                    booking: null,
+                },
+            },
+        );
+
+        return res.json({
+            message: "Payment rejected and tickets released",
+            booking,
+        });
+    } catch (error) {
+        console.error("Reject manual payment error:", error);
+
+        return res.status(500).json({
+            message: error.message || "Failed to reject payment",
         });
     }
 }

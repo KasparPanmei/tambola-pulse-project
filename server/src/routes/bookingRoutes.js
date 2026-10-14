@@ -4,7 +4,7 @@ import {
     holdTickets,
     createBooking,
     getBookingStatus,
-    verifyBookingPayment,
+    submitManualPayment,
     joinRoom,
 } from "../controllers/bookingController.js";
 
@@ -29,10 +29,12 @@ r.get(
     getBookingStatus,
 );
 
+
 r.post(
-    "/:reference/verify-payment",
-    verifyBookingPayment,
+    "/:reference/submit-manual-payment",
+    submitManualPayment,
 );
+
 
 r.post(
     "/join-room",

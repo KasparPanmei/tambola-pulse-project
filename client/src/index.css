@@ -39,7 +39,7 @@ button {
   --muted2: #64748b;
   /* CHANGED: Keep text and borders themeable while preserving the original default appearance. */
   --text: #f8fafc;
-  --line: rgba(255, 255, 255, 0.10);
+  --line: rgba(255, 255, 255, 0.1);
 }
 .app {
   min-height: 100vh;
@@ -798,20 +798,31 @@ button {
   padding: 0 12px;
   border: 1px solid rgba(255, 185, 95, 0.36);
   border-radius: 9px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(79, 70, 229, 0.25));
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.22),
+    rgba(79, 70, 229, 0.25)
+  );
   color: #ffddb8;
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .admin-poster-button:hover:not(:disabled) {
   transform: translateY(-1px);
   border-color: var(--admin-amber);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.32), rgba(79, 70, 229, 0.34));
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.32),
+    rgba(79, 70, 229, 0.34)
+  );
 }
 
 .admin-poster-button:disabled {
@@ -6977,7 +6988,6 @@ button {
   }
 }
 
-
 /* CHANGED: Additional palettes retain the original Midnight colors as the default. */
 :root[data-theme="lagoon"] {
   --s: #071923;
@@ -7094,7 +7104,9 @@ button {
 }
 .back-confirm-dialog h2 {
   margin: 14px 0 6px;
-  font: 700 20px/1.25 Outfit, sans-serif;
+  font:
+    700 20px/1.25 Outfit,
+    sans-serif;
 }
 .back-confirm-dialog p {
   margin: 0;
@@ -7145,8 +7157,14 @@ button {
   overflow: hidden;
   border: 1px solid rgba(129, 140, 248, 0.48);
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(49, 46, 129, 0.92), rgba(30, 27, 75, 0.96));
-  box-shadow: 0 12px 30px rgba(49, 46, 129, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    135deg,
+    rgba(49, 46, 129, 0.92),
+    rgba(30, 27, 75, 0.96)
+  );
+  box-shadow:
+    0 12px 30px rgba(49, 46, 129, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .home-upcoming-room-card::after {
   position: absolute;
@@ -7202,7 +7220,9 @@ button {
   cursor: pointer;
   font: inherit;
   font-weight: 800;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 .home-join-room-button:hover {
   box-shadow: 0 10px 24px rgba(249, 115, 22, 0.4);
@@ -7259,7 +7279,6 @@ button {
   }
 }
 
-
 /* CHANGED: Warm ivory light theme and cool sky light theme; the existing dark themes are unchanged. */
 :root[data-theme="light-soft"] {
   color-scheme: light;
@@ -7305,7 +7324,7 @@ button {
 :root[data-theme^="light-"] .topbar {
   background: color-mix(in srgb, var(--sl) 94%, transparent);
   border-color: var(--line);
-  box-shadow: 0 4px 18px rgba(31, 45, 62, 0.10);
+  box-shadow: 0 4px 18px rgba(31, 45, 62, 0.1);
   color: var(--text);
 }
 :root[data-theme^="light-"] .bottom {
@@ -7393,7 +7412,9 @@ button {
   background: linear-gradient(145deg, #201b55, #101a36 72%);
   color: #f8fafc;
   text-align: center;
-  box-shadow: 0 28px 100px rgba(0, 0, 0, 0.62), 0 0 50px rgba(245, 158, 11, 0.2);
+  box-shadow:
+    0 28px 100px rgba(0, 0, 0, 0.62),
+    0 0 50px rgba(245, 158, 11, 0.2);
   animation: winner-modal-in 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .winner-celebration-close {
@@ -7419,24 +7440,32 @@ button {
   border-radius: 50%;
   background: radial-gradient(circle, #fbbf24, #d97706);
   color: #3b2200;
-  box-shadow: 0 0 0 10px rgba(251, 191, 36, 0.12), 0 0 38px rgba(251, 191, 36, 0.7);
+  box-shadow:
+    0 0 0 10px rgba(251, 191, 36, 0.12),
+    0 0 38px rgba(251, 191, 36, 0.7);
   animation: winner-trophy-pulse 1.6s ease-in-out infinite;
 }
 .winner-celebration-kicker {
   margin: 0 0 8px;
   color: #fbbf24;
-  font: 700 11px/16px "Space Grotesk", sans-serif;
+  font:
+    700 11px/16px "Space Grotesk",
+    sans-serif;
   letter-spacing: 0.14em;
 }
 .winner-celebration-modal h2 {
   margin: 0;
-  font: 800 34px/1.12 Outfit, sans-serif;
+  font:
+    800 34px/1.12 Outfit,
+    sans-serif;
   letter-spacing: -0.03em;
 }
 .winner-celebration-prize {
   margin: 18px 0 8px;
   color: #6ffbbe;
-  font: 800 24px/1.3 Outfit, sans-serif;
+  font:
+    800 24px/1.3 Outfit,
+    sans-serif;
 }
 .winner-celebration-copy {
   max-width: 330px;
@@ -7474,23 +7503,46 @@ button {
   animation-delay: calc(var(--confetti-index) * -0.08s);
 }
 @keyframes winner-modal-in {
-  from { opacity: 0; transform: translateY(22px) scale(0.92); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 @keyframes winner-trophy-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
 }
 @keyframes confetti-fall {
-  0% { opacity: 0; transform: translate3d(0, -20px, 0) rotate(0deg); }
-  12% { opacity: 1; }
-  100% { opacity: 0.9; transform: translate3d(calc((var(--confetti-index) - 3) * 22px), 110vh, 0) rotate(560deg); }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -20px, 0) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.9;
+    transform: translate3d(calc((var(--confetti-index) - 3) * 22px), 110vh, 0)
+      rotate(560deg);
+  }
 }
 @media (max-width: 560px) {
-  .winner-celebration-modal { padding: 36px 22px 24px; }
-  .winner-celebration-modal h2 { font-size: 29px; }
+  .winner-celebration-modal {
+    padding: 36px 22px 24px;
+  }
+  .winner-celebration-modal h2 {
+    font-size: 29px;
+  }
 }
-
 
 /* ADDED: Room-wide full-house result dialog and admin-controlled background music controls. */
 .game-ended-overlay {
@@ -7511,18 +7563,24 @@ button {
   background: linear-gradient(145deg, #201b55, #101a36 72%);
   color: #f8fafc;
   text-align: center;
-  box-shadow: 0 28px 100px rgba(0, 0, 0, 0.62), 0 0 50px rgba(245, 158, 11, 0.2);
+  box-shadow:
+    0 28px 100px rgba(0, 0, 0, 0.62),
+    0 0 50px rgba(245, 158, 11, 0.2);
   animation: winner-modal-in 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .game-ended-modal h2 {
   margin: 0;
-  font: 800 31px/1.15 Outfit, sans-serif;
+  font:
+    800 31px/1.15 Outfit,
+    sans-serif;
   letter-spacing: -0.03em;
 }
 .game-ended-winner {
   margin: 16px 0 8px;
   color: #6ffbbe;
-  font: 800 25px/1.25 Outfit, sans-serif;
+  font:
+    800 25px/1.25 Outfit,
+    sans-serif;
 }
 .game-ended-copy {
   max-width: 350px;
@@ -7689,7 +7747,6 @@ button {
     font-size: 27px;
   }
 }
-
 
 /* ADDED: Admin music library dropdown and full in-header player controls. */
 .admin-music-library-anchor {
@@ -7885,7 +7942,9 @@ button {
 }
 .admin-music-playing-indicator {
   color: #86efac;
-  font: 700 8px "Space Grotesk", sans-serif;
+  font:
+    700 8px "Space Grotesk",
+    sans-serif;
   letter-spacing: 0.08em;
 }
 .admin-music-library-empty {
@@ -7922,5 +7981,344 @@ button {
   .admin-music-volume span,
   .admin-escrow {
     display: none;
+  }
+}
+
+.payment-review-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(8, 12, 24, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.payment-review-modal {
+  width: min(1100px, 100%);
+  max-height: min(88vh, 850px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: #e8edf8;
+  background: #111827;
+  border: 1px solid #303b50;
+  border-radius: 20px;
+  box-shadow: 0 28px 100px rgba(0, 0, 0, 0.4);
+}
+
+.payment-review-header,
+.payment-review-footer {
+  padding: 22px 26px;
+  border-bottom: 1px solid #273247;
+}
+
+.payment-review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.payment-review-eyebrow,
+.payment-review-detail-title > div > span {
+  color: #a5b4fc;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.payment-review-header h2 {
+  margin: 8px 0 6px;
+  font-size: 24px;
+}
+
+.payment-review-header p,
+.payment-review-empty p,
+.payment-review-placeholder p {
+  margin: 0;
+  color: #9caac0;
+  font-size: 13px;
+}
+
+.payment-review-close {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #cbd5e1;
+  background: #1e293b;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.payment-review-count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 26px;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.08);
+  border-bottom: 1px solid #273247;
+  font-size: 13px;
+}
+
+.payment-review-body {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.85fr) minmax(0, 1.4fr);
+  min-height: 350px;
+  overflow: auto;
+}
+
+.payment-review-list {
+  padding: 14px;
+  border-right: 1px solid #273247;
+}
+
+.payment-review-item {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px;
+  margin-bottom: 8px;
+  color: inherit;
+  text-align: left;
+  background: #172033;
+  border: 1px solid #29354a;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.payment-review-item.selected {
+  background: #202b43;
+  border-color: #818cf8;
+}
+
+.payment-review-item > div,
+.payment-review-item-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.payment-review-item strong {
+  font-size: 13px;
+}
+
+.payment-review-item span,
+.payment-review-item small {
+  color: #aab7ca;
+  font-size: 12px;
+}
+
+.payment-review-item-right {
+  align-items: flex-end;
+  white-space: nowrap;
+}
+
+.payment-review-details {
+  padding: 24px;
+  min-width: 0;
+}
+
+.payment-review-detail-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.payment-review-detail-title h3 {
+  margin: 7px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.payment-review-pending {
+  padding: 6px 10px;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.payment-review-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 20px 0;
+  padding: 18px;
+  background: #182338;
+  border: 1px solid #2c3951;
+  border-radius: 14px;
+}
+
+.payment-review-amount span,
+.payment-review-dl dt {
+  color: #9caac0;
+  font-size: 12px;
+}
+
+.payment-review-amount strong {
+  font-size: 27px;
+}
+
+.payment-review-dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.payment-review-dl div {
+  min-width: 0;
+}
+
+.payment-review-dl dt {
+  margin-bottom: 5px;
+}
+
+.payment-review-dl dd {
+  margin: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.payment-review-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px;
+  margin-bottom: 18px;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+}
+
+.payment-review-warning p {
+  margin: 0;
+  color: #d5dced;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.payment-review-proof {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  color: #a5b4fc;
+  font-size: 13px;
+}
+
+.payment-review-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.payment-review-details textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  color: #f8fafc;
+  background: #0b1220;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  resize: vertical;
+}
+
+.payment-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.payment-review-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 15px;
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.payment-review-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.payment-review-reject {
+  background: #7f1d1d;
+}
+
+.payment-review-approve {
+  background: #047857;
+}
+
+.payment-review-empty,
+.payment-review-placeholder {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #a5b4fc;
+  text-align: center;
+  padding: 20px;
+}
+
+.payment-review-footer {
+  border-top: 1px solid #273247;
+  border-bottom: 0;
+  color: #9caac0;
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .payment-review-overlay {
+    padding: 8px;
+  }
+
+  .payment-review-modal {
+    max-height: 94vh;
+  }
+
+  .payment-review-body {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-review-list {
+    max-height: 230px;
+    overflow-y: auto;
+    border-right: 0;
+    border-bottom: 1px solid #273247;
+  }
+
+  .payment-review-details {
+    padding: 18px;
+  }
+
+  .payment-review-dl {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-review-actions {
+    flex-direction: column-reverse;
+  }
+
+  .payment-review-actions button {
+    width: 100%;
   }
 }

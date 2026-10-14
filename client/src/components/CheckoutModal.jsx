@@ -523,7 +523,6 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                             {[
                                 ["upi_qr", "▦", "UPI QR"],
                                 ["upi_id", "ϟ", "GPay / UPI ID"],
-                                ["card", "▣", "Cards/Net"],
                             ].map(([id, icon, l]) => (
                                 <button
                                     key={id}

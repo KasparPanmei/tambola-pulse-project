@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import adminApi from "../lib/adminApi.js";
-// ADDED: Music controls let admins choose and operate a shared room track.
 import {
     Activity,
     AlertTriangle,
@@ -17,36 +16,21 @@ import {
     History,
     Hash,
     LayoutDashboard,
-    ListMusic,
     Menu,
-    Music2,
     Pause,
     Phone,
     Play,
     RefreshCcw,
-    Search,
     Settings,
     ShieldCheck,
-    SkipBack,
-    SkipForward,
     Ticket,
     Trophy,
-    Upload,
     UserRound,
     Users,
-    Volume2,
     X,
     XCircle,
     Zap,
 } from "lucide-react";
-
-// ADDED: Format player progress and duration as familiar minutes:seconds values.
-function formatMusicTime(seconds) {
-    const value = Number(seconds);
-    if (!Number.isFinite(value) || value < 0) return "0:00";
-    const total = Math.floor(value);
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
 
 const historyRows = [
     {
@@ -382,8 +366,19 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
 
                                 <label className="admin-prize-field">
                                     <span>WINNERS</span>
-                                    {/* CHANGED: Each prize is awarded to one ticket only. */}
-                                    <input type="number" value="1" readOnly aria-label={`${prize.name}: one winning ticket`} />
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={prize.winners}
+                                        onChange={(e) =>
+                                            updatePrize(
+                                                index,
+                                                "winners",
+                                                e.target.value,
+                                            )
+                                        }
+                                        required={prize.enabled}
+                                    />
                                 </label>
 
                                 <label className="admin-prize-toggle">
@@ -517,19 +512,19 @@ function ClaimTicketChart({ ticket, calledNumbers = [] }) {
                 {grid.flatMap((row, rowIndex) =>
                     Array.isArray(row)
                         ? row.map((value, columnIndex) => {
-                            const number = value !== null && value !== undefined && value !== "";
-                            const marked = number && called.has(Number(value));
-                            return (
-                                <div
-                                    key={`${rowIndex}-${columnIndex}`}
-                                    className={["claim-review-cell", !number ? "empty" : "", marked ? "called" : ""]
-                                        .filter(Boolean)
-                                        .join(" ")}
-                                >
-                                    {number ? value : ""}
-                                </div>
-                            );
-                        })
+                              const number = value !== null && value !== undefined && value !== "";
+                              const marked = number && called.has(Number(value));
+                              return (
+                                  <div
+                                      key={`${rowIndex}-${columnIndex}`}
+                                      className={["claim-review-cell", !number ? "empty" : "", marked ? "called" : ""]
+                                          .filter(Boolean)
+                                          .join(" ")}
+                                  >
+                                      {number ? value : ""}
+                                  </div>
+                              );
+                          })
                         : [],
                 )}
             </div>
@@ -688,259 +683,21 @@ function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onRe
     );
 }
 
-// CHANGED: Generate a downloadable PNG poster from the current room setup, prizes, timing, and ticket count.
-function downloadGamePoster({ room, totalTickets }) {
-    if (!room) return;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = 1200;
-    canvas.height = 1500;
-    const context = canvas.getContext("2d");
-    const prizes = (room.prizes || []).filter((prize) => prize?.enabled !== false);
-    const startTime = room.startsAt
-        ? new Date(room.startsAt).toLocaleString("en-IN", {
-            weekday: "short",
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-        })
-        : "To be announced";
-
-    const roundedRect = (x, y, width, height, radius, fill, stroke) => {
-        context.beginPath();
-        context.roundRect(x, y, width, height, radius);
-        context.fillStyle = fill;
-        context.fill();
-        if (stroke) {
-            context.strokeStyle = stroke;
-            context.lineWidth = 2;
-            context.stroke();
-        }
-    };
-
-    const wrapText = (text, x, y, maxWidth, lineHeight, maxLines = 3) => {
-        const words = String(text || "").split(" ");
-        let line = "";
-        let lines = 0;
-        words.forEach((word) => {
-            const test = line ? `${line} ${word}` : word;
-            if (context.measureText(test).width > maxWidth && line && lines < maxLines - 1) {
-                context.fillText(line, x, y + lines * lineHeight);
-                lines += 1;
-                line = word;
-            } else {
-                line = test;
-            }
-        });
-        if (line && lines < maxLines) context.fillText(line, x, y + lines * lineHeight);
-        return y + Math.min(lines + 1, maxLines) * lineHeight;
-    };
-
-    const background = context.createLinearGradient(0, 0, 1200, 1500);
-    background.addColorStop(0, "#090f24");
-    background.addColorStop(0.55, "#1e1b4b");
-    background.addColorStop(1, "#080d1d");
-    context.fillStyle = background;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    context.fillStyle = "rgba(99, 102, 241, 0.18)";
-    context.beginPath();
-    context.arc(1030, 110, 280, 0, Math.PI * 2);
-    context.fill();
-    context.fillStyle = "rgba(251, 191, 36, 0.12)";
-    context.beginPath();
-    context.arc(140, 1300, 250, 0, Math.PI * 2);
-    context.fill();
-
-    context.fillStyle = "#a5b4fc";
-    context.font = "700 24px Arial";
-    context.fillText("TAMBOLA PULSE", 84, 92);
-    context.fillStyle = "#f8fafc";
-    context.font = "800 66px Arial";
-    wrapText(room.title || "Live Tambola Game", 84, 190, 1030, 76, 2);
-    context.fillStyle = "#c7d2fe";
-    context.font = "400 24px Arial";
-    wrapText(room.description || "Join the live game and play for exciting prizes.", 88, 350, 880, 34, 2);
-
-    roundedRect(84, 450, 1032, 155, 22, "rgba(255,255,255,0.08)", "rgba(165,180,252,0.32)");
-    const meta = [
-        ["ROOM CODE", room.code || "—"],
-        ["STARTS", startTime],
-        ["TICKETS", `${Number(totalTickets || 0).toLocaleString("en-IN")} available`],
-    ];
-    meta.forEach(([label, value], index) => {
-        const x = 116 + index * 337;
-        context.fillStyle = "#94a3b8";
-        context.font = "700 15px Arial";
-        context.fillText(label, x, 495);
-        context.fillStyle = "#ffffff";
-        context.font = "700 25px Arial";
-        wrapText(value, x, 540, 285, 30, 2);
-    });
-
-    context.fillStyle = "#fbbf24";
-    context.font = "800 22px Arial";
-    context.fillText("PRIZES TO WIN", 88, 690);
-    prizes.forEach((prize, index) => {
-        const y = 735 + index * 92;
-        roundedRect(84, y, 1032, 72, 14, "rgba(15,23,42,0.72)", "rgba(255,255,255,0.1)");
-        context.fillStyle = "#f8fafc";
-        context.font = "700 24px Arial";
-        context.fillText(prize.name || `Prize ${index + 1}`, 112, y + 31);
-        context.fillStyle = "#94a3b8";
-        context.font = "400 16px Arial";
-        context.fillText(prize.detail || "Complete the winning pattern", 112, y + 55);
-        context.fillStyle = "#4edea3";
-        context.font = "800 25px Arial";
-        context.textAlign = "right";
-        context.fillText(`₹${Number(prize.amount || 0).toLocaleString("en-IN")}`, 1085, y + 43);
-        context.textAlign = "left";
-    });
-
-    const footerY = 735 + prizes.length * 92 + 58;
-    roundedRect(84, footerY, 1032, 120, 18, "#4f46e5", null);
-    context.fillStyle = "#ffffff";
-    context.font = "800 28px Arial";
-    context.fillText(`Ticket price: ₹${Number(room.ticketPrice || 0).toLocaleString("en-IN")}`, 116, footerY + 48);
-    context.font = "400 18px Arial";
-    context.fillStyle = "#e0e7ff";
-    context.fillText("Book your ticket and be ready when the caller goes live.", 116, footerY + 82);
-    context.fillStyle = "#94a3b8";
-    context.font = "400 16px Arial";
-    context.fillText("Play responsibly • Keep this poster handy for the room code", 88, 1430);
-
-    canvas.toBlob((blob) => {
-        if (!blob) return;
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${String(room.code || "tambola-game").toLowerCase()}-poster.png`;
-        link.click();
-        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-    }, "image/png");
-}
-
-// CHANGED: Generate a downloadable winners poster from verified prize claims after the room is finished.
-function downloadWinnerPoster({ room, winnerClaims }) {
-    if (!room) return;
-
-    const verifiedWinners = (winnerClaims || []).filter(
-        (claim) => claim?.status === "verified",
-    );
-    if (!verifiedWinners.length) return;
-
-    const rowHeight = 118;
-    const canvas = document.createElement("canvas");
-    canvas.width = 1200;
-    canvas.height = Math.max(900, 470 + verifiedWinners.length * rowHeight);
-    const context = canvas.getContext("2d");
-
-    const roundedRect = (x, y, width, height, radius, fill, stroke) => {
-        context.beginPath();
-        context.roundRect(x, y, width, height, radius);
-        context.fillStyle = fill;
-        context.fill();
-        if (stroke) {
-            context.strokeStyle = stroke;
-            context.lineWidth = 2;
-            context.stroke();
-        }
-    };
-
-    const wrapText = (text, x, y, maxWidth, lineHeight, maxLines = 2) => {
-        const words = String(text || "—").split(" ");
-        let line = "";
-        let lines = 0;
-        words.forEach((word) => {
-            const test = line ? `${line} ${word}` : word;
-            if (context.measureText(test).width > maxWidth && line && lines < maxLines - 1) {
-                context.fillText(line, x, y + lines * lineHeight);
-                lines += 1;
-                line = word;
-            } else {
-                line = test;
-            }
-        });
-        if (line && lines < maxLines) context.fillText(line, x, y + lines * lineHeight);
-    };
-
-    const background = context.createLinearGradient(0, 0, 1200, canvas.height);
-    background.addColorStop(0, "#090f24");
-    background.addColorStop(0.55, "#312e81");
-    background.addColorStop(1, "#111827");
-    context.fillStyle = background;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    context.fillStyle = "rgba(251, 191, 36, 0.14)";
-    context.beginPath();
-    context.arc(1040, 120, 270, 0, Math.PI * 2);
-    context.fill();
-    context.fillStyle = "rgba(99, 102, 241, 0.18)";
-    context.beginPath();
-    context.arc(130, canvas.height - 100, 240, 0, Math.PI * 2);
-    context.fill();
-
-    context.fillStyle = "#a5b4fc";
-    context.font = "700 24px Arial";
-    context.fillText("TAMBOLA PULSE", 84, 86);
-    context.fillStyle = "#f8fafc";
-    context.font = "800 62px Arial";
-    context.fillText("WINNERS", 84, 168);
-    context.fillStyle = "#c7d2fe";
-    context.font = "400 24px Arial";
-    context.fillText(`${room.title || "Tambola Game"} • Room ${room.code || "—"}`, 88, 218);
-
-    const verifiedAt = new Date().toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    });
-    context.fillStyle = "#94a3b8";
-    context.font = "400 18px Arial";
-    context.fillText(`Verified winners • ${verifiedAt}`, 88, 258);
-
-    verifiedWinners.forEach((claim, index) => {
-        const y = 320 + index * rowHeight;
-        roundedRect(84, y, 1032, 92, 16, "rgba(15,23,42,0.78)", "rgba(255,255,255,0.12)");
-
-        context.fillStyle = "#fbbf24";
-        context.font = "800 26px Arial";
-        context.fillText(`${index + 1}`, 116, y + 38);
-
-        context.fillStyle = "#f8fafc";
-        context.font = "800 23px Arial";
-        wrapText(claim.prizeName || "Prize Winner", 172, y + 31, 300, 27, 2);
-
-        context.fillStyle = "#cbd5e1";
-        context.font = "600 19px Arial";
-        const playerName = claim.user?.name || claim.userName || "Player";
-        const ticketNumber = claim.ticket?.publicCode || claim.ticket?.number || claim.ticketNumber || "—";
-        context.fillText(playerName, 520, y + 31);
-        context.fillStyle = "#94a3b8";
-        context.font = "400 16px Arial";
-        context.fillText(`Ticket ${ticketNumber}`, 520, y + 60);
-
-        context.fillStyle = "#4edea3";
-        context.font = "800 23px Arial";
-        context.textAlign = "right";
-        context.fillText(`₹${Number(claim.prizeAmount || 0).toLocaleString("en-IN")}`, 1082, y + 38);
-        context.textAlign = "left";
-    });
-
-    context.fillStyle = "#94a3b8";
-    context.font = "400 16px Arial";
-    context.fillText("Congratulations to all winners • Tambola Pulse", 88, canvas.height - 48);
-
-    canvas.toBlob((blob) => {
-        if (!blob) return;
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${String(room.code || "tambola-game").toLowerCase()}-winners.png`;
-        link.click();
-        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-    }, "image/png");
-}
+const overlayStyle = { position: "fixed", inset: 0, zIndex: 2000, background: "rgba(5,10,20,.78)", backdropFilter: "blur(7px)", display: "grid", placeItems: "center", padding: 16 };
+const modalStyle = { width: "min(1050px, 100%)", maxHeight: "92vh", overflow: "auto", background: "#111827", color: "#e5e7eb", border: "1px solid #334155", borderRadius: 18, boxShadow: "0 25px 90px #0008" };
+const modalHeaderStyle = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, padding: "20px 24px", borderBottom: "1px solid #293548" };
+const modalBodyStyle = { display: "grid", gridTemplateColumns: "minmax(230px,.8fr) minmax(0,1.3fr)" };
+const modalListStyle = { padding: 14, borderRight: "1px solid #293548", maxHeight: "65vh", overflow: "auto" };
+const paymentRowStyle = { width: "100%", display: "flex", justifyContent: "space-between", gap: 10, textAlign: "left", padding: 13, marginBottom: 8, color: "inherit", background: "#1b2638", border: "1px solid #334155", borderRadius: 11, cursor: "pointer" };
+const smallStyle = { display: "block", color: "#9ca3af", fontSize: 12, marginTop: 5 };
+const modalDetailStyle = { padding: 22, minWidth: 0 };
+const amountStyle = { padding: 16, margin: "14px 0 18px", background: "#1b2638", border: "1px solid #334155", borderRadius: 12 };
+const detailsGridStyle = { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 15 };
+const warningStyle = { padding: 12, margin: "18px 0", background: "#332a16", border: "1px solid #6b5122", borderRadius: 10, fontSize: 12, lineHeight: 1.55, color: "#fcdca1" };
+const textareaStyle = { width: "100%", boxSizing: "border-box", background: "#0b1220", color: "white", border: "1px solid #475569", borderRadius: 9, padding: 11, resize: "vertical" };
+const actionsStyle = { display: "flex", justifyContent: "flex-end", flexWrap: "wrap", gap: 10, marginTop: 14 };
+const rejectButtonStyle = { display: "flex", alignItems: "center", gap: 7, border: 0, borderRadius: 9, padding: "11px 14px", color: "white", background: "#991b1b", fontWeight: 700, cursor: "pointer" };
+const approveButtonStyle = { ...rejectButtonStyle, background: "#047857" };
 
 export default function Admin() {
     const navigate = useNavigate();
@@ -968,18 +725,6 @@ export default function Admin() {
     }, [navigate]);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    // ADDED: Refs connect the header file picker and local audio preview to room playback.
-    const musicInputRef = useRef(null);
-    const adminMusicRef = useRef(null);
-    // ADDED: Debounce room-wide volume updates while an admin drags the slider.
-    const musicVolumeUpdateTimerRef = useRef(null);
-    // ADDED: Debounce server updates while the admin seeks through the current track.
-    const musicPositionUpdateTimerRef = useRef(null);
-    const [musicLibrary, setMusicLibrary] = useState([]);
-    const [musicLibraryOpen, setMusicLibraryOpen] = useState(false);
-    const [musicSearch, setMusicSearch] = useState("");
-    const [musicCurrentTime, setMusicCurrentTime] = useState(0);
-    const [musicDuration, setMusicDuration] = useState(0);
     const [activeSection, setActiveSection] =
         useState("overview");
 
@@ -988,6 +733,10 @@ export default function Admin() {
     const [tickets, setTickets] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [payments, setPayments] = useState([]);
+    const [paymentReviewOpen, setPaymentReviewOpen] = useState(false);
+    const [selectedPaymentReference, setSelectedPaymentReference] = useState("");
+    const [busyPaymentReference, setBusyPaymentReference] = useState("");
+    const [paymentRejectionReason, setPaymentRejectionReason] = useState("");
     const [creatingRoom, setCreatingRoom] = useState(false);
     const currentBall = room?.currentNumber ?? null;
 
@@ -1163,175 +912,113 @@ export default function Admin() {
     const totalBookings = dashboardStats.totalBookings;
     const totalRevenue = dashboardStats.revenue;
 
-   const loadAdminData = async ({ silent = false } = {}) => {
+    const loadAdminData = async ({ silent = false } = {}) => {
         if (!roomCode) {
-            setRoom(null);
-            setTickets([]);
-            setBookings([]);
-            setPayments([]);
-            setWinnerClaims([]);
-            setDashboardStats({
-                totalTickets: 0,
-                availableTickets: 0,
-                bookedTickets: 0,
-                heldTickets: 0,
-                totalBookings: 0,
-                revenue: 0,
-            });
-            setLoading(false);
-            return;
+            setRoom(null); setTickets([]); setBookings([]); setPayments([]);
+            setDashboardStats({ totalTickets: 0, availableTickets: 0, bookedTickets: 0, heldTickets: 0, totalBookings: 0, revenue: 0 });
+            setLoading(false); return;
         }
-
-        if (!silent) {
-            setLoading(true);
-        }
-
-        try {
-            const roomResponse = await adminApi.get(
-                `/rooms/${encodeURIComponent(roomCode)}`
+        const claimsResponse =
+            await adminApi.get(
+                `/admin/rooms/${roomCode}/claims`,
             );
 
-            const nextRoom = roomResponse.data.room;
+        const claims =
+            claimsResponse.data.claims || [];
 
-            const [
-                ticketsResponse,
-                bookingsResponse,
-                paymentsResponse,
-                claimsResponse,
-            ] = await Promise.all([
-                adminApi.get(
-                    `/admin/tickets?room=${encodeURIComponent(roomCode)}`
-                ),
-                adminApi.get(
-                    `/admin/bookings?room=${encodeURIComponent(roomCode)}`
-                ),
-                adminApi
-                    .get(
-                        `/admin/payments?room=${encodeURIComponent(roomCode)}`
-                    )
-                    .catch(() => ({
-                        data: { payments: [] },
-                    })),
-                adminApi
-                    .get(
-                        `/admin/rooms/${encodeURIComponent(roomCode)}/claims`
-                    )
-                    .catch(() => ({
-                        data: { claims: [] },
-                    })),
-            ]);
-
-            const nextTickets = (
-                ticketsResponse.data.tickets || []
-            ).map((ticket) => ({
-                ...ticket,
-                code: ticket.publicCode || ticket.code,
-            }));
-
-            const nextBookings =
-                bookingsResponse.data.bookings || [];
-
-            const nextPayments =
-                paymentsResponse.data.payments || [];
-
-            const claims =
-                claimsResponse.data.claims || [];
-
-            setRoom(nextRoom);
-            setTickets(nextTickets);
-            setBookings(nextBookings);
-            setPayments(nextPayments);
-            setWinnerClaims(claims);
-
-            if (claimsInitialized.current) {
-                const newClaim = claims.find(
+        setWinnerClaims(claims);
+        if (claimsInitialized.current) {
+            const newClaim =
+                claims.find(
                     (claim) =>
-                        claim.status === "pending" &&
-                        !seenClaimIds.current.has(claim._id)
-                );
-
-                if (newClaim && notifications) {
-                    setWinnerAlert(newClaim);
-                }
-            }
-
-            claims.forEach((claim) => {
-                seenClaimIds.current.add(claim._id);
-            });
-
-            claimsInitialized.current = true;
-
-            const available = nextTickets.filter(
-                (ticket) => ticket.status === "available"
-            ).length;
-
-            const booked = nextTickets.filter(
-                (ticket) => ticket.status === "booked"
-            ).length;
-
-            const held = nextTickets.filter(
-                (ticket) => ticket.status === "held"
-            ).length;
-
-            const revenue = nextBookings
-                .filter(
-                    (booking) =>
-                        booking.paymentStatus === "paid"
-                )
-                .reduce(
-                    (sum, booking) =>
-                        sum +
-                        Number(
-                            booking.total ??
-                            booking.amount ??
-                            0
+                        claim.status ===
+                        "pending" &&
+                        !seenClaimIds.current.has(
+                            claim._id,
                         ),
-                    0
                 );
 
-            setDashboardStats({
-                totalTickets: nextTickets.length,
-                availableTickets: available,
-                bookedTickets: booked,
-                heldTickets: held,
-                totalBookings: nextBookings.length,
-                revenue,
-            });
-        } catch (error) {
-            console.error(
-                "Admin data loading error:",
-                error
-            );
-
-            if (error.response?.status === 404) {
-                setRoom(null);
-                setTickets([]);
-                setBookings([]);
-                setPayments([]);
-                setWinnerClaims([]);
-
-                setDashboardStats({
-                    totalTickets: 0,
-                    availableTickets: 0,
-                    bookedTickets: 0,
-                    heldTickets: 0,
-                    totalBookings: 0,
-                    revenue: 0,
-                });
-
-                setLastAction(
-                    `Room ${roomCode} was not found. Create a new room to continue.`
-                );
-            } else {
-                setLastAction(
-                    error.response?.data?.message ||
-                    "Unable to synchronize AdminDesk with the server."
-                );
+            if (
+                newClaim &&
+                notifications
+            ) {
+                setWinnerAlert(newClaim);
             }
-        } finally {
-            setLoading(false);
         }
+
+        claims.forEach((claim) => {
+            seenClaimIds.current.add(
+                claim._id,
+            );
+        });
+
+        claimsInitialized.current = true;
+        if (!silent) setLoading(true);
+        try {
+            const [roomResponse, ticketsResponse, bookingsResponse, paymentsResponse] = await Promise.all([
+                adminApi.get(`/rooms/${encodeURIComponent(roomCode)}`),
+                adminApi.get(`/admin/tickets?room=${encodeURIComponent(roomCode)}`),
+                adminApi.get(`/admin/bookings?room=${encodeURIComponent(roomCode)}`),
+                adminApi.get(`/admin/payments?room=${encodeURIComponent(roomCode)}`).catch(() => ({ data: { payments: [] } })),
+            ]);
+            const nextRoom = roomResponse.data.room;
+            const nextTickets = (ticketsResponse.data.tickets || []).map((ticket) => ({ ...ticket, code: ticket.publicCode || ticket.code }));
+            const nextBookings = bookingsResponse.data.bookings || [];
+            const nextPayments = paymentsResponse.data.payments || [];
+            setRoom(nextRoom); setTickets(nextTickets); setBookings(nextBookings); setPayments(nextPayments);
+            const available = nextTickets.filter((x) => x.status === "available").length;
+            const booked = nextTickets.filter((x) => x.status === "booked").length;
+            const held = nextTickets.filter((x) => x.status === "held").length;
+            const revenue = nextBookings.filter((x) => x.paymentStatus === "paid").reduce((sum, x) => sum + Number(x.total ?? x.amount ?? 0), 0);
+            setDashboardStats({ totalTickets: nextTickets.length, availableTickets: available, bookedTickets: booked, heldTickets: held, totalBookings: nextBookings.length, revenue });
+        } catch (error) {
+            console.error("Admin data loading error:", error);
+            if (error.response?.status === 404) {
+                setRoom(null); setTickets([]); setBookings([]); setPayments([]);
+                setLastAction(`Room ${roomCode} was not found. Create/select a valid room.`);
+            } else {
+                setLastAction(error.response?.data?.message || "Unable to synchronize AdminDesk with the server.");
+            }
+        } finally { setLoading(false); }
     };
+    const pendingPaymentReviews = payments.filter((payment) =>
+        payment.paymentStatus !== "paid" && !["confirmed", "rejected", "cancelled", "expired"].includes(payment.status)
+    );
+    const selectedPayment = pendingPaymentReviews.find((payment) => String(payment.reference) === String(selectedPaymentReference)) || null;
+
+    async function handleVerifyManualPayment(payment) {
+        const amount = Number(payment.total ?? payment.amount ?? 0);
+        if (!window.confirm(`Confirm you independently verified receipt of ₹${amount.toFixed(2)} for booking ${payment.reference}?`)) return;
+        setBusyPaymentReference(payment.reference);
+        setLastAction("");
+        try {
+            await adminApi.post(`/admin/payments/${encodeURIComponent(payment.reference)}/approve`);
+            setLastAction(`Payment verified for ${payment.reference}.`);
+            setPaymentReviewOpen(false);
+            setSelectedPaymentReference("");
+            await loadAdminData({ silent: true });
+        } catch (error) {
+            setLastAction(error.response?.data?.message || "Payment verification failed. Confirm the admin approval route exists.");
+        } finally { setBusyPaymentReference(""); }
+    }
+
+    async function handleRejectManualPayment(payment) {
+        const reason = paymentRejectionReason.trim();
+        if (reason.length < 3) { setLastAction("Enter a rejection reason of at least 3 characters."); return; }
+        setBusyPaymentReference(payment.reference);
+        setLastAction("");
+        try {
+            await adminApi.post(`/admin/payments/${encodeURIComponent(payment.reference)}/reject`, { reason });
+            setLastAction(`Payment rejected for ${payment.reference}.`);
+            setPaymentReviewOpen(false);
+            setSelectedPaymentReference("");
+            setPaymentRejectionReason("");
+            await loadAdminData({ silent: true });
+        } catch (error) {
+            setLastAction(error.response?.data?.message || "Payment rejection failed. Confirm the admin rejection route exists.");
+        } finally { setBusyPaymentReference(""); }
+    }
+
     useEffect(() => {
         loadAdminData();
 
@@ -1580,11 +1267,6 @@ export default function Admin() {
         }
     }
     async function startGame() {
-        // CHANGED: Give immediate feedback and refuse the start action until a paid ticket exists.
-        if (bookedTickets < 1) {
-            setLastAction("No tickets have been bought yet. The game cannot start until at least one booking is paid and confirmed.");
-            return;
-        }
         try {
             const { data } = await adminApi.post(
                 `/admin/rooms/${encodeURIComponent(roomCode)}/start`,
@@ -1610,11 +1292,6 @@ export default function Admin() {
                 setRoom(data.room);
                 setLastAction("Game paused");
             } else {
-                // CHANGED: Apply the same empty-room guard to Resume as to Start Game.
-                if (bookedTickets < 1) {
-                    setLastAction("No tickets have been bought yet. The game cannot start until at least one booking is paid and confirmed.");
-                    return;
-                }
                 const { data } = await adminApi.post(
                     `/admin/rooms/${encodeURIComponent(roomCode)}/start`,
                 );
@@ -1668,229 +1345,6 @@ export default function Admin() {
         } catch (error) { console.error("Generate tickets error:", error); setLastAction(error.response?.data?.message || "Failed to generate tickets."); }
     }
 
-    // ADDED: Load all saved server-side uploads, including files uploaded before the library existed.
-    async function refreshMusicLibrary({ quiet = false } = {}) {
-        try {
-            const { data } = await adminApi.get("/admin/music/library");
-            setMusicLibrary(Array.isArray(data?.tracks) ? data.tracks : []);
-        } catch (error) {
-            if (!quiet) setLastAction(error.response?.data?.message || "Unable to load the music library.");
-        }
-    }
-
-    function currentMusicTrackIndex() {
-        return musicLibrary.findIndex((track) => track.url === room?.musicUrl);
-    }
-
-    // ADDED: Select a saved song, start playback, and synchronize the new track with the room.
-    async function selectRoomMusic(track) {
-        if (!roomCode || !track?._id) {
-            setLastAction("Create or select a room before playing music.");
-            return;
-        }
-        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
-        const audio = adminMusicRef.current;
-        if (audio) {
-            const configuredApi = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-            const apiOrigin = new URL(configuredApi, window.location.origin);
-            audio.pause();
-            audio.src = new URL(track.url, apiOrigin).href;
-            audio.currentTime = 0;
-            audio.load();
-            audio.play()?.catch(() => {});
-        }
-        try {
-            const { data } = await adminApi.post("/admin/music/select", { roomCode, trackId: track._id });
-            setRoom(data.room);
-            setMusicCurrentTime(0);
-            setMusicDuration(0);
-            setLastAction(data.message || `Now playing: ${track.title}`);
-        } catch (error) {
-            audio?.pause();
-            setLastAction(error.response?.data?.message || "Unable to play the selected track.");
-        }
-    }
-
-    // ADDED: Playlist transport wraps to the next track and starts playback for everyone.
-    async function playNextRoomMusic() {
-        if (musicLibrary.length === 0) {
-            setMusicLibraryOpen(true);
-            return;
-        }
-        const currentIndex = currentMusicTrackIndex();
-        const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % musicLibrary.length;
-        await selectRoomMusic(musicLibrary[nextIndex]);
-    }
-
-    // ADDED: Previous rewinds the current track when it has played for more than three seconds.
-    async function playPreviousRoomMusic() {
-        const audio = adminMusicRef.current;
-        if (audio && audio.currentTime > 3) {
-            saveRoomMusicPosition(0);
-            return;
-        }
-        if (musicLibrary.length === 0) return;
-        const currentIndex = currentMusicTrackIndex();
-        const previousIndex = currentIndex < 0
-            ? musicLibrary.length - 1
-            : (currentIndex - 1 + musicLibrary.length) % musicLibrary.length;
-        await selectRoomMusic(musicLibrary[previousIndex]);
-    }
-
-    // ADDED: Apply a seek locally and debounce its room-wide synchronization request.
-    function saveRoomMusicPosition(position) {
-        const target = Math.max(0, Math.min(Number.isFinite(musicDuration) && musicDuration > 0 ? musicDuration : Number.MAX_SAFE_INTEGER, Number(position) || 0));
-        setMusicCurrentTime(target);
-        const audio = adminMusicRef.current;
-        if (audio && Number.isFinite(audio.duration)) audio.currentTime = Math.min(target, audio.duration);
-        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
-        musicPositionUpdateTimerRef.current = window.setTimeout(async () => {
-            try {
-                const { data } = await adminApi.post("/admin/music/control", {
-                    roomCode,
-                    playing: Boolean(room?.musicPlaying),
-                    currentTime: target,
-                });
-                setRoom(data.room);
-            } catch (error) {
-                setLastAction(error.response?.data?.message || "Unable to seek the room music.");
-            }
-        }, 250);
-    }
-
-    function seekRoomMusic(event) {
-        saveRoomMusicPosition(Number(event.target.value));
-    }
-
-    // ADDED: Upload a selected local audio file for all room players to access.
-    async function uploadRoomMusic(event) {
-        const file = event.target.files?.[0];
-        event.target.value = "";
-        if (!file) return;
-        if (!roomCode) {
-            setLastAction("Create or select a room before choosing background music.");
-            return;
-        }
-        if (file.size > 25 * 1024 * 1024) {
-            setLastAction("Music files must be 25 MB or smaller.");
-            return;
-        }
-        try {
-            const query = new URLSearchParams({ roomCode, fileName: file.name });
-            const { data } = await adminApi.post(`/admin/music/upload?${query}`, file, {
-                headers: { "Content-Type": "application/octet-stream" },
-            });
-            setRoom(data.room);
-            setMusicCurrentTime(0);
-            setMusicDuration(0);
-            await refreshMusicLibrary({ quiet: true });
-            setLastAction(data.message || "Background music uploaded.");
-        } catch (error) {
-            setLastAction(error.response?.data?.message || "Unable to upload background music.");
-        }
-    }
-
-    // ADDED: Start or pause playback for the admin and the players in this room.
-    async function toggleRoomMusic() {
-        if (!room?.musicUrl) {
-            setMusicLibraryOpen(true);
-            refreshMusicLibrary({ quiet: true });
-            return;
-        }
-        const nextPlaying = !room.musicPlaying;
-        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
-        const audio = adminMusicRef.current;
-        const currentTime = audio?.readyState ? audio.currentTime : Number(room.musicPosition) || 0;
-        if (nextPlaying) {
-            if (audio && audio.readyState) audio.currentTime = currentTime;
-            audio?.play()?.catch(() => {});
-        } else {
-            audio?.pause();
-        }
-        try {
-            const { data } = await adminApi.post("/admin/music/control", {
-                roomCode,
-                playing: nextPlaying,
-                currentTime,
-            });
-            setRoom(data.room);
-            setLastAction(data.message || "Background music updated.");
-        } catch (error) {
-            if (nextPlaying) adminMusicRef.current?.pause();
-            setLastAction(error.response?.data?.message || "Unable to update background music.");
-        }
-    }
-
-    // ADDED: Change the room master volume immediately, then persist the latest slider value.
-    function updateRoomMusicVolume(event) {
-        const volume = Math.max(0, Math.min(1, Number(event.target.value) / 100));
-        setRoom((current) => current ? { ...current, musicVolume: volume } : current);
-        if (adminMusicRef.current) adminMusicRef.current.volume = volume;
-        if (musicVolumeUpdateTimerRef.current) window.clearTimeout(musicVolumeUpdateTimerRef.current);
-        musicVolumeUpdateTimerRef.current = window.setTimeout(async () => {
-            try {
-                const { data } = await adminApi.post("/admin/music/control", {
-                    roomCode,
-                    volume,
-                });
-                setRoom(data.room);
-            } catch (error) {
-                setLastAction(error.response?.data?.message || "Unable to update room music volume.");
-            }
-        }, 250);
-    }
-
-    // ADDED: Keep the admin audio player aligned with the shared room track and seek timeline.
-    useEffect(() => {
-        const audio = adminMusicRef.current;
-        if (!audio) return;
-        audio.volume = Number.isFinite(Number(room?.musicVolume)) ? Math.max(0, Math.min(1, Number(room.musicVolume))) : 1;
-        const configuredApi = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-        const apiOrigin = new URL(configuredApi, window.location.origin);
-        const source = room?.musicUrl ? new URL(room.musicUrl, apiOrigin).href : "";
-        if (!source) {
-            audio.pause();
-            audio.removeAttribute("src");
-            return;
-        }
-        if (audio.src !== source) {
-            audio.src = source;
-            audio.load();
-        }
-        if (room?.musicPlaying) {
-            const alignAudio = () => {
-                if (!room.musicUpdatedAt) return;
-                const elapsed = Math.max(0, (Date.now() - new Date(room.musicUpdatedAt).getTime()) / 1000);
-                const position = Math.max(0, Number(room.musicPosition) || 0) + elapsed;
-                const target = Number.isFinite(audio.duration) && audio.duration > 0 ? position % audio.duration : position;
-                if (Number.isFinite(target) && Math.abs(audio.currentTime - target) > 3) {
-                    try { audio.currentTime = target; } catch { /* metadata is not ready yet */ }
-                }
-            };
-            if (audio.readyState >= 1) alignAudio();
-            else audio.addEventListener("loadedmetadata", alignAudio, { once: true });
-            audio.play()?.catch(() => {});
-            return () => audio.removeEventListener("loadedmetadata", alignAudio);
-        }
-        audio.pause();
-        const restorePosition = () => {
-            const saved = Math.max(0, Number(room?.musicPosition) || 0);
-            if (Number.isFinite(audio.duration) && audio.duration > 0) audio.currentTime = Math.min(saved, audio.duration);
-        };
-        if (audio.readyState >= 1) restorePosition();
-        else audio.addEventListener("loadedmetadata", restorePosition, { once: true });
-        return () => audio.removeEventListener("loadedmetadata", restorePosition);
-    }, [room?.musicUrl, room?.musicPlaying, room?.musicUpdatedAt, room?.musicPosition, room?.musicVolume]);
-
-    // ADDED: Load the saved library once and clear delayed playback updates on unmount.
-    useEffect(() => {
-        refreshMusicLibrary({ quiet: true });
-        return () => {
-            if (musicVolumeUpdateTimerRef.current) window.clearTimeout(musicVolumeUpdateTimerRef.current);
-            if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
-        };
-    }, []);
-
     if (loading) {
         return (
             <div className="admin-page">
@@ -1912,6 +1366,36 @@ export default function Admin() {
 
     return (
         <div className="admin-page">
+            {paymentReviewOpen && <div style={overlayStyle} onMouseDown={(e) => { if (e.target === e.currentTarget && !busyPaymentReference) setPaymentReviewOpen(false); }}>
+                <style>{`@media(max-width:700px){.admin-payment-review-modal>div{grid-template-columns:1fr!important}.admin-payment-review-modal>div>div:first-child{max-height:220px;border-right:0!important;border-bottom:1px solid #293548}.admin-payment-review-modal>div>div:last-child>div:nth-child(2){grid-template-columns:1fr!important}.admin-payment-review-modal footer{font-size:10px}}`}</style>
+                <section style={modalStyle} className="admin-payment-review-modal" role="dialog" aria-modal="true" aria-labelledby="payment-review-title">
+                    <header style={modalHeaderStyle}>
+                        <div><small style={{ color: "#a5b4fc", fontWeight: 800, letterSpacing: ".12em" }}>ADMIN DESK / MANUAL UPI</small><h2 id="payment-review-title" style={{ margin: "7px 0" }}>Payment verification queue</h2><p style={{ margin: 0, color: "#9ca3af", fontSize: 13 }}>Verify the received transaction before confirming tickets.</p></div>
+                        <button type="button" disabled={!!busyPaymentReference} onClick={() => setPaymentReviewOpen(false)} aria-label="Close payment verification"><X size={18}/></button>
+                    </header>
+                    <div style={modalBodyStyle}>
+                        <div style={modalListStyle}>
+                            <p style={{ color: "#fbbf24", fontSize: 13 }}>{pendingPaymentReviews.length} booking(s) awaiting review</p>
+                            {pendingPaymentReviews.length === 0 ? <div style={{ padding: 24, color: "#9ca3af", textAlign: "center" }}><CheckCircle2 size={30}/><p>No pending payments</p></div> : pendingPaymentReviews.map((payment) => <button key={payment._id || payment.reference} type="button" onClick={() => { setSelectedPaymentReference(payment.reference); setPaymentRejectionReason(""); }} style={{ ...paymentRowStyle, borderColor: String(selectedPaymentReference) === String(payment.reference) ? "#818cf8" : "#334155" }}><span><strong>{payment.reference}</strong><small style={smallStyle}>{payment.user?.name || payment.user?.phone || "Unknown player"}</small><small style={smallStyle}>{payment.status || "pending"} · {payment.paymentStatus || "pending"}</small></span><strong>₹{Number(payment.total ?? payment.amount ?? 0).toFixed(2)}</strong></button>)}
+                        </div>
+                        <div style={modalDetailStyle}>
+                            {!selectedPayment ? <div style={{ padding: 28, textAlign: "center", color: "#9ca3af" }}><ShieldCheck size={32}/><p>Select a booking to review</p></div> : <>
+                                <small style={{ color: "#a5b4fc", letterSpacing: ".1em" }}>BOOKING REFERENCE</small><h3 style={{ overflowWrap: "anywhere" }}>{selectedPayment.reference}</h3>
+                                <div style={amountStyle}><small style={smallStyle}>Amount to verify</small><strong style={{ fontSize: 28 }}>₹{Number(selectedPayment.total ?? selectedPayment.amount ?? 0).toFixed(2)}</strong></div>
+                                <div style={detailsGridStyle}>
+                                    <div><small style={smallStyle}>Player</small><strong>{selectedPayment.user?.name || "Not provided"}</strong></div><div><small style={smallStyle}>Phone</small><strong>{selectedPayment.user?.phone || "Not provided"}</strong></div>
+                                    <div><small style={smallStyle}>Payment method</small><strong>{(selectedPayment.paymentMethod || "UPI").replaceAll("_", " ").toUpperCase()}</strong></div><div><small style={smallStyle}>UPI transaction reference</small><strong>{selectedPayment.upiReference || "Not provided"}</strong></div>
+                                    <div style={{ gridColumn: "1 / -1" }}><small style={smallStyle}>Tickets</small><strong>{(selectedPayment.tickets || []).map(t => t.publicCode || t.number || t).join(", ") || "No ticket details returned"}</strong></div><div><small style={smallStyle}>Created</small><strong>{selectedPayment.createdAt ? new Date(selectedPayment.createdAt).toLocaleString("en-IN") : "Not provided"}</strong></div><div><small style={smallStyle}>Status</small><strong>{selectedPayment.status || "pending"} / {selectedPayment.paymentStatus || "pending"}</strong></div>
+                                </div>
+                                <p style={warningStyle}>A screenshot or checkbox is not proof of payment. Independently confirm the transaction in your receiving UPI app or bank account before approving.</p>
+                                <label htmlFor="payment-rejection-reason" style={{ display: "block", fontSize: 12, marginBottom: 7 }}>Rejection reason (required to reject)</label><textarea id="payment-rejection-reason" rows={2} value={paymentRejectionReason} onChange={e => setPaymentRejectionReason(e.target.value)} placeholder="e.g. Payment not received or amount mismatch" style={textareaStyle}/>
+                                <div style={actionsStyle}><button type="button" disabled={!!busyPaymentReference || paymentRejectionReason.trim().length < 3} onClick={() => handleRejectManualPayment(selectedPayment)} style={rejectButtonStyle}>{busyPaymentReference === selectedPayment.reference ? "Processing…" : <><XCircle size={16}/> Reject payment</>}</button><button type="button" disabled={!!busyPaymentReference} onClick={() => handleVerifyManualPayment(selectedPayment)} style={approveButtonStyle}>{busyPaymentReference === selectedPayment.reference ? "Processing…" : <><CheckCircle2 size={16}/> Verify & approve</>}</button></div>
+                            </>}
+                        </div>
+                    </div>
+                    <footer style={{ padding: 14, borderTop: "1px solid #293548", color: "#9ca3af", fontSize: 11 }}>Approval must be backed by independent payment verification. The backend must enforce admin authorization and update booking/ticket state.</footer>
+                </section>
+            </div>}
             <ClaimReviewModal
                 claim={winnerAlert}
                 calledNumbers={calledBalls}
@@ -2090,28 +1574,6 @@ export default function Admin() {
                 </nav>
 
                 <div className="admin-sidebar-footer">
-                    {/* CHANGED: Keep the poster download at the bottom of the admin sidebar. */}
-                    <button
-                        type="button"
-                        className="admin-poster-button"
-                        onClick={() => downloadGamePoster({ room, totalTickets: totalGenerated })}
-                        disabled={!room}
-                        title={room ? "Download a poster with the current game setup" : "Create or select a room first"}
-                    >
-                        <Download size={15} />
-                        <span>Download Game Poster</span>
-                    </button>
-                    {/* CHANGED: Put the winners-poster download directly below the game-poster action and enable it only for verified finished-room winners. */}
-                    <button
-                        type="button"
-                        className="admin-poster-button"
-                        onClick={() => downloadWinnerPoster({ room, winnerClaims })}
-                        disabled={room?.status !== "closed" || !winnerClaims.some((claim) => claim.status === "verified")}
-                        title={room?.status !== "closed" ? "Terminate the room after the game finishes to download winners" : "Download a poster of verified winners"}
-                    >
-                        <Download size={15} />
-                        <span>Download Winners Poster</span>
-                    </button>
                     <div className="admin-rng-status">
                         <span className="admin-rng-dot" />
 
@@ -2153,153 +1615,6 @@ export default function Admin() {
                     </div>
 
                     <div className="admin-header-right">
-                        {/* ADDED: Local music selection and room-wide playback controls in the admin header. */}
-                        <input
-                            ref={musicInputRef}
-                            type="file"
-                            accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm"
-                            onChange={uploadRoomMusic}
-                            style={{ display: "none" }}
-                            aria-label="Choose background music"
-                        />
-                        {/* ADDED: Hidden audio element drives the shared library player's transport and progress controls. */}
-                        <audio
-                            ref={adminMusicRef}
-                            preload="metadata"
-                            aria-hidden="true"
-                            onTimeUpdate={(event) => setMusicCurrentTime(event.currentTarget.currentTime || 0)}
-                            onLoadedMetadata={(event) => {
-                                const audio = event.currentTarget;
-                                setMusicDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
-                                setMusicCurrentTime(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
-                            }}
-                            onEnded={playNextRoomMusic}
-                        />
-                        <button
-                            type="button"
-                            className="admin-music-button"
-                            onClick={toggleRoomMusic}
-                            disabled={!roomCode}
-                            title={room?.musicTitle ? `${room.musicPlaying ? "Pause" : "Play"}: ${room.musicTitle}` : "Choose a music file to play for the room"}
-                        >
-                            {room?.musicPlaying ? <Pause size={15} /> : <Music2 size={15} />}
-                            <span>{room?.musicPlaying ? "Pause music" : room?.musicUrl ? "Play music" : "Play music"}</span>
-                        </button>
-                        <button
-                            type="button"
-                            className="admin-header-button admin-music-pick"
-                            onClick={() => musicInputRef.current?.click()}
-                            disabled={!roomCode}
-                            aria-label="Choose a different music file"
-                            title={room?.musicTitle ? `Change track (${room.musicTitle})` : "Choose a music file"}
-                        >
-                            <Upload size={16} />
-                        </button>
-                        {/* ADDED: Admin master-volume slider is synchronized to every player in the room. */}
-                        <div className="admin-music-volume">
-                            <Volume2 size={15} aria-hidden="true" />
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={Math.round(Number(room?.musicVolume ?? 1) * 100)}
-                                onChange={updateRoomMusicVolume}
-                                disabled={!roomCode}
-                                aria-label="Background music volume for all players"
-                                title="Set background music volume for all players"
-                            />
-                            <span>{Math.round(Number(room?.musicVolume ?? 1) * 100)}%</span>
-                        </div>
-                        {/* ADDED: Library dropdown combines current-track transport with access to uploaded songs. */}
-                        <div className="admin-music-library-anchor">
-                            <button
-                                type="button"
-                                className="admin-header-button admin-music-library-toggle"
-                                onClick={() => {
-                                    setMusicLibraryOpen((open) => !open);
-                                    refreshMusicLibrary({ quiet: true });
-                                }}
-                                aria-expanded={musicLibraryOpen}
-                                aria-label="Open music library and player"
-                                title="Music library and player"
-                            >
-                                <ListMusic size={16} />
-                            </button>
-                            {musicLibraryOpen && (
-                                <section className="admin-music-library-panel" aria-label="Music library and player">
-                                    <div className="admin-music-library-heading">
-                                        <div>
-                                            <strong>Music library</strong>
-                                            <small>{musicLibrary.length} saved {musicLibrary.length === 1 ? "track" : "tracks"}</small>
-                                        </div>
-                                        <button type="button" className="admin-music-library-close" onClick={() => setMusicLibraryOpen(false)} aria-label="Close music library">
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                    <div className="admin-music-current-track">
-                                        <Music2 size={16} />
-                                        <span title={room?.musicTitle || "No track selected"}>{room?.musicTitle || "No track selected"}</span>
-                                    </div>
-                                    <div className="admin-music-transport">
-                                        <button type="button" onClick={playPreviousRoomMusic} disabled={!musicLibrary.length} aria-label="Previous track" title="Previous track">
-                                            <SkipBack size={16} />
-                                        </button>
-                                        <button type="button" className="admin-music-main-transport" onClick={toggleRoomMusic} disabled={!roomCode} aria-label={room?.musicPlaying ? "Pause music" : "Play music"} title={room?.musicPlaying ? "Pause" : "Play"}>
-                                            {room?.musicPlaying ? <Pause size={17} /> : <Play size={17} />}
-                                        </button>
-                                        <button type="button" onClick={playNextRoomMusic} disabled={!musicLibrary.length} aria-label="Next track" title="Next track">
-                                            <SkipForward size={16} />
-                                        </button>
-                                    </div>
-                                    <div className="admin-music-progress">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max={Math.max(musicDuration, 1)}
-                                            step="0.1"
-                                            value={Math.min(musicCurrentTime, musicDuration || musicCurrentTime)}
-                                            onChange={seekRoomMusic}
-                                            disabled={!room?.musicUrl || !musicDuration}
-                                            aria-label="Seek music playback"
-                                        />
-                                        <div><span>{formatMusicTime(musicCurrentTime)}</span><span>{formatMusicTime(musicDuration)}</span></div>
-                                    </div>
-                                    <button type="button" className="admin-music-library-upload" onClick={() => musicInputRef.current?.click()} disabled={!roomCode}>
-                                        <Upload size={14} /> Add music from this device
-                                    </button>
-                                    <label className="admin-music-library-search">
-                                        <Search size={15} />
-                                        <input
-                                            type="search"
-                                            value={musicSearch}
-                                            onChange={(event) => setMusicSearch(event.target.value)}
-                                            placeholder="Search your library"
-                                            aria-label="Search music library"
-                                        />
-                                    </label>
-                                    <div className="admin-music-library-list">
-                                        {musicLibrary
-                                            .filter((track) => String(track.title || "").toLowerCase().includes(musicSearch.trim().toLowerCase()))
-                                            .map((track, index) => (
-                                                <button
-                                                    type="button"
-                                                    key={track._id || track.fileName || `${track.url}-${index}`}
-                                                    className={`admin-music-library-track ${track.url === room?.musicUrl ? "active" : ""}`}
-                                                    onClick={() => selectRoomMusic(track)}
-                                                    disabled={!roomCode}
-                                                    title={`Play ${track.title}`}
-                                                >
-                                                    <Music2 size={14} />
-                                                    <span>{track.title}</span>
-                                                    {track.url === room?.musicUrl && room?.musicPlaying ? <span className="admin-music-playing-indicator">PLAYING</span> : null}
-                                                </button>
-                                            ))}
-                                        {musicLibrary.length === 0 && <p className="admin-music-library-empty">No saved music yet. Add a song from your device.</p>}
-                                        {musicLibrary.length > 0 && !musicLibrary.some((track) => String(track.title || "").toLowerCase().includes(musicSearch.trim().toLowerCase())) && <p className="admin-music-library-empty">No tracks match that search.</p>}
-                                    </div>
-                                </section>
-                            )}
-                        </div>
                         <div className="admin-escrow">
                             <span>ESCROW</span>
                             <strong>₹{room?.jackpot ?? 0}</strong>
@@ -2388,16 +1703,6 @@ export default function Admin() {
                                         DATABASE SYNCED
                                     </div>
 
-                                    {/* CHANGED: Surface the poster action beside the active room controls so it is easy to discover. */}
-                                    <button
-                                        className="admin-poster-shortcut"
-                                        type="button"
-                                        onClick={() => downloadGamePoster({ room, totalTickets: totalGenerated })}
-                                    >
-                                        <Download size={14} />
-                                        Download Poster
-                                    </button>
-
                                     <button className="admin-action-button" onClick={clearSelectedRoom}>
                                         <X size={14} />
                                         New Room
@@ -2470,29 +1775,18 @@ export default function Admin() {
                                             </div>
                                         </div>
 
-                                        {bookedTickets < 1 && (
-                                            // CHANGED: Tell admins why Start/Resume is unavailable before they click.
-                                            <div className="admin-start-warning" role="alert">
-                                                <AlertTriangle size={15} />
-                                                No tickets have been bought yet. Sell and confirm at least one ticket before starting.
-                                            </div>
-                                        )}
-
                                         <div className="admin-scheduler-actions">
                                             <button
                                                 className="admin-start-game"
                                                 onClick={startGame}
-                                                disabled={!room || bookedTickets < 1}
                                             >
                                                 <Play size={15} />
                                                 START GAME
                                             </button>
 
-                                            {/* CHANGED: Keep Resume disabled until at least one paid booking exists. */}
                                             <button
                                                 className="admin-secondary-action"
                                                 onClick={toggleGame}
-                                                disabled={gameState !== "live" && bookedTickets < 1}
                                             >
                                                 {gameState ===
                                                     "live" ? (
@@ -3043,13 +2337,13 @@ export default function Admin() {
                                                         <td>
                                                             <div className="ticket-pills">
                                                                 {(booking.tickets || []).map(
-                                                                    (ticket, index) => (
+                                                                    (
+                                                                        ticket,
+                                                                    ) => (
                                                                         <span
-                                                                            // MODIFIED: Use a stable scalar key; ticket objects themselves stringify to `[object Object]`.
-                                                                            key={`${typeof ticket === "string"
-                                                                                ? ticket
-                                                                                : ticket?._id?.toString?.() || ticket?.id?.toString?.() || ticket?.publicCode || ticket?.number || "ticket"
-                                                                                }-${index}`}
+                                                                            key={
+                                                                                ticket
+                                                                            }
                                                                         >
                                                                             {typeof ticket === "string"
                                                                                 ? ticket.split("-")[2]
@@ -3110,7 +2404,15 @@ export default function Admin() {
                                     description="Live payment records synchronized from confirmed and pending bookings."
                                     tag={`${payments.length} PAYMENTS`}
                                 />
-
+                                <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 18px 16px" }}>
+                                    <button type="button" className="admin-view-queue" onClick={() => {
+                                        setSelectedPaymentReference(pendingPaymentReviews[0]?.reference || "");
+                                        setPaymentRejectionReason("");
+                                        setPaymentReviewOpen(true);
+                                    }}>
+                                        <ShieldCheck size={15} /> Verify submitted payments ({pendingPaymentReviews.length}) <ChevronRight size={13} />
+                                    </button>
+                                </div>
                                 <div className="admin-booking-table-wrap">
                                     <table className="admin-booking-table">
                                         <thead>

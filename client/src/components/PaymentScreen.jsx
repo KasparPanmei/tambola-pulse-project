@@ -1,12 +1,19 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import {
+    ArrowLeft,
     Check,
+    CheckCircle2,
+    Clock,
+    Copy,
+    ExternalLink,
     Info,
+    MessageCircle,
     ShieldCheck,
     Smartphone,
-    ArrowLeft,
+    Ticket,
 } from "lucide-react";
-
+import { QRCodeSVG } from "qrcode.react";
 import api from "../lib/api.js";
 import Countdown from "./Countdown.jsx";
 
@@ -15,269 +22,272 @@ export default function PaymentScreen({
     onBack,
     onSuccess,
 }) {
-    const [loading, setLoading] =
-        useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [confirmed, setConfirmed] = useState(false);
+    const [upiTransactionId, setUpiTransactionId] = useState("");
+    const [copied, setCopied] = useState(false);
+    const [submitted, setSubmitted] = useState(
+        Boolean(booking?.manualPaymentSubmitted),
+    );
+    const [bookingStatus, setBookingStatus] = useState(
+        booking?.status || "pending",
+    );
+    const [paymentStatus, setPaymentStatus] = useState(
+        booking?.paymentStatus || "pending",
+    );
+    const [rejectionReason, setRejectionReason] = useState(
+        booking?.paymentRejectionReason || "",
+    );
 
-    const [verifying, setVerifying] =
-        useState(false);
+    const total = Number(
+        booking?.total ?? booking?.amount ?? 0,
+    );
 
-    const [success, setSuccess] =
-        useState(false);
+    const tickets = booking?.tickets || [];
+    const reference = booking?.reference || "";
+    const upiId = String(booking?.upiId || "").trim();
+    const merchantName = String(
+        booking?.merchantName || "Tambola Pulse",
+    ).trim();
+    const whatsappNumber = String(
+        booking?.whatsappNumber || "",
+    ).replace(/\D/g, "");
 
-    const [error, setError] =
-        useState("");
+    const upiUri = useMemo(() => {
+        if (!upiId || !Number.isFinite(total) || total <= 0) {
+            return "";
+        }
+
+        return `upi://pay?${new URLSearchParams({
+            pa: upiId,
+            pn: merchantName,
+            am: total.toFixed(2),
+            cu: "INR",
+            tn: `Tambola ${reference}`,
+        }).toString()}`;
+    }, [upiId, merchantName, total, reference]);
+    const whatsappMessage = useMemo(
+        () =>
+            `Hello Admin, I have made a UPI payment for my Tambola Pulse booking.\n\n` +
+            `Booking reference: ${reference}\n` +
+            `Amount: ₹${total.toFixed(2)}\n` +
+            `Tickets: ${tickets.map((ticket) => ticket.number).join(", ")}\n` +
+            `UPI transaction ID: ${upiTransactionId.trim() || "Will provide in screenshot"}\n\n` +
+            `I am sending my payment screenshot for verification.`,
+        [reference, total, tickets, upiTransactionId],
+    );
+
+    const whatsappUrl = whatsappNumber
+        ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`
+        : "";
 
     useEffect(() => {
-        if (!success) return;
+        if (!reference) return undefined;
 
-        const timer = setTimeout(() => {
-            onSuccess();
-        }, 1200);
+        let active = true;
 
-        return () =>
-            clearTimeout(timer);
-    }, [success, onSuccess]);
-
-    /*
-     * Load Razorpay Checkout script.
-     */
-    function loadRazorpay() {
-        return new Promise(
-            (resolve) => {
-                if (
-                    window.Razorpay
-                ) {
-                    resolve(true);
-                    return;
-                }
-
-                const script =
-                    document.createElement(
-                        "script",
-                    );
-
-                script.src =
-                    "https://checkout.razorpay.com/v1/checkout.js";
-
-                script.onload = () =>
-                    resolve(true);
-
-                script.onerror = () =>
-                    resolve(false);
-
-                document.body.appendChild(
-                    script,
+        const refreshStatus = async () => {
+            try {
+                const { data } = await api.get(
+                    `/bookings/${encodeURIComponent(reference)}/status`,
                 );
-            },
+
+                if (!active) return;
+
+                const current = data.booking || data;
+
+                setBookingStatus(current.status || "pending");
+                setPaymentStatus(
+                    current.paymentStatus || "pending",
+                );
+                setSubmitted(
+                    Boolean(current.manualPaymentSubmitted),
+                );
+                setRejectionReason(
+                    current.paymentRejectionReason || "",
+                );
+
+                if (
+                    current.status === "confirmed" &&
+                    current.paymentStatus === "paid"
+                ) {
+                    onSuccess?.();
+                }
+            } catch (e) {
+                if (e.response?.status !== 404) {
+                    console.error(
+                        "Unable to refresh booking status:",
+                        e,
+                    );
+                }
+            }
+        };
+
+        refreshStatus();
+
+        const interval = window.setInterval(
+            refreshStatus,
+            5000,
         );
+
+        return () => {
+            active = false;
+            window.clearInterval(interval);
+        };
+    }, [reference, onSuccess]);
+
+    async function copyUpiId() {
+        setError("");
+        setCopied(false);
+
+        try {
+            await navigator.clipboard.writeText(upiId);
+            setCopied(true);
+        } catch {
+            setError(
+                "Unable to copy automatically. Please select and copy the UPI ID manually.",
+            );
+        }
     }
 
-    /*
-     * Open Razorpay Checkout.
-     */
-    async function pay() {
+    async function submitPaymentConfirmation() {
         setError("");
+
+        if (!confirmed) {
+            setError(
+                "Please confirm that you have paid and sent your payment screenshot to the admin on WhatsApp.",
+            );
+            return;
+        }
+
+        if (!submitted && !whatsappNumber) {
+            setError(
+                "The admin WhatsApp number is not configured. Please contact the administrator.",
+            );
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const loaded =
-                await loadRazorpay();
-
-            if (!loaded) {
-                throw new Error(
-                    "Unable to load Razorpay Checkout.",
-                );
-            }
-
-            if (
-                !booking.razorpayOrderId ||
-                !booking.razorpayKeyId
-            ) {
-                throw new Error(
-                    "Razorpay order information is missing.",
-                );
-            }
-
-            const options = {
-                key:
-                    booking.razorpayKeyId,
-
-                amount:
-                    Math.round(
-                        booking.total *
-                        100,
-                    ),
-
-                currency: "INR",
-
-                name:
-                    "Tambola Pulse",
-
-                description:
-                    `Tambola booking ${booking.reference}`,
-
-                order_id:
-                    booking.razorpayOrderId,
-
-                prefill: {
-                    name:
-                        booking.user?.name ||
-                        "",
-                },
-
-                theme: {
-                    color:
-                        "#f59e0b",
-                },
-
-                handler:
-                    async function (
-                        response,
-                    ) {
-                        /*
-                         * Razorpay has returned a
-                         * successful checkout response.
-                         *
-                         * We STILL verify it through
-                         * our backend.
-                         */
-                        await verifyPayment(
-                            response,
-                        );
-                    },
-
-                modal: {
-                    ondismiss:
-                        function () {
-                            setLoading(
-                                false,
-                            );
-                        },
-                },
-            };
-
-            const rzp =
-                new window.Razorpay(
-                    options,
-                );
-
-            rzp.on(
-                "payment.failed",
-                function (
-                    response,
-                ) {
-                    setLoading(
-                        false,
-                    );
-
-                    setError(
-                        response
-                            ?.error
-                            ?.description ||
-                        "Payment failed.",
-                    );
+            const { data } = await api.post(
+                `/bookings/${encodeURIComponent(reference)}/submit-manual-payment`,
+                {
+                    confirmed: true,
+                    upiTransactionId: upiTransactionId.trim(),
                 },
             );
 
-            rzp.open();
-        } catch (e) {
-            setLoading(false);
-
-            setError(
-                e.message ||
-                "Unable to start payment.",
+            setSubmitted(true);
+            setBookingStatus(
+                data.booking?.status || "pending",
             );
-        }
-    }
-
-    /*
-     * Verify the Razorpay payment
-     * through our backend.
-     */
-    async function verifyPayment(
-        razorpayResponse,
-    ) {
-        setError("");
-        setVerifying(true);
-
-        try {
-            /*
-             * Send the Razorpay checkout
-             * response to our backend.
-             *
-             * The backend verifies the
-             * signature and payment.
-             */
-            const { data } =
-                await api.post(
-                    `/bookings/${booking.reference}/verify-payment`,
-                    {
-                        razorpayPaymentId:
-                            razorpayResponse
-                                .razorpay_payment_id,
-
-                        razorpayOrderId:
-                            razorpayResponse
-                                .razorpay_order_id,
-
-                        razorpaySignature:
-                            razorpayResponse
-                                .razorpay_signature,
-                    },
-                );
-
-            if (
-                data.verified
-            ) {
-                setSuccess(true);
-                return;
-            }
-
-            setError(
-                data.message ||
-                "Payment not completed.",
+            setPaymentStatus(
+                data.booking?.paymentStatus || "pending",
             );
+
+            setError("");
         } catch (e) {
             setError(
-                e.response
-                    ?.data
-                    ?.message ||
-                "Payment verification failed.",
+                e.response?.data?.message ||
+                "Unable to submit your payment confirmation. Please try again.",
             );
         } finally {
-            setVerifying(false);
             setLoading(false);
         }
     }
 
-    if (success) {
+    if (
+        bookingStatus === "confirmed" &&
+        paymentStatus === "paid"
+    ) {
         return (
             <div className="app">
                 <main className="page qrpage">
                     <div
-                        className="success stack"
+                        className="card pad stack"
                         style={{
-                            marginTop: 50,
+                            marginTop: 40,
+                            textAlign: "center",
+                            alignItems: "center",
                         }}
                     >
-                        <Check
-                            size={36}
+                        <CheckCircle2
+                            size={52}
                             color="var(--green)"
                         />
 
-                        <div className="title">
+                        <div className="section-title">
                             Payment Verified!
                         </div>
 
                         <div className="muted">
-                            Your tickets are
-                            confirmed.
-                            Entering the room...
+                            Your booking has been approved by
+                            the administrator. You can now enter
+                            the GameRoom.
                         </div>
 
                         <span className="pill green">
-                            {booking.reference}
+                            {reference}
                         </span>
+
+                        <button
+                            type="button"
+                            className="btn primary"
+                            onClick={() => onSuccess?.()}
+                        >
+                            Enter GameRoom
+                        </button>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (
+        bookingStatus === "cancelled" ||
+        bookingStatus === "expired" ||
+        paymentStatus === "failed"
+    ) {
+        return (
+            <div className="app">
+                <main className="page qrpage">
+                    <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={onBack}
+                    >
+                        <ArrowLeft size={18} />
+                        Back
+                    </button>
+
+                    <div className="card pad stack">
+                        <Info
+                            size={40}
+                            color="var(--amber)"
+                        />
+
+                        <div className="section-title">
+                            Booking Not Active
+                        </div>
+
+                        <div className="muted">
+                            {rejectionReason ||
+                                "This booking has expired or was rejected. Please contact the administrator if you believe this is incorrect."}
+                        </div>
+
+                        <span className="pill">
+                            {reference}
+                        </span>
+
+                        <button
+                            type="button"
+                            className="btn primary"
+                            onClick={onBack}
+                        >
+                            Return to Tickets
+                        </button>
                     </div>
                 </main>
             </div>
@@ -287,248 +297,420 @@ export default function PaymentScreen({
     return (
         <div className="app">
             <main className="page qrpage">
-
                 <button
+                    type="button"
                     className="btn ghost"
                     style={{
-                        justifyContent:
-                            "flex-start",
+                        justifyContent: "flex-start",
                         paddingLeft: 0,
                     }}
                     onClick={onBack}
-                    disabled={
-                        loading ||
-                        verifying
-                    }
+                    disabled={loading || submitted}
                 >
-                    <ArrowLeft
-                        size={18}
-                    />
-                    Change Payment
+                    <ArrowLeft size={18} />
+                    Back to Checkout
                 </button>
 
                 <div className="card pad stack">
-
-                    <div
-                        className="row"
-                    >
+                    <div className="row">
                         <div>
                             <div className="section-title">
-                                Complete Payment
+                                UPI Payment
                             </div>
 
                             <div className="small muted">
-                                Secure Razorpay
-                                Checkout
+                                Pay manually and submit for
+                                verification
                             </div>
                         </div>
 
-                        <span className="pill green">
-                            TEST MODE
+                        <span className="pill">
+                            MANUAL UPI
                         </span>
                     </div>
 
-                    <div
-                        className="summary"
-                    >
+                    <div className="summary">
                         <div className="sumline">
-                            <span>
-                                Booking
-                            </span>
-
-                            <strong>
-                                {
-                                    booking.reference
-                                }
-                            </strong>
+                            <span>Booking reference</span>
+                            <strong>{reference}</strong>
                         </div>
 
                         <div className="sumline">
-                            <span>
-                                Tickets
-                            </span>
-
-                            <strong>
-                                {
-                                    booking
-                                        .tickets
-                                        ?.length ||
-                                    0
-                                }
-                            </strong>
+                            <span>Selected tickets</span>
+                            <strong>{tickets.length}</strong>
                         </div>
 
                         <div className="sumline total">
-                            <span>
-                                Total
-                            </span>
-
+                            <span>Total payable</span>
                             <strong>
-                                ₹
-                                {
-                                    booking.total
-                                }
+                                ₹{total.toFixed(2)}
                             </strong>
                         </div>
                     </div>
 
-                    <div
-                        className="waiting"
-                    >
-                        <ShieldCheck
-                            size={18}
-                        />
-
-                        Your payment is
-                        processed securely
-                        by Razorpay.
-                    </div>
-
-                    <div
-                        className="info"
-                    >
-                        <Info
-                            size={18}
-                        />
-
-                        <span>
-                            This is Razorpay
-                            <strong>
-                                {" "}
-                                Test Mode
-                            </strong>
-                            . No real money
-                            will be charged.
-                        </span>
-                    </div>
-
-                    <button
-                        className="btn primary"
-                        onClick={pay}
-                        disabled={
-                            loading ||
-                            verifying
-                        }
-                    >
-                        <Smartphone
-                            size={20}
-                        />
-
-                        {loading ||
-                            verifying
-                            ? "Processing..."
-                            : `Pay ₹${booking.total} with Razorpay`}
-                    </button>
-
-                    {error && (
+                    {submitted ? (
                         <div
-                            className="payment-error"
-                            role="alert"
+                            className="waiting stack"
+                            style={{ alignItems: "flex-start" }}
                         >
+                            <Clock size={24} />
+
                             <strong>
-                                Payment Not
-                                Completed
+                                Payment Verification Pending
                             </strong>
 
                             <span>
-                                {error}
+                                Your payment confirmation has
+                                been submitted. Please wait
+                                while the administrator checks
+                                your payment.
+                            </span>
+
+                            <span className="small">
+                                You cannot enter the GameRoom
+                                until your booking is approved.
+                            </span>
+
+                            <span className="pill">
+                                {reference}
                             </span>
                         </div>
-                    )}
+                    ) : (
+                        <>
+                            <div className="waiting">
+                                <ShieldCheck size={20} />
 
-                    <div className="small muted">
-                        QR scanning is not
-                        used in Test Mode.
-                        Use Razorpay Checkout
-                        to simulate the
-                        payment.
-                    </div>
+                                Pay exactly ₹{total.toFixed(2)}
+                                using your UPI app.
+                            </div>
+
+                            {upiUri && (
+                                <div
+                                    className="stack"
+                                    style={{
+                                        alignItems: "center",
+                                        padding: "16px 0",
+                                        gap: 12,
+                                    }}
+                                >
+                                    <div className="section-title">
+                                        Scan UPI QR
+                                    </div>
+
+                                    <div
+                                        style={{
+                                            background: "#ffffff",
+                                            padding: 14,
+                                            borderRadius: 14,
+                                            display: "inline-flex",
+                                        }}
+                                    >
+                                        {upiUri && (
+                                            <QRCodeSVG
+                                                value={upiUri}
+                                                size={220}
+                                                level="M"
+                                                includeMargin
+                                            />
+                                        )}
+                                    </div>
+
+                                    <div className="small muted">
+                                        Open GPay, PhonePe, Paytm
+                                        or another compatible UPI
+                                        app and scan this code.
+                                    </div>
+                                </div>
+                            )}
+
+                            {!upiId && (
+                                <div
+                                    className="payment-error"
+                                    role="alert"
+                                >
+                                    UPI ID is not configured.
+                                    Please contact the admin.
+                                </div>
+                            )}
+
+                            <div className="summary stack">
+                                <div className="small muted">
+                                    PAY TO
+                                </div>
+
+                                <strong>{merchantName}</strong>
+
+                                <div
+                                    className="row"
+                                    style={{ gap: 8 }}
+                                >
+                                    <strong
+                                        style={{
+                                            overflowWrap: "anywhere",
+                                        }}
+                                    >
+                                        {upiId || "UPI ID unavailable"}
+                                    </strong>
+
+                                    <button
+                                        type="button"
+                                        className="btn ghost"
+                                        onClick={copyUpiId}
+                                        disabled={!upiId}
+                                    >
+                                        {copied ? (
+                                            <Check size={16} />
+                                        ) : (
+                                            <Copy size={16} />
+                                        )}
+                                        {copied ? "Copied" : "Copy"}
+                                    </button>
+                                </div>
+
+                                <div className="small muted">
+                                    Amount: ₹{total.toFixed(2)}
+                                </div>
+                            </div>
+
+                            <a
+                                className="btn primary"
+                                href={upiUri || undefined}
+                                onClick={(event) => {
+                                    if (!upiUri) {
+                                        event.preventDefault();
+                                    }
+                                }}
+                                style={{
+                                    textDecoration: "none",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <Smartphone size={20} />
+                                Open UPI App
+                                <ExternalLink size={16} />
+                            </a>
+
+                            <div className="info">
+                                <Info size={18} />
+
+                                <span>
+                                    Verify the recipient and amount
+                                    in your UPI app before paying.
+                                    The booking is not confirmed
+                                    automatically.
+                                </span>
+                            </div>
+
+                            <div className="stack">
+                                <label
+                                    htmlFor="upiTransactionId"
+                                    className="label"
+                                >
+                                    UPI transaction ID / UTR
+                                    <span className="muted">
+                                        {" "}(optional)
+                                    </span>
+                                </label>
+
+                                <input
+                                    id="upiTransactionId"
+                                    type="text"
+                                    className="input"
+                                    value={upiTransactionId}
+                                    onChange={(event) =>
+                                        setUpiTransactionId(
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Enter transaction reference"
+                                    maxLength={120}
+                                />
+                            </div>
+
+                            <a
+                                className="btn"
+                                href={whatsappUrl || undefined}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(event) => {
+                                    if (!whatsappUrl) {
+                                        event.preventDefault();
+                                        setError(
+                                            "Admin WhatsApp number is not configured.",
+                                        );
+                                    }
+                                }}
+                                style={{
+                                    background: "#168653",
+                                    color: "#ffffff",
+                                    textDecoration: "none",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <MessageCircle size={20} />
+                                Send Payment Screenshot on WhatsApp
+                                <ExternalLink size={16} />
+                            </a>
+
+                            <div className="small muted">
+                                WhatsApp opens a pre-filled message.
+                                You must attach and send your payment
+                                screenshot yourself.
+                            </div>
+
+                            <label
+                                className="row"
+                                style={{
+                                    alignItems: "flex-start",
+                                    gap: 10,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={confirmed}
+                                    onChange={(event) =>
+                                        setConfirmed(
+                                            event.target.checked,
+                                        )
+                                    }
+                                    style={{
+                                        marginTop: 4,
+                                        width: 18,
+                                        height: 18,
+                                        flexShrink: 0,
+                                    }}
+                                />
+
+                                <span>
+                                    I confirm that I have paid the
+                                    displayed amount and sent the
+                                    payment screenshot to the admin
+                                    on WhatsApp using my registered
+                                    mobile number.
+                                </span>
+                            </label>
+
+                            <button
+                                type="button"
+                                className="btn primary"
+                                onClick={submitPaymentConfirmation}
+                                disabled={
+                                    loading ||
+                                    !confirmed ||
+                                    !upiId ||
+                                    total <= 0
+                                }
+                            >
+                                {loading
+                                    ? "Submitting..."
+                                    : "Confirm Booking for Verification"}
+                            </button>
+
+                            {error && (
+                                <div
+                                    className="payment-error"
+                                    role="alert"
+                                >
+                                    <strong>
+                                        Unable to submit
+                                    </strong>
+
+                                    <span>{error}</span>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
 
                 <div className="card pad stack">
-
                     <div className="row">
-                        <div className="gap">
-                            <ShieldCheck
+                        <div
+                            className="gap"
+                            style={{ alignItems: "center" }}
+                        >
+                            <Ticket
                                 size={20}
                                 color="var(--green)"
                             />
 
-                            <div>
-                                <strong>
-                                    Tambola Pulse
-                                </strong>
-
-                                <div className="small muted">
-                                    Secure payment
-                                </div>
-                            </div>
+                            <strong>Allocated Tickets</strong>
                         </div>
+
+                        <span className="pill">
+                            {tickets.length} selected
+                        </span>
+                    </div>
+
+                    <div
+                        className="gap"
+                        style={{
+                            flexWrap: "wrap",
+                            justifyContent: "flex-start",
+                        }}
+                    >
+                        {tickets.map((ticket) => (
+                            <span
+                                className="pill primary-pill"
+                                key={ticket.id || ticket._id}
+                            >
+                                #{ticket.number}
+                            </span>
+                        ))}
                     </div>
 
                     <div className="summary">
-                        <div className="row">
-                            <span className="muted">
-                                Allocated Tickets
-                            </span>
+                        <div className="sumline">
+                            <span>Ticket price</span>
 
-                            <div
-                                className="gap"
-                                style={{
-                                    flexWrap:
-                                        "wrap",
-                                    justifyContent:
-                                        "flex-end",
-                                }}
-                            >
-                                {booking.tickets?.map(
-                                    (t) => (
-                                        <span
-                                            className="pill primary-pill"
-                                            key={
-                                                t.id ||
-                                                t._id
-                                            }
-                                        >
-                                            #
-                                            {
-                                                t.number
-                                            }
-                                        </span>
-                                    ),
-                                )}
-                            </div>
+                            <strong>
+                                ₹
+                                {Number(
+                                    booking.room?.ticketPrice ??
+                                    total /
+                                    Math.max(tickets.length, 1),
+                                ).toFixed(2)}
+                            </strong>
+                        </div>
+
+                        <div className="sumline">
+                            <span>Number of tickets</span>
+                            <strong>{tickets.length}</strong>
+                        </div>
+
+                        <div className="sumline total">
+                            <span>Total</span>
+                            <strong>₹{total.toFixed(2)}</strong>
                         </div>
                     </div>
+
+                    {!submitted && booking.expiresAt && (
+                        <div className="row">
+                            <span className="label muted">
+                                BOOKING EXPIRY
+                            </span>
+
+                            <strong
+                                style={{
+                                    color: "var(--amber)",
+                                }}
+                            >
+                                <Countdown
+                                    target={booking.expiresAt}
+                                />
+                            </strong>
+                        </div>
+                    )}
 
                     <div className="info">
                         <Info size={18} />
 
                         <span>
-                            Complete the
-                            Razorpay payment
-                            before the booking
-                            timer expires.
+                            Your booking remains pending until
+                            the administrator verifies the
+                            incoming payment. Never pay twice
+                            for the same booking.
                         </span>
-                    </div>
-
-                    <div className="row">
-                        <span className="label muted">
-                            PAYMENT SESSION
-                        </span>
-
-                        <strong
-                            style={{
-                                color:
-                                    "var(--amber)",
-                            }}
-                        >
-                            <Countdown
-                                target={
-                                    booking.expiresAt
-                                }
-                            />
-                        </strong>
                     </div>
                 </div>
             </main>

@@ -10,31 +10,37 @@ const s = new mongoose.Schema(
         total: Number,
         paymentMethod: {
             type: String,
-            enum: ['upi_qr', 'upi_id', 'card'],
-            default: 'upi_qr',
+            enum: ["upi_qr", "upi_id"],
+            default: "upi_qr",
         },
         paymentStatus: {
             type: String,
-            enum: ['pending', 'paid', 'failed', 'expired'],
-            default: 'pending',
+            enum: ["pending", "paid", "failed", "expired"],
+            default: "pending",
         },
         status: {
             type: String,
-            enum: ['pending', 'confirmed', 'cancelled', 'expired'],
-            default: 'pending',
+            enum: ["pending", "confirmed", "cancelled", "expired"],
+            default: "pending",
         },
-        expiresAt: Date,
-        upiReference: String,
-
-        razorpayOrderId: {
+        upiReference: {
             type: String,
-            index: true,
+            default: "",
         },
-
-        razorpayPaymentId: {
+        manualPaymentSubmitted: {
+            type: Boolean,
+            default: false,
+        },
+        paymentSubmittedAt: Date,
+        paymentVerifiedAt: Date,
+        paymentVerifiedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        },
+        paymentRejectionReason: {
             type: String,
+            default: "",
         },
-        razorpayPaymentId: String,
     },
     { timestamps: true }
 );
