@@ -169,6 +169,7 @@ export async function holdTickets(req, res) {
     }
 }
 
+
 export async function createBooking(req, res) {
     try {
         const {
@@ -176,21 +177,17 @@ export async function createBooking(req, res) {
             ticketIds,
             paymentMethod = "upi_qr",
             name,
-        } = req.body;
+            ticketColor = "yellow",
+        } = req.body || {};
 
+        // Validate payment method
         if (!["upi_qr", "upi_id"].includes(paymentMethod)) {
             return res.status(400).json({
-                message:
-                    "Choose UPI QR or GPay / UPI ID.",
+                message: "Choose UPI QR or GPay / UPI ID.",
             });
         }
 
-        // ADDED: Restrict color values to the seven colors offered in checkout.
-        const allowedTicketColors = new Set(["yellow", "pink", "green", "blue", "white", "purple", "orange"]);
-        if (!allowedTicketColors.has(String(ticketColor))) {
-            return res.status(400).json({ message: "Invalid ticket color" });
-        }
-
+        // Validate ticket selection
         if (
             !Array.isArray(ticketIds) ||
             ticketIds.length < 1 ||
@@ -209,6 +206,28 @@ export async function createBooking(req, res) {
             });
         }
 
+        // Validate ticket color
+        const allowedTicketColors = [
+            "yellow",
+            "pink",
+            "green",
+            "blue",
+            "white",
+            "purple",
+            "orange",
+        ];
+
+        const selectedTicketColor = String(ticketColor)
+            .trim()
+            .toLowerCase();
+
+        if (!allowedTicketColors.includes(selectedTicketColor)) {
+            return res.status(400).json({
+                message: "Invalid ticket color selected.",
+            });
+        }
+
+        // Validate room code
         const code = String(roomCode || "")
             .trim()
             .toUpperCase();
@@ -228,13 +247,14 @@ export async function createBooking(req, res) {
             });
         }
 
+        // Validate the registered name
         const requestedName = String(name || "").trim();
 
         if (
             requestedName &&
             user.name?.trim() &&
             user.name.trim().toLocaleLowerCase() !==
-            requestedName.toLocaleLowerCase()
+                requestedName.toLocaleLowerCase()
         ) {
             return res.status(409).json({
                 message:
@@ -242,6 +262,7 @@ export async function createBooking(req, res) {
             });
         }
 
+        // Verify that all selected tickets are still held by this user
         const tickets = await Ticket.find({
             _id: { $in: uniqueIds },
             room: room._id,
@@ -258,6 +279,7 @@ export async function createBooking(req, res) {
             });
         }
 
+        // Calculate amount on the server
         const amount =
             tickets.length * Number(room.ticketPrice);
 
@@ -270,14 +292,16 @@ export async function createBooking(req, res) {
         const reference = makeReference("TAM");
 
         const expiresAt = new Date(
-            Date.now() + PAYMENT_REVIEW_DURATION_MS,
+            Date.now() + PAYMENT_REVIEW_DURATION_MS
         );
 
+        // Create the pending booking
         const booking = await Booking.create({
             reference,
             room: room._id,
             user: user._id,
             tickets: tickets.map((ticket) => ticket._id),
+            ticketColor: selectedTicketColor,
             amount,
             fee: 0,
             total: amount,
@@ -289,6 +313,7 @@ export async function createBooking(req, res) {
             manualPaymentSubmitted: false,
         });
 
+        // Assign the held tickets to the booking
         const assigned = await Ticket.updateMany(
             {
                 _id: { $in: tickets.map((ticket) => ticket._id) },
@@ -300,9 +325,10 @@ export async function createBooking(req, res) {
             },
             {
                 $set: {
-                    booking: b._id,
+                    booking: booking._id,
+                    heldUntil: expiresAt,
                 },
-            },
+            }
         );
 
         if (assigned.modifiedCount !== tickets.length) {
@@ -310,7 +336,9 @@ export async function createBooking(req, res) {
 
             await Ticket.updateMany(
                 {
-                    _id: { $in: tickets.map((ticket) => ticket._id) },
+                    _id: {
+                        $in: tickets.map((ticket) => ticket._id),
+                    },
                     booking: booking._id,
                     status: "held",
                 },
@@ -321,7 +349,7 @@ export async function createBooking(req, res) {
                         heldBy: null,
                         booking: null,
                     },
-                },
+                }
             );
 
             return res.status(409).json({
@@ -330,23 +358,26 @@ export async function createBooking(req, res) {
             });
         }
 
+        // Manual UPI configuration
         const upiId = String(
-            process.env.UPI_ID || "",
+            process.env.UPI_ID || ""
         ).trim();
+
         const merchantName = String(
-            process.env.MERCHANT_NAME || "Tambola Pulse",
+            process.env.MERCHANT_NAME || "Tambola Pulse"
         ).trim();
 
         const whatsappNumber = String(
             process.env.ADMIN_WHATSAPP_NUMBER ||
-            process.env.ADMIN_PHONE ||
-            "",
+                process.env.ADMIN_PHONE ||
+                ""
         ).replace(/\D/g, "");
 
         return res.status(201).json({
             success: true,
             booking: {
                 ...bookingResponse(booking),
+                ticketColor: selectedTicketColor,
                 tickets: tickets.map(clean),
                 room: {
                     code: room.code,
@@ -366,6 +397,7 @@ export async function createBooking(req, res) {
         });
     }
 }
+
 
 export async function submitManualPayment(req, res) {
     try {

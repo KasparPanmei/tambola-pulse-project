@@ -41,6 +41,21 @@ const s = new mongoose.Schema(
             type: String,
             default: "",
         },
+
+        ticketColor: {
+            type: String,
+            enum: [
+                "yellow",
+                "pink",
+                "green",
+                "blue",
+                "white",
+                "purple",
+                "orange",
+            ],
+            default: "yellow",
+        },
+
     },
     { timestamps: true }
 );
