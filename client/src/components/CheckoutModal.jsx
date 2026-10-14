@@ -242,9 +242,19 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
 
             setMessage("Payment session created. Opening payment...");
 
+
             setTimeout(() => {
-                onPayment(booking);
+                onPayment({
+                    ...booking,
+                    fullName: name.trim(),
+                    customerName: name.trim(),
+                    name: name.trim(),
+                    phoneNumber: phone.trim(),
+                    customerPhone: phone.trim(),
+                    phone: phone.trim(),
+                });
             }, 150);
+
 
         } catch (e) {
             console.error("=== BOOKING ERROR ===");

@@ -12,7 +12,7 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { startGameEngine } from "./utils/gameEngine.js";
 const app = express(),
-  PORT = process.env.PORT || 5000;
+    PORT = process.env.PORT || 5000;
 const serverDirectory = path.dirname(fileURLToPath(import.meta.url));
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
 app.use(express.json());
@@ -26,7 +26,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/admin", adminRoutes);
 app.use((_, res) => res.status(404).json({ message: "Route not found" }));
 app.use((e, _, res, __) =>
-  res.status(500).json({ message: e.message || "Internal server error" }),
+    res.status(500).json({ message: e.message || "Internal server error" }),
 );
 connectDB()
     .then(() => {
