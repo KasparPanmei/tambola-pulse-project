@@ -56,7 +56,7 @@ export default function AdminLoginModal({ onClose }) {
         setLoading(true);
 
         try {
-            const { data } = await api.post(
+            await api.post(
                 "/auth/request-otp",
                 {
                     phone: normalized,
@@ -66,11 +66,7 @@ export default function AdminLoginModal({ onClose }) {
             setPhone(normalized);
             setOtpSent(true);
 
-            setMessage(
-                data.devOtp
-                    ? `Development OTP: ${data.devOtp}`
-                    : "OTP sent to your mobile number.",
-            );
+            setMessage("OTP sent to your mobile number.");
 
             setTimeout(() => {
                 otpRefs.current[0]?.focus();

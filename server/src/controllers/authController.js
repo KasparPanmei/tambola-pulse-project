@@ -1,21 +1,38 @@
-import bcrypt from "bcryptjs";
 import User from "../models/User.js";
-import OtpChallenge from "../models/OtpChallenge.js";
-import { makeOtp } from "../utils/reference.js";
 import { signToken } from "../utils/auth.js";
+import twilio from "twilio";
+
+function getTwilioClient() {
+    const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN } = process.env;
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+        throw new Error("Twilio Verify is not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.");
+    }
+    return twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+}
+
+function getVerifyServiceSid() {
+    const sid = process.env.TWILIO_VERIFY_SERVICE_SID;
+    if (!sid) throw new Error("Twilio Verify is not configured. Set TWILIO_VERIFY_SERVICE_SID.");
+    return sid;
+}
+
+function toSmsNumber(phone) {
+    // Keep the existing database phone format; normalize only the Twilio destination.
+    if (phone.startsWith("+")) return phone;
+    // Convert Indian 10-digit mobile numbers to E.164.
+    if (/^[6-9]\d{9}$/.test(phone)) return `+91${phone}`;
+    throw new Error("Use an international number with country code, such as +14155552671.");
+}
 
 export async function requestOtp(req, res) {
-    const phone = (req.body.phone || "").replace(/\s/g, "");
+    const phone = String(req.body.phone || "").replace(/\s/g, "");
 
     if (!/^\+?[1-9]\d{9,14}$/.test(phone)) {
-        return res.status(400).json({
-            message: "Enter a valid mobile number",
-        });
+        return res.status(400).json({ message: "Enter a valid mobile number" });
     }
 
     const requestedName = String(req.body.name || "").trim();
     const existingUser = await User.findOne({ phone });
-    // CHANGED: Do not let the same registered phone number be reused under a different booking name.
     if (
         requestedName &&
         existingUser?.name?.trim() &&
@@ -26,80 +43,49 @@ export async function requestOtp(req, res) {
         });
     }
 
-    const otp = makeOtp();
+    try {
+        const client = getTwilioClient();
+        await client.verify.v2
+            .services(getVerifyServiceSid())
+            .verifications.create({ to: toSmsNumber(phone), channel: "sms" });
 
-    const hash = await bcrypt.hash(otp, 10);
-
-    const ttl = Number(
-        process.env.OTP_TTL_MINUTES || 5,
-    );
-
-    await OtpChallenge.deleteMany({
-        phone,
-        verified: false,
-    });
-
-    await OtpChallenge.create({
-        phone,
-        otpHash: hash,
-        expiresAt: new Date(
-            Date.now() + ttl * 60000,
-        ),
-    });
-
-    console.log(`[DEV OTP] ${phone}: ${otp}`);
-
-    res.json({
-        message: "OTP sent",
-        ...(process.env.NODE_ENV !== "production"
-            ? { devOtp: otp }
-            : {}),
-    });
+        return res.json({ message: "OTP sent to your mobile number." });
+    } catch (error) {
+        console.error("Twilio Verify send failed:", error.code || error.message);
+        return res.status(502).json({
+            message: "Could not send the OTP SMS. Check the mobile number and Twilio configuration.",
+        });
+    }
 }
 
 export async function verifyOtp(req, res) {
-    const phone = (req.body.phone || "").replace(
-        /\s/g,
-        "",
-    );
+    const phone = String(req.body.phone || "").replace(/\s/g, "");
+    const code = String(req.body.otp || "").trim();
 
-    const c = await OtpChallenge.findOne({
-        phone,
-        verified: false,
-    }).sort({
-        createdAt: -1,
-    });
-
-    if (!c || c.expiresAt < new Date()) {
-        return res.status(400).json({
-            message: "OTP expired or not found",
-        });
+    if (!/^\+?[1-9]\d{9,14}$/.test(phone) || !/^\d{6}$/.test(code)) {
+        return res.status(400).json({ message: "Enter a valid mobile number and 6-digit OTP." });
     }
 
-    if (c.attempts >= 5) {
-        return res.status(429).json({
-            message: "Too many OTP attempts",
-        });
-    }
+    try {
+        const client = getTwilioClient();
+        const check = await client.verify.v2
+            .services(getVerifyServiceSid())
+            .verificationChecks.create({ to: toSmsNumber(phone), code });
 
-    c.attempts++;
-
-    const valid = await bcrypt.compare(
-        String(req.body.otp || ""),
-        c.otpHash,
-    );
-
-    if (!valid) {
-        await c.save();
-
-        return res.status(400).json({
-            message: "Incorrect OTP",
+        if (check.status !== "approved") {
+            return res.status(400).json({ message: "Incorrect or expired OTP" });
+        }
+    } catch (error) {
+        // Twilio Verify rejects invalid, expired, or already-used codes. Do not log the code.
+        console.error("Twilio Verify check failed:", error.code || error.message);
+        const status = [60200, 60202, 60203, 20404].includes(Number(error.code)) ? 400 : 502;
+        return res.status(status).json({
+            message: status === 400 ? "Incorrect or expired OTP" : "Could not verify the OTP. Please try again.",
         });
     }
 
     let user = await User.findOne({ phone });
     const requestedName = String(req.body.name || "").trim();
-    // CHANGED: Recheck the identity at OTP verification so a changed name cannot take over an existing phone account.
     if (
         requestedName &&
         user?.name?.trim() &&
@@ -110,32 +96,22 @@ export async function verifyOtp(req, res) {
         });
     }
 
-    c.verified = true;
-    await c.save();
-
     if (!user) {
         user = await User.create({
             phone,
-            name: (req.body.name || "").trim(),
+            name: requestedName,
             phoneVerified: true,
             role: "player",
         });
     } else {
-        // CHANGED: Only fill a missing profile name; never overwrite a registered name for the same phone.
-        if (!user.name?.trim() && requestedName) {
-            user.name = requestedName;
-        }
-
+        if (!user.name?.trim() && requestedName) user.name = requestedName;
         user.phoneVerified = true;
-
         await user.save();
     }
 
-    res.json({
+    return res.json({
         message: "OTP verified",
-
         token: signToken(user),
-
         user: {
             id: user._id,
             name: user.name,

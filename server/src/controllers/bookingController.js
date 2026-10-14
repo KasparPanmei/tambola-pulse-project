@@ -5,6 +5,16 @@ import Ticket from "../models/Ticket.js";
 import User from "../models/User.js";
 import { makeReference } from "../utils/reference.js";
 
+const allowedTicketColors = [
+    "yellow",
+    "pink",
+    "green",
+    "blue",
+    "white",
+    "purple",
+    "orange",
+];
+
 const HOLD_DURATION_MS = 15 * 60 * 1000;
 const PAYMENT_REVIEW_DURATION_MS = 24 * 60 * 60 * 1000;
 
@@ -254,7 +264,7 @@ export async function createBooking(req, res) {
             requestedName &&
             user.name?.trim() &&
             user.name.trim().toLocaleLowerCase() !==
-                requestedName.toLocaleLowerCase()
+            requestedName.toLocaleLowerCase()
         ) {
             return res.status(409).json({
                 message:
@@ -369,8 +379,8 @@ export async function createBooking(req, res) {
 
         const whatsappNumber = String(
             process.env.ADMIN_WHATSAPP_NUMBER ||
-                process.env.ADMIN_PHONE ||
-                ""
+            process.env.ADMIN_PHONE ||
+            ""
         ).replace(/\D/g, "");
 
         return res.status(201).json({
@@ -617,11 +627,19 @@ export async function joinRoom(req, res) {
         const ticketMap = new Map();
 
         for (const booking of bookings) {
+            // Copy the booking's saved color to each ticket returned to GameRoom.
+            const bookingColor = allowedTicketColors.includes(booking.ticketColor)
+                ? booking.ticketColor
+                : "yellow";
+
             for (const ticket of booking.tickets || []) {
                 if (ticket?._id) {
                     ticketMap.set(
                         ticket._id.toString(),
-                        ticket,
+                        {
+                            ...ticket.toObject(),
+                            ticketColor: bookingColor,
+                        },
                     );
                 }
             }

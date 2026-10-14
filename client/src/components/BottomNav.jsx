@@ -53,9 +53,6 @@ export default function BottomNav({
     const [message, setMessage] =
         useState("");
 
-    const [devOtp, setDevOtp] =
-        useState("");
-
     function openAdmin() {
         setAdminModal(true);
         setError("");
@@ -71,13 +68,11 @@ export default function BottomNav({
         setOtpSent(false);
         setError("");
         setMessage("");
-        setDevOtp("");
     }
 
     async function requestOTP() {
         setError("");
         setMessage("");
-        setDevOtp("");
 
         const cleanPhone = phone.replace(
             /\s/g,
@@ -98,7 +93,7 @@ export default function BottomNav({
         setLoading(true);
 
         try {
-            const { data } = await adminApi.post(
+            await adminApi.post(
                 "/auth/request-otp",
                 {
                     phone: cleanPhone,
@@ -106,10 +101,6 @@ export default function BottomNav({
             );
 
             setOtpSent(true);
-
-            if (data.devOtp) {
-                setDevOtp(data.devOtp);
-            }
 
             setMessage(
                 "OTP sent successfully.",
@@ -527,19 +518,6 @@ export default function BottomNav({
                                         Resend OTP
                                     </button>
                                 </>
-                            )}
-
-                            {devOtp && (
-                                <div className="admin-dev-otp">
-                                    <span>
-                                        DEVELOPMENT
-                                        OTP
-                                    </span>
-
-                                    <strong>
-                                        {devOtp}
-                                    </strong>
-                                </div>
                             )}
 
                             {message && (

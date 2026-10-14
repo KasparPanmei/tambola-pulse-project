@@ -103,11 +103,9 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                 return;
             }
             // CHANGED: Send the booking name with the phone so the server can reject phone reuse under a different name.
-            const { data } = await api.post("/auth/request-otp", { phone, name });
+            await api.post("/auth/request-otp", { phone, name });
             setSent(true);
-            setMsg(
-                data.devOtp ? `Development OTP: ${data.devOtp}` : "OTP sent by SMS",
-            );
+            setMsg("OTP sent by SMS. Please check your messages.");
         } catch (e) {
             setError(e.response?.data?.message || "Could not send OTP");
         }
