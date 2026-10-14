@@ -549,6 +549,8 @@ function ClaimValidationPanel({ claim, calledNumbers }) {
         { label: "Middle Line", value: `${middleLine.marked} / ${middleLine.total || 5}`, valid: middleLine.complete, active: prizeId === "middle-line" },
         { label: "Bottom Line", value: `${bottomLine.marked} / ${bottomLine.total || 5}`, valid: bottomLine.complete, active: prizeId === "bottom-line" },
         { label: "Four Corners", value: `${validation.markedCorners} / 4`, valid: validation.fourCorners, active: prizeId === "four-corners" },
+        // ADDED: Show the server-verified six-ticket condition in the admin claim review.
+        { label: "Sheet Prize", value: "Six tickets • one mark each", valid: prizeId === "sheet-prize", active: prizeId === "sheet-prize" },
         { label: "Full House", value: `${validation.markedTotal} / ${validation.totalNumbers || 15}`, valid: validation.totalNumbers > 0 && validation.markedTotal === validation.totalNumbers, active: prizeId === "full-house" },
     ];
     return (
@@ -865,6 +867,18 @@ export default function Admin() {
                 winners: 1,
                 enabled: true,
             },
+            // ADDED: Include Sheet Prize in the default setup for newly created rooms.
+            {
+                id: "sheet-prize",
+                name: "Sheet Prize",
+                shortName: "Sheet prize",
+                amount: 2500,
+                reward: "₹2,500",
+                detail: "First full sheet with at least one mark on every ticket",
+                accent: "mint",
+                winners: 1,
+                enabled: true,
+            },
             {
                 id: "full-house",
                 name: "Full House",
@@ -1143,6 +1157,18 @@ export default function Admin() {
                         reward: "₹3,000",
                         detail: "Mark the outside corners",
                         accent: "gold",
+                        winners: 1,
+                        enabled: true,
+                    },
+                    // ADDED: Reset the default prize configuration with Sheet Prize included.
+                    {
+                        id: "sheet-prize",
+                        name: "Sheet Prize",
+                        shortName: "Sheet prize",
+                        amount: 2500,
+                        reward: "₹2,500",
+                        detail: "First full sheet with at least one mark on every ticket",
+                        accent: "mint",
                         winners: 1,
                         enabled: true,
                     },

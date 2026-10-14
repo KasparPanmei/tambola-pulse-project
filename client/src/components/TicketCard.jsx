@@ -4,6 +4,8 @@ import TicketGrid from "./TicketGrid.jsx";
 export default function TicketCard({
     ticket,
     selected,
+    // ADDED: Preview the active checkout color, or reuse the saved color outside checkout.
+    ticketColor = ticket.ticketColor || "yellow",
     onToggle,
 }) {
     const isAvailable = ticket.status === "available";
@@ -22,9 +24,10 @@ export default function TicketCard({
         }
     };
 
+    // MODIFIED: The wrapper color class styles the traditional colored ticket paper.
     return (
         <div
-            className={`ticket ${selected
+            className={`ticket ticket-color-${ticketColor} ${selected
                 ? "selected"
                 : isAvailable
                     ? "available"

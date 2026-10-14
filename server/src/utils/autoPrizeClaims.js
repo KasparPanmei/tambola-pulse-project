@@ -43,9 +43,20 @@ export function getPrizeEligibility(prizeId, grid, calledNumbers) {
         }
         case "full-house":
             return totalMarked === 15;
+        case "sheet-prize":
+            // MODIFIED: A sheet prize must be evaluated over its full six-ticket booking, never one ticket.
+            return false; // Evaluated against a complete six-ticket booking below.
         default:
             return false;
     }
+}
+
+// ADDED: A sheet qualifies only when all six tickets each have at least one called number.
+export function isSheetPrizeEligible(tickets, calledNumbers) {
+    return Array.isArray(tickets) && tickets.length === 6 && tickets.every((ticket) =>
+        Array.isArray(ticket?.grid) &&
+        ticket.grid.flat().some((value) => isMarked(value, calledNumbers)),
+    );
 }
 
 function idOf(value) {
@@ -165,12 +176,19 @@ export async function autoClaimEligiblePrizes(roomSnapshot) {
             .lean(),
     ]);
 
+    const calledNumbers = new Set(roomSnapshot.calledNumbers.map(Number));
     const candidates = bookings.flatMap((booking) =>
         (booking.tickets || [])
             .filter((ticket) => Array.isArray(ticket.grid))
-            .map((ticket) => ({ ticket, user: booking.user })),
+            .map((ticket) => ({ ticket, user: booking.user, booking })),
     ).sort(ticketOrder);
-    const calledNumbers = new Set(roomSnapshot.calledNumbers.map(Number));
+    // ADDED: Group tickets by their confirmed booking so separate purchases cannot combine into a sheet.
+    const sheetCandidates = bookings.flatMap((booking) => {
+        const sheet = (booking.tickets || []).filter((ticket) => Array.isArray(ticket.grid));
+        if (!isSheetPrizeEligible(sheet, calledNumbers)) return [];
+        const firstTicket = [...sheet].sort((a, b) => Number(a.number || 0) - Number(b.number || 0))[0];
+        return [{ ticket: firstTicket, user: booking.user, booking }];
+    }).sort(ticketOrder);
     const claimsByPrize = new Map();
     for (const claim of activeClaims) {
         const key = String(claim.prizeId);
@@ -248,9 +266,12 @@ export async function autoClaimEligiblePrizes(roomSnapshot) {
             continue;
         }
 
-        const winner = candidates.find(({ ticket }) =>
-            getPrizeEligibility(prizeId, ticket.grid, calledNumbers),
-        );
+        // MODIFIED: Select the earliest qualifying six-ticket booking for Sheet Prize; retain ticket rules for other prizes.
+        const winner = prizeId === "sheet-prize"
+            ? sheetCandidates[0]
+            : candidates.find(({ ticket }) =>
+                getPrizeEligibility(prizeId, ticket.grid, calledNumbers),
+            );
         if (!winner) continue;
 
         const claimedAt = new Date();

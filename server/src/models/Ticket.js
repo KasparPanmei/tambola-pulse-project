@@ -10,6 +10,8 @@ const s = new mongoose.Schema(
         number: { type: Number, required: true },
         publicCode: { type: String, unique: true },
         grid: [[Number]],
+        // ADDED: Persist the selected ticket paper color for checkout and live-game rendering.
+        ticketColor: { type: String, enum: ["yellow", "pink", "green", "blue", "white", "purple", "orange"], default: "yellow" },
         status: {
             type: String,
             enum: ["available", "held", "booked"],

@@ -8,11 +8,11 @@ import { makeReference } from "../utils/reference.js";
 const HOLD_DURATION_MS = 15 * 60 * 1000;
 const PAYMENT_REVIEW_DURATION_MS = 24 * 60 * 60 * 1000;
 
-const clean = (ticket) => ({
-    id: ticket._id,
-    number: ticket.number,
-    publicCode: ticket.publicCode,
-    grid: ticket.grid,
+const clean = (t) => ({
+    id: t._id,
+    number: t.number,
+    publicCode: t.publicCode,
+    grid: t.grid,
 });
 
 async function release() {
@@ -176,13 +176,19 @@ export async function createBooking(req, res) {
             ticketIds,
             paymentMethod = "upi_qr",
             name,
-        } = req.body || {};
+        } = req.body;
 
         if (!["upi_qr", "upi_id"].includes(paymentMethod)) {
             return res.status(400).json({
                 message:
                     "Choose UPI QR or GPay / UPI ID.",
             });
+        }
+
+        // ADDED: Restrict color values to the seven colors offered in checkout.
+        const allowedTicketColors = new Set(["yellow", "pink", "green", "blue", "white", "purple", "orange"]);
+        if (!allowedTicketColors.has(String(ticketColor))) {
+            return res.status(400).json({ message: "Invalid ticket color" });
         }
 
         if (
@@ -294,8 +300,7 @@ export async function createBooking(req, res) {
             },
             {
                 $set: {
-                    booking: booking._id,
-                    heldUntil: expiresAt,
+                    booking: b._id,
                 },
             },
         );
@@ -555,9 +560,9 @@ export async function joinRoom(req, res) {
         })
             .populate({
                 path: "tickets",
-                select: "_id number publicCode grid status",
-            })
-            .sort({ createdAt: 1 });
+                select:
+                    "_id number publicCode grid status",
+            });
 
         if (!bookings.length) {
             const pendingBooking = await Booking.exists({

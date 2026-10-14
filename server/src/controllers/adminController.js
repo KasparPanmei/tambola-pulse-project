@@ -138,6 +138,8 @@ export async function createRoom(req, res) {
                                 "middle-line",
                                 "bottom-line",
                                 "four-corners",
+                                // ADDED: Include the sheet-level prize ID in the default prize ID order.
+                                "sheet-prize",
                                 "full-house",
                             ][index] ||
                             `prize-${index + 1}`,

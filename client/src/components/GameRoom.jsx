@@ -651,6 +651,8 @@ function TambolaTicket({
     ticket,
     calledNumbers,
     ticketNumber,
+    // ADDED: Use each buyer's saved ticket paper color in the live game.
+    ticketColor = "yellow",
 }) {
     const markedCount =
         Array.isArray(ticket)
@@ -665,8 +667,9 @@ function TambolaTicket({
                 ).length
             : 0;
 
+    // MODIFIED: Theme the live ticket using its persisted selected color.
     return (
-        <section className="ticket-card panel-card">
+        <section className={`ticket-card panel-card ticket-color-${ticketColor}`}>
             <div className="ticket-topline">
                 <div>
                     <div className="eyebrow with-icon">
@@ -2043,6 +2046,7 @@ export default function GameRoom({
                     </div>
                 </div>
 
+                {/* MODIFIED: Mobile styling prioritizes caller, the player's tickets, then prizes. */}
                 <div className="room-layout">
 
                     {/* CALLER */}
@@ -2078,7 +2082,8 @@ export default function GameRoom({
                     </div>
 
                     {/* TICKETS */}
-                    <div className="ticket-rail">
+                    {/* MODIFIED: Group all booked tickets in a distinct, accessible player Tickets section. */}
+                    <section className="ticket-rail player-tickets-section" aria-label="Your tickets">
                         <div className="ticket-heading-row">
                             <SectionLabel
                                 eyebrow="YOUR GAME PIECES"
@@ -2111,10 +2116,11 @@ export default function GameRoom({
                                         ticket.publicCode ||
                                         ticket.number
                                     }
+                                    ticketColor={ticket.ticketColor || "yellow"}
                                 />
                             )
                         )}
-                    </div>
+                    </section>
 
                     {/* NUMBER BOARD */}
                     <div className="board-rail">
