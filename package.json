@@ -1,5 +1,25 @@
 {
   "dependencies": {
     "sonner": "^2.0.8"
-  }
+  },
+  "name": "tambola-pulse-project",
+  "version": "1.0.0",
+  "description": "Implements the supplied HTML flow: room card → ticket selection → player/OTP → payment method → UPI QR checkout → payment verification → room entry state.",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client",
+    "start": "npm run start --prefix server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KasparPanmei/tambola-pulse-project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/KasparPanmei/tambola-pulse-project/issues"
+  },
+  "homepage": "https://github.com/KasparPanmei/tambola-pulse-project#readme"
 }
