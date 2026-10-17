@@ -1846,22 +1846,16 @@ button {
 .admin-generator-actions {
   display: flex;
   align-items: center;
-
   gap: 6px;
-
   flex-wrap: wrap;
 }
 
 .admin-count-input {
   display: flex;
   align-items: center;
-
   gap: 6px;
-
   padding: 6px 9px;
-
   border-radius: 6px;
-
   background: var(--admin-sidebar);
 }
 
@@ -1876,7 +1870,7 @@ button {
 }
 
 .admin-count-input input {
-  width: 48px;
+  width: 100%;
 
   border: 0;
 
@@ -3105,8 +3099,6 @@ button {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-
 
 .admin-login-message {
   display: flex;
