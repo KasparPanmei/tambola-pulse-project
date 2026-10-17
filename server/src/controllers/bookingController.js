@@ -23,6 +23,8 @@ const clean = (t) => ({
     number: t.number,
     publicCode: t.publicCode,
     grid: t.grid,
+    sheetId: t.sheetId,
+    sheetNumber: t.sheetNumber,
 });
 
 async function release() {
@@ -124,6 +126,23 @@ export async function holdTickets(req, res) {
             });
         }
 
+        // ADDED: A six-ticket sheet purchase must contain all six available tickets
+        // from the same persisted sheet, never an arbitrary selection of six tickets.
+        if (uniqueIds.length === 6) {
+            const sheetId = availableTickets[0]?.sheetId;
+            const sameSheet = Boolean(sheetId) && availableTickets.every((ticket) => String(ticket.sheetId) === String(sheetId));
+            const completeSheet = sameSheet
+                ? await Ticket.find({ room: room._id, sheetId, status: "available" }).select("_id").lean()
+                : [];
+            const requestedSet = new Set(uniqueIds);
+            if (completeSheet.length !== 6 || completeSheet.some((ticket) => !requestedSet.has(String(ticket._id)))) {
+                return res.status(409).json({
+                    message: "No complete available sheet matches those tickets. Please select a complete sheet again.",
+                    code: "FULL_SHEET_UNAVAILABLE",
+                });
+            }
+        }
+
         const until = new Date(
             Date.now() + HOLD_DURATION_MS,
         );
@@ -145,6 +164,11 @@ export async function holdTickets(req, res) {
         );
 
         if (result.modifiedCount !== uniqueIds.length) {
+            // ADDED: Roll back any tickets partially held in a concurrent sheet-selection race.
+            await Ticket.updateMany(
+                { _id: { $in: uniqueIds }, status: "held", heldBy: user._id, heldUntil: until, booking: null },
+                { $set: { status: "available", heldUntil: null, heldBy: null, booking: null } },
+            );
             return res.status(409).json({
                 message:
                     "Some tickets were just taken. Please select again.",
@@ -603,7 +627,7 @@ export async function joinRoom(req, res) {
             .populate({
                 path: "tickets",
                 select:
-                    "_id number publicCode grid status",
+                    "_id number publicCode grid status sheetId sheetNumber",
             });
 
         if (!bookings.length) {

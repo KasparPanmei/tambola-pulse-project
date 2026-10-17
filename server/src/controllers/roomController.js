@@ -36,7 +36,7 @@ export async function getActiveRoom(req, res) {
                 number: 1,
             })
             .select(
-                "_id number publicCode grid status",
+                "_id number publicCode grid status sheetId sheetNumber",
             );
 
         return res.json({
@@ -92,7 +92,7 @@ export async function getRoom(req, res) {
                     number: 1,
                 })
                 .select(
-                    "_id number publicCode grid status",
+                    "_id number publicCode grid status sheetId sheetNumber",
                 );
 
         return res.json({

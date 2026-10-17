@@ -10,6 +10,10 @@ const s = new mongoose.Schema(
         number: { type: Number, required: true },
         publicCode: { type: String, unique: true },
         grid: [[Number]],
+        // ADDED: Group each consecutive set of six tickets into a purchasable sheet.
+        sheetId: { type: String, default: null, index: true },
+        // ADDED: Human-readable sheet number shown on each ticket card.
+        sheetNumber: { type: Number, default: null },
         // ADDED: Persist the selected ticket paper color for checkout and live-game rendering.
         ticketColor: { type: String, enum: ["yellow", "pink", "green", "blue", "white", "purple", "orange"], default: "yellow" },
         status: {
@@ -33,4 +37,5 @@ const s = new mongoose.Schema(
     { timestamps: true },
 );
 s.index({ room: 1, number: 1 }, { unique: true });
+s.index({ room: 1, sheetId: 1, status: 1 });
 export default mongoose.model("Ticket", s);

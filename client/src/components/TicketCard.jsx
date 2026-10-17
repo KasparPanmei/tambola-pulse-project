@@ -55,6 +55,11 @@ export default function TicketCard({
                         Ticket #{ticket.number}
                     </strong>
 
+                    {/* ADDED: Identify the parent sheet on every displayed ticket. */}
+                    <span className="ticket-sheet-label">
+                        Sheet {ticket.sheetNumber ?? "—"}
+                    </span>
+
                     <span className="code">
                         {ticket.publicCode}
                     </span>

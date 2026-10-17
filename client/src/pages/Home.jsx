@@ -263,7 +263,11 @@ export default function Home() {
                         <div className="home-upcoming-room-copy">
                             <span className="home-upcoming-eyebrow">NEXT GAME STARTS IN</span>
                             <strong className="home-upcoming-countdown">
-                                <Countdown target={new Date(room.startsAt)} />
+                                {/* CHANGED: Show the upcoming room countdown as days, hours, minutes, and seconds. */}
+                                <Countdown
+                                    target={new Date(room.startsAt)}
+                                    format="days-hours-minutes-seconds"
+                                />
                             </strong>
                             <span className="home-upcoming-room-code">Room #{room.code}</span>
                         </div>

@@ -374,6 +374,16 @@ button {
   gap: 8px;
   min-width: 0;
 }
+.ticket-sheet-label {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--amber);
+  color: #2a1700;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
 .mark {
   width: 24px;
   height: 24px;
@@ -7160,9 +7170,11 @@ button {
 }
 .home-upcoming-countdown {
   color: #ffffff;
-  font-size: clamp(28px, 8vw, 42px);
+  font-size: clamp(16px, 4.5vw, 28px);
   line-height: 1.05;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   text-shadow: 0 0 22px rgba(165, 180, 252, 0.42);
 }
 .home-upcoming-room-code {

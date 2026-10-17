@@ -1180,6 +1180,7 @@ export default function Admin() {
         revenue: 0,
     });
     const [loading, setLoading] = useState(true);
+    // CHANGED: The admin can request any ticket quantity, including partial final strips.
     const [ticketCount, setTicketCount] = useState(100);
     const [cadence, setCadence] = useState(5);
 
@@ -1643,6 +1644,7 @@ export default function Admin() {
     async function generateTickets() {
         if (!roomCode) { setLastAction("Create a room before generating tickets."); return; }
         const requestedCount = Number(ticketCount);
+        // CHANGED: Validate any integer ticket count from 1 through 1000.
         if (!Number.isInteger(requestedCount) || requestedCount < 1 || requestedCount > 1000) { setLastAction("Ticket count must be between 1 and 1000."); return; }
         try {
             const { data } = await adminApi.post("/admin/tickets/generate", { roomCode, count: requestedCount });
@@ -2687,10 +2689,11 @@ export default function Admin() {
                                 id="tickets"
                                 className="admin-panel admin-generator-panel"
                             >
+                                {/* CHANGED: Explain six-ticket strip rules and unique ticket layouts. */}
                                 <PanelHeader
                                     icon={Ticket}
                                     title="Ticket Generation & Live Sync Deck"
-                                    description="Generate unique Tambola tickets and prepare them for the live room."
+                                    description="Generate distinct tickets in standard six-ticket strips. Each complete strip uses 1–90 once; the final strip may be partial."
                                     tag="INVENTORY CONTROL"
                                 />
 
@@ -2700,10 +2703,12 @@ export default function Admin() {
                                             TICKETS
                                         </span>
 
+                                        {/* CHANGED: Allow any ticket count, not just multiples of six. */}
                                         <input
                                             type="number"
                                             min="1"
                                             max="1000"
+                                            step="1"
                                             value={ticketCount}
                                             onChange={(event) =>
                                                 setTicketCount(

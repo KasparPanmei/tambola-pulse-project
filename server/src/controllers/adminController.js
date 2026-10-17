@@ -1,7 +1,8 @@
 import Room from "../models/Room.js";
 import Ticket from "../models/Ticket.js";
 import Booking from "../models/Booking.js";
-import { generateTicket } from "../utils/tickets.js";
+// CHANGED: Generate complete six-ticket sheets instead of standalone tickets.
+import { generateTicketStrip } from "../utils/tickets.js";
 
 export async function getAdminDashboard(req, res) {
     try {
@@ -301,6 +302,7 @@ export async function generateAdminTickets(
             req.body.count,
         );
 
+        // CHANGED: Accept any requested ticket count; only the final strip may be partial.
         if (
             !Number.isInteger(requestedCount) ||
             requestedCount < 1 ||
@@ -308,7 +310,7 @@ export async function generateAdminTickets(
         ) {
             return res.status(400).json({
                 message:
-                    "Ticket count must be between 1 and 1000",
+                    "Ticket count must be between 1 and 1000.",
             });
         }
 
@@ -327,26 +329,44 @@ export async function generateAdminTickets(
                 room: room._id,
             });
 
+        // CHANGED: Reject repeated 15-number ticket layouts, including against
+        // tickets already generated for this room.
+        const existingTickets = await Ticket.find({ room: room._id }).select("grid sheetId sheetNumber").lean();
+        const ticketSignatures = new Set(existingTickets.map(({ grid }) => JSON.stringify(grid)));
+        const existingSheetIds = new Set(existingTickets.map(({ sheetId }) => sheetId).filter(Boolean));
         const documents = [];
 
-        for (
-            let i = 0;
-            i < requestedCount;
-            i++
-        ) {
-            const number =
-                existingCount + i + 1;
+        // CHANGED: Generate valid six-ticket strips, then keep exactly the
+        // requested number of tickets (the last strip can be partial).
+        for (let offset = 0; offset < requestedCount; offset += 6) {
+            let strip;
+            for (let attempt = 0; attempt < 100; attempt++) {
+                const candidate = generateTicketStrip();
+                const signatures = candidate.map((grid) => JSON.stringify(grid));
+                if (new Set(signatures).size === signatures.length && signatures.every((signature) => !ticketSignatures.has(signature))) {
+                    strip = candidate;
+                    signatures.forEach((signature) => ticketSignatures.add(signature));
+                    break;
+                }
+            }
+            if (!strip) throw new Error("Unable to generate a unique ticket set; please retry.");
 
-            documents.push({
-                room: room._id,
-                number,
-                publicCode:
-                    `${room.code}-${String(
-                        number,
-                    ).padStart(2, "0")}`,
-                grid: generateTicket(),
-                status: "available",
-            });
+            const ticketsToStore = Math.min(6, requestedCount - offset);
+            // ADDED: Store a shared identifier so checkout can reserve the exact six-ticket strip.
+            const sheetId = `${room._id.toString()}-${existingCount + offset + 1}`;
+            const sheetNumber = existingSheetIds.size + Math.floor(offset / 6) + 1;
+            for (let index = 0; index < ticketsToStore; index++) {
+                const number = existingCount + offset + index + 1;
+                documents.push({
+                    room: room._id,
+                    number,
+                    publicCode: `${room.code}-${String(number).padStart(2, "0")}`,
+                    grid: strip[index],
+                    sheetId,
+                    sheetNumber,
+                    status: "available",
+                });
+            }
         }
 
         const created =

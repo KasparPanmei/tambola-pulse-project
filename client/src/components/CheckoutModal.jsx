@@ -6,6 +6,18 @@ import api from "../lib/api.js";
 import Countdown from "./Countdown.jsx";
 import TicketCard from "./TicketCard.jsx";
 
+// ADDED: Only a complete six-ticket group may be sold as a sheet.
+function firstCompleteAvailableSheet(tickets) {
+    const sheets = new Map();
+    for (const ticket of tickets || []) {
+        if (!ticket.sheetId || ticket.status !== "available") continue;
+        const group = sheets.get(ticket.sheetId) || [];
+        group.push(ticket);
+        sheets.set(ticket.sheetId, group);
+    }
+    return [...sheets.values()].find((group) => group.length === 6) || null;
+}
+
 export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
 
     const [selected, setSelected] = useState([]),
@@ -30,8 +42,8 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
         [verifiedIdentity, setVerifiedIdentity] = useState(null);
     const amount = selected.length * room.ticketPrice;
     // ADDED: Show a popup when a complete six-ticket sheet is no longer available.
-    const notifyFullSheetUnavailable = () => toast.warning("Full sheet is no longer available", {
-        description: "There are fewer than 6 tickets left. Please choose from the available tickets instead.",
+    const notifyFullSheetUnavailable = () => toast.warning("No complete sheet is available", {
+        description: "All six tickets in a sheet must be available together. Please try again later or choose individual tickets.",
         duration: 5000,
     });
     // ADDED: Keep the displayed ticket list synchronized with refreshed parent inventory.
@@ -59,13 +71,17 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
     }, []);
     const toggle = (t) => {
         setError("");
-        setSelected((a) =>
-            a.some((x) => x._id === t._id)
-                ? a.filter((x) => x._id !== t._id)
-                : a.length < 6
-                    ? [...a, t]
-                    : a,
-        );
+        setSelected((current) => {
+            if (current.some((ticket) => ticket._id === t._id)) {
+                return current.filter((ticket) => ticket._id !== t._id);
+            }
+            if (current.length >= 6) return current;
+            if (current.length === 5 && (!t.sheetId || current.some((ticket) => ticket.sheetId !== t.sheetId))) {
+                toast.warning("Select one complete sheet", { description: "To select six tickets together, all six must belong to the same sheet." });
+                return current;
+            }
+            return [...current, t];
+        });
     };
     // MODIFIED: Recheck server inventory before allowing the six-ticket Full Sheet bundle.
     const bundle = async (n) => {
@@ -79,17 +95,16 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             const { data } = await api.get(`/rooms/${encodeURIComponent(room.code)}`);
             const latestTickets = Array.isArray(data?.tickets) ? data.tickets : [];
             setAvailableTickets(latestTickets);
-            if (latestTickets.length < 6) {
-                const availableIds = new Set(latestTickets.map((ticket) => ticket._id));
-                setSelected((current) => current.filter((ticket) => availableIds.has(ticket._id)));
-                // MODIFIED: Replace the inline warning with a popup notification.
+            const completeSheet = firstCompleteAvailableSheet(latestTickets);
+            if (!completeSheet) {
+                setSelected([]);
                 notifyFullSheetUnavailable();
                 return;
             }
-            setSelected(latestTickets.slice(0, 6));
+            setSelected(completeSheet);
         } catch (e) {
-            // ADDED: Preserve the full-sheet warning if the last known inventory is already below six.
-            if (availableTickets.length < 6) notifyFullSheetUnavailable();
+            // ADDED: Preserve the warning when the last known inventory has no complete grouped sheet.
+            if (!firstCompleteAvailableSheet(availableTickets)) notifyFullSheetUnavailable();
             else setError(e.response?.data?.message || "Could not check the latest ticket availability. Please try again.");
         } finally {
             setCheckingFullSheet(false);
@@ -143,9 +158,8 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             return;
         }
 
-        // ADDED: Do not submit a six-ticket purchase when refreshed inventory is below six.
-        if (selected.length === 6 && availableTickets.length < 6) {
-            // MODIFIED: Keep the last-line full-sheet safeguard as a popup, not an inline error.
+        // ADDED: Do not submit six tickets unless they still represent one complete sheet.
+        if (selected.length === 6 && (!selected[0]?.sheetId || selected.some((ticket) => ticket.sheetId !== selected[0].sheetId))) {
             notifyFullSheetUnavailable();
             return;
         }
@@ -155,7 +169,11 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             verifiedIdentity?.name?.trim() &&
             verifiedIdentity.name.trim().toLocaleLowerCase() !== name.trim().toLocaleLowerCase()
         ) {
-            setError("This phone number is already registered under a different name. Please enter another phone number.");
+            // CHANGED: Show this identity conflict in the app-wide top notification, not inside the modal.
+            toast.warning("Phone number already registered", {
+                description: "This phone number is already registered under a different name. Please enter another phone number.",
+                duration: 6000,
+            });
             return;
         }
 
@@ -261,6 +279,15 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             const status = e.response?.status;
             const serverMessage = e.response?.data?.message;
 
+            // CHANGED: Use the same top notification if the server reports this identity conflict.
+            if (serverMessage?.toLowerCase().includes("phone number is already registered under a different name")) {
+                toast.warning("Phone number already registered", {
+                    description: serverMessage,
+                    duration: 6000,
+                });
+                return;
+            }
+
 
             if (status === 401) {
                 localStorage.removeItem("tp_token");
@@ -277,18 +304,21 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
 
 
             if (status === 409) {
-                // ADDED: Recheck inventory after a conflict so a now-unavailable full sheet gets the requested popup.
+                // ADDED: Refresh sheet groups after a conflict; offer another complete sheet if available.
                 if (selected.length === 6) {
                     try {
                         const { data } = await api.get(`/rooms/${encodeURIComponent(room.code)}`);
                         const latestTickets = Array.isArray(data?.tickets) ? data.tickets : [];
                         setAvailableTickets(latestTickets);
-                        if (latestTickets.length < 6) {
-                            const availableIds = new Set(latestTickets.map((ticket) => ticket._id));
-                            setSelected((current) => current.filter((ticket) => availableIds.has(ticket._id)));
+                        const nextSheet = firstCompleteAvailableSheet(latestTickets);
+                        if (!nextSheet) {
+                            setSelected([]);
                             notifyFullSheetUnavailable();
                             return;
                         }
+                        setSelected(nextSheet);
+                        toast.warning("That sheet was just taken", { description: "We selected another complete sheet. Confirm again to reserve it." });
+                        return;
                     } catch {
                         // Keep the server conflict message below if inventory could not be refreshed.
                     }
@@ -330,6 +360,11 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
         }
     };
     const ids = useMemo(() => new Set(selected.map((t) => t._id)), [selected]);
+    // CHANGED: First cap inventory to six, then show either four or that capped set.
+    const firstSixAvailableTickets = availableTickets.slice(0, 6);
+    const visibleTickets = showAllTickets
+        ? firstSixAvailableTickets
+        : firstSixAvailableTickets.slice(0, 4);
     return (
         <div className="overlay">
             <div className="modal">
@@ -421,7 +456,7 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                     <div className="ticket-list">
                         {/* MODIFIED: Render from the refreshed available-ticket list. */}
                         {/* MODIFIED: Preview ticket cards using the currently selected color. */}
-                        {(showAllTickets ? availableTickets : availableTickets.slice(0, 4)).map((t) => (
+                        {visibleTickets.map((t) => (
                             <TicketCard
                                 key={t._id}
                                 ticket={t}
@@ -442,8 +477,8 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                             }}
                         >
                             {showAllTickets
-                                ? "Show Less"
-                                : `Show More Tickets (${availableTickets.length - 4})`}
+                                ? `Show Less (showing ${visibleTickets.length} max)`
+                                : "Show More Tickets (first 6 max)"}
                         </button>
                     )}
                     <div className="card pad stack">
