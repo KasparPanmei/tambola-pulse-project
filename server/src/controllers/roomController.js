@@ -109,7 +109,6 @@ export async function getRoom(req, res) {
         return res.status(500).json({
             message:
                 "Unable to load game room",
-            error: error.message,
         });
     }
 }
@@ -200,7 +199,6 @@ export async function startRoom(req, res) {
             message:
                 "Unable to start game",
 
-            error: error.message,
         });
     }
 }
@@ -419,8 +417,7 @@ export async function drawRoomBall(
         );
 
         return res.status(400).json({
-            message:
-                error.message,
+            message: "Unable to draw the next ball.",
         });
     }
 }

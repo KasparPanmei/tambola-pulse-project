@@ -1,6 +1,7 @@
 import { Router } from "express";
 // ADDED: Raw audio upload parser and room music endpoint handlers.
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { controlRoomMusic, getMusicLibrary, selectRoomMusic, uploadRoomMusic } from "../controllers/musicController.js";
 
 import {
@@ -47,6 +48,7 @@ router.use(
 // ADDED: These routes remain protected by the router-level admin authentication above.
 router.post(
     "/music/upload",
+    rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: true, legacyHeaders: false }),
     express.raw({ type: "application/octet-stream", limit: "25mb" }),
     uploadRoomMusic,
 );

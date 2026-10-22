@@ -51,9 +51,7 @@ export async function getAdminClaims(req, res) {
         );
 
         return res.status(500).json({
-            message:
-                error.message ||
-                "Unable to load claims",
+            message: "Unable to load claims",
         });
     }
 }
@@ -133,9 +131,7 @@ export async function verifyClaim(req, res) {
         );
 
         return res.status(500).json({
-            message:
-                error.message ||
-                "Unable to verify claim",
+            message: "Unable to verify claim",
         });
     }
 }
@@ -198,9 +194,7 @@ export async function rejectClaim(req, res) {
         );
 
         return res.status(500).json({
-            message:
-                error.message ||
-                "Unable to reject claim",
+            message: "Unable to reject claim",
         });
     }
 }

@@ -110,6 +110,11 @@ export async function holdTickets(req, res) {
                 message: "Room or user not found.",
             });
         }
+        if (room.status !== "upcoming") {
+            return res.status(409).json({
+                message: "Ticket sales are closed for this room.",
+            });
+        }
 
         const now = new Date();
 
@@ -280,6 +285,11 @@ export async function createBooking(req, res) {
                 message: "Room or user not found.",
             });
         }
+        if (room.status !== "upcoming") {
+            return res.status(409).json({
+                message: "Ticket sales are closed for this room.",
+            });
+        }
 
         // Validate the registered name
         const requestedName = String(name || "").trim();
@@ -426,8 +436,7 @@ export async function createBooking(req, res) {
         console.error("createBooking:", error);
 
         return res.status(500).json({
-            message:
-                error.message || "Unable to create booking.",
+            message: "Unable to create booking.",
         });
     }
 }

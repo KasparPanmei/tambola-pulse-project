@@ -25,13 +25,13 @@ function toSmsNumber(phone) {
 }
 
 export async function requestOtp(req, res) {
-    const phone = String(req.body.phone || "").replace(/\s/g, "");
+    const phone = String(req.body?.phone || "").replace(/\s/g, "");
 
-    if (!/^\+?[1-9]\d{9,14}$/.test(phone)) {
+    if (!( /^\+[1-9]\d{9,14}$/.test(phone) || /^[6-9]\d{9}$/.test(phone) )) {
         return res.status(400).json({ message: "Enter a valid mobile number" });
     }
 
-    const requestedName = String(req.body.name || "").trim();
+    const requestedName = String(req.body?.name || "").trim();
     const existingUser = await User.findOne({ phone });
     if (
         requestedName &&
@@ -59,10 +59,10 @@ export async function requestOtp(req, res) {
 }
 
 export async function verifyOtp(req, res) {
-    const phone = String(req.body.phone || "").replace(/\s/g, "");
-    const code = String(req.body.otp || "").trim();
+    const phone = String(req.body?.phone || "").replace(/\s/g, "");
+    const code = String(req.body?.otp || "").trim();
 
-    if (!/^\+?[1-9]\d{9,14}$/.test(phone) || !/^\d{6}$/.test(code)) {
+    if (!( /^\+[1-9]\d{9,14}$/.test(phone) || /^[6-9]\d{9}$/.test(phone) ) || !/^\d{6}$/.test(code)) {
         return res.status(400).json({ message: "Enter a valid mobile number and 6-digit OTP." });
     }
 
@@ -85,7 +85,7 @@ export async function verifyOtp(req, res) {
     }
 
     let user = await User.findOne({ phone });
-    const requestedName = String(req.body.name || "").trim();
+    const requestedName = String(req.body?.name || "").trim();
     if (
         requestedName &&
         user?.name?.trim() &&

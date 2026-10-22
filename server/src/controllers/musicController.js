@@ -8,6 +8,7 @@ import Room from "../models/Room.js";
 
 // ADDED: Admin-uploaded audio is saved on the server and referenced from the room document.
 const allowedExtensions = new Set([".mp3", ".wav", ".ogg", ".m4a", ".aac", ".webm"]);
+const MAX_MUSIC_STORAGE_BYTES = 500 * 1024 * 1024;
 const musicDirectory = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "../uploads/music",
@@ -36,6 +37,19 @@ export async function uploadRoomMusic(req, res) {
         if (!room) return res.status(404).json({ message: `Room ${roomCode} not found.` });
 
         await fs.mkdir(musicDirectory, { recursive: true });
+        const existingFiles = await fs.readdir(musicDirectory, { withFileTypes: true });
+        let totalStoredBytes = 0;
+        for (const entry of existingFiles) {
+            if (!entry.isFile()) continue;
+            try {
+                totalStoredBytes += (await fs.stat(path.join(musicDirectory, entry.name))).size;
+            } catch (statError) {
+                if (statError.code !== "ENOENT") throw statError;
+            }
+        }
+        if (totalStoredBytes + audio.length > MAX_MUSIC_STORAGE_BYTES) {
+            return res.status(413).json({ message: "The music library has reached its storage limit. Remove old tracks before uploading more." });
+        }
         const filename = `${crypto.randomUUID()}${extension}`;
         await fs.writeFile(path.join(musicDirectory, filename), audio, { flag: "wx" });
 

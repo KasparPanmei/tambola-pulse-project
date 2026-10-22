@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import Room from "../models/Room.js";
 // ADDED: Check the authoritative full-house award and stop the caller after it is verified.
 import PrizeClaim from "../models/PrizeClaim.js";
@@ -57,13 +58,7 @@ export async function drawNextBall(roomCode) {
             }
         }
 
-        const nextNumber =
-            remaining[
-            Math.floor(
-                Math.random() *
-                remaining.length,
-            )
-            ];
+        const nextNumber = remaining[randomInt(remaining.length)];
 
         const updated =
             await Room.findOneAndUpdate(

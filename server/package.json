@@ -17,10 +17,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
     "qrcode": "^1.5.4",
-    "razorpay": "^2.9.8",
     "twilio": "^5.13.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^1.14.10"
   }
 }

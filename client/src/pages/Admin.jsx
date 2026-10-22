@@ -83,12 +83,7 @@ function StatCard({ icon: Icon, label, value, detail, tone = "" }) {
     );
 }
 
-function PanelHeader({
-    icon: Icon,
-    title,
-    description,
-    tag,
-}) {
+function PanelHeader({ icon: Icon, title, description, tag }) {
     return (
         <div className="admin-panel-header">
             <div>
@@ -110,18 +105,12 @@ function TicketCard({ ticket }) {
         <div className="admin-ticket">
             <div className="admin-ticket-top">
                 <div>
-                    <div className="admin-ticket-number">
-                        Ticket #{ticket.number}
-                    </div>
+                    <div className="admin-ticket-number">Ticket #{ticket.number}</div>
 
-                    <div className="admin-ticket-code">
-                        {ticket.code}
-                    </div>
+                    <div className="admin-ticket-code">{ticket.code}</div>
                 </div>
 
-                <span
-                    className={`admin-ticket-status ${ticket.status}`}
-                >
+                <span className={`admin-ticket-status ${ticket.status}`}>
                     {ticket.status}
                 </span>
             </div>
@@ -131,9 +120,7 @@ function TicketCard({ ticket }) {
                     row.map((value, columnIndex) => (
                         <div
                             key={`${rowIndex}-${columnIndex}`}
-                            className={`admin-ticket-cell ${value === null
-                                ? "empty"
-                                : "filled"
+                            className={`admin-ticket-cell ${value === null ? "empty" : "filled"
                                 }`}
                         >
                             {value ?? ""}
@@ -146,9 +133,7 @@ function TicketCard({ ticket }) {
                 <span>15 NUMBERS</span>
 
                 {ticket.status === "booked" ? (
-                    <span className="admin-ticket-booked">
-                        BOOKED
-                    </span>
+                    <span className="admin-ticket-booked">BOOKED</span>
                 ) : (
                     <span>READY</span>
                 )}
@@ -352,10 +337,7 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
 
                     <div className="admin-prize-config-list">
                         {form.prizes.map((prize, index) => (
-                            <div
-                                className="admin-prize-config-row"
-                                key={prize.id}
-                            >
+                            <div className="admin-prize-config-row" key={prize.id}>
                                 <div className="admin-prize-config-name">
                                     <Trophy size={15} />
                                     <strong>{prize.name}</strong>
@@ -368,11 +350,7 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
                                         min="0"
                                         value={prize.amount}
                                         onChange={(e) =>
-                                            updatePrize(
-                                                index,
-                                                "amount",
-                                                e.target.value,
-                                            )
+                                            updatePrize(index, "amount", e.target.value)
                                         }
                                         required={prize.enabled}
                                     />
@@ -385,11 +363,7 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
                                         min="1"
                                         value={prize.winners}
                                         onChange={(e) =>
-                                            updatePrize(
-                                                index,
-                                                "winners",
-                                                e.target.value,
-                                            )
+                                            updatePrize(index, "winners", e.target.value)
                                         }
                                         required={prize.enabled}
                                     />
@@ -401,11 +375,7 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
                                         type="checkbox"
                                         checked={prize.enabled}
                                         onChange={(e) =>
-                                            updatePrize(
-                                                index,
-                                                "enabled",
-                                                e.target.checked,
-                                            )
+                                            updatePrize(index, "enabled", e.target.checked)
                                         }
                                     />
                                 </label>
@@ -413,10 +383,7 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
                         ))}
                     </div>
 
-                    <div
-                        className="admin-payout-footer"
-                        style={{ marginTop: 14 }}
-                    >
+                    <div className="admin-payout-footer" style={{ marginTop: 14 }}>
                         <span>TOTAL CONFIGURED PRIZES</span>
 
                         <strong>
@@ -426,8 +393,7 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
                                 .reduce(
                                     (total, prize) =>
                                         total +
-                                        Number(prize.amount || 0) *
-                                        Number(prize.winners || 1),
+                                        Number(prize.amount || 0) * Number(prize.winners || 1),
                                     0,
                                 )
                                 .toLocaleString("en-IN")}
@@ -435,20 +401,11 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
                     </div>
                 </div>
 
-                <div
-                    className="admin-scheduler-actions"
-                    style={{ marginTop: 16 }}
-                >
-                    <button
-                        className="admin-start-game"
-                        type="submit"
-                        disabled={busy}
-                    >
+                <div className="admin-scheduler-actions" style={{ marginTop: 16 }}>
+                    <button className="admin-start-game" type="submit" disabled={busy}>
                         <Gamepad2 size={15} />
 
-                        {busy
-                            ? "CREATING ROOM..."
-                            : "CREATE ROOM"}
+                        {busy ? "CREATING ROOM..." : "CREATE ROOM"}
                     </button>
                 </div>
             </form>
@@ -456,18 +413,15 @@ function CreateRoomPanel({ form, setForm, onSubmit, busy }) {
     );
 }
 
-
 function getTicketNumbers(ticket) {
     if (!Array.isArray(ticket?.grid)) return [];
-    return ticket.grid.flat().filter(
-        (value) => value !== null && value !== undefined && value !== "",
-    );
+    return ticket.grid
+        .flat()
+        .filter((value) => value !== null && value !== undefined && value !== "");
 }
 
 function getCalledSet(calledNumbers) {
-    return new Set(
-        Array.isArray(calledNumbers) ? calledNumbers.map(Number) : [],
-    );
+    return new Set(Array.isArray(calledNumbers) ? calledNumbers.map(Number) : []);
 }
 
 function getTicketValidation(ticket, calledNumbers) {
@@ -475,7 +429,9 @@ function getTicketValidation(ticket, calledNumbers) {
     const called = getCalledSet(calledNumbers);
     const rows = grid.map((row) => {
         const numbers = Array.isArray(row)
-            ? row.filter((value) => value !== null && value !== undefined && value !== "")
+            ? row.filter(
+                (value) => value !== null && value !== undefined && value !== "",
+            )
             : [];
         const marked = numbers.filter((value) => called.has(Number(value))).length;
         return {
@@ -485,17 +441,29 @@ function getTicketValidation(ticket, calledNumbers) {
         };
     });
     const allNumbers = getTicketNumbers(ticket);
-    const markedTotal = allNumbers.filter((value) => called.has(Number(value))).length;
+    const markedTotal = allNumbers.filter((value) =>
+        called.has(Number(value)),
+    ).length;
     const firstRow = grid[0] || [];
     const lastRow = grid[2] || [];
-    const firstNumber = firstRow.find((value) => value !== null && value !== undefined && value !== "");
-    const lastNumber = [...firstRow].reverse().find((value) => value !== null && value !== undefined && value !== "");
-    const bottomFirst = lastRow.find((value) => value !== null && value !== undefined && value !== "");
-    const bottomLast = [...lastRow].reverse().find((value) => value !== null && value !== undefined && value !== "");
+    const firstNumber = firstRow.find(
+        (value) => value !== null && value !== undefined && value !== "",
+    );
+    const lastNumber = [...firstRow]
+        .reverse()
+        .find((value) => value !== null && value !== undefined && value !== "");
+    const bottomFirst = lastRow.find(
+        (value) => value !== null && value !== undefined && value !== "",
+    );
+    const bottomLast = [...lastRow]
+        .reverse()
+        .find((value) => value !== null && value !== undefined && value !== "");
     const corners = [firstNumber, lastNumber, bottomFirst, bottomLast].filter(
         (value) => value !== null && value !== undefined && value !== "",
     );
-    const markedCorners = corners.filter((value) => called.has(Number(value))).length;
+    const markedCorners = corners.filter((value) =>
+        called.has(Number(value)),
+    ).length;
     return {
         rows,
         markedTotal,
@@ -514,7 +482,9 @@ function ClaimTicketChart({ ticket, calledNumbers = [] }) {
                 <div>
                     <span className="claim-review-eyebrow">TICKET CHART</span>
                     <strong>
-                        {ticket?.publicCode || ticket?.code || `Ticket #${ticket?.number ?? "—"}`}
+                        {ticket?.publicCode ||
+                            ticket?.code ||
+                            `Ticket #${ticket?.number ?? "—"}`}
                     </strong>
                 </div>
                 <span className="claim-review-ticket-id">
@@ -526,12 +496,17 @@ function ClaimTicketChart({ ticket, calledNumbers = [] }) {
                 {grid.flatMap((row, rowIndex) =>
                     Array.isArray(row)
                         ? row.map((value, columnIndex) => {
-                            const number = value !== null && value !== undefined && value !== "";
+                            const number =
+                                value !== null && value !== undefined && value !== "";
                             const marked = number && called.has(Number(value));
                             return (
                                 <div
                                     key={`${rowIndex}-${columnIndex}`}
-                                    className={["claim-review-cell", !number ? "empty" : "", marked ? "called" : ""]
+                                    className={[
+                                        "claim-review-cell",
+                                        !number ? "empty" : "",
+                                        marked ? "called" : "",
+                                    ]
                                         .filter(Boolean)
                                         .join(" ")}
                                 >
@@ -543,9 +518,18 @@ function ClaimTicketChart({ ticket, calledNumbers = [] }) {
                 )}
             </div>
             <div className="claim-review-ticket-legend">
-                <span><i className="legend-number" />Number</span>
-                <span><i className="legend-called" />Called</span>
-                <span><i className="legend-empty" />Empty</span>
+                <span>
+                    <i className="legend-number" />
+                    Number
+                </span>
+                <span>
+                    <i className="legend-called" />
+                    Called
+                </span>
+                <span>
+                    <i className="legend-empty" />
+                    Empty
+                </span>
             </div>
         </div>
     );
@@ -554,18 +538,67 @@ function ClaimTicketChart({ ticket, calledNumbers = [] }) {
 function ClaimValidationPanel({ claim, calledNumbers }) {
     const validation = getTicketValidation(claim?.ticket, calledNumbers);
     const prizeId = String(claim?.prizeId || "");
-    const topLine = validation.rows[0] || { total: 5, marked: 0, complete: false };
-    const middleLine = validation.rows[1] || { total: 5, marked: 0, complete: false };
-    const bottomLine = validation.rows[2] || { total: 5, marked: 0, complete: false };
+    const topLine = validation.rows[0] || {
+        total: 5,
+        marked: 0,
+        complete: false,
+    };
+    const middleLine = validation.rows[1] || {
+        total: 5,
+        marked: 0,
+        complete: false,
+    };
+    const bottomLine = validation.rows[2] || {
+        total: 5,
+        marked: 0,
+        complete: false,
+    };
     const checks = [
-        { label: "Early Five", value: `${Math.min(validation.markedTotal, 5)} / 5`, valid: validation.markedTotal >= 5, active: prizeId === "early-five" },
-        { label: "Top Line", value: `${topLine.marked} / ${topLine.total || 5}`, valid: topLine.complete, active: prizeId === "top-line" },
-        { label: "Middle Line", value: `${middleLine.marked} / ${middleLine.total || 5}`, valid: middleLine.complete, active: prizeId === "middle-line" },
-        { label: "Bottom Line", value: `${bottomLine.marked} / ${bottomLine.total || 5}`, valid: bottomLine.complete, active: prizeId === "bottom-line" },
-        { label: "Four Corners", value: `${validation.markedCorners} / 4`, valid: validation.fourCorners, active: prizeId === "four-corners" },
+        {
+            label: "Early Five",
+            value: `${Math.min(validation.markedTotal, 5)} / 5`,
+            valid: validation.markedTotal >= 5,
+            active: prizeId === "early-five",
+        },
+        {
+            label: "Top Line",
+            value: `${topLine.marked} / ${topLine.total || 5}`,
+            valid: topLine.complete,
+            active: prizeId === "top-line",
+        },
+        {
+            label: "Middle Line",
+            value: `${middleLine.marked} / ${middleLine.total || 5}`,
+            valid: middleLine.complete,
+            active: prizeId === "middle-line",
+        },
+        {
+            label: "Bottom Line",
+            value: `${bottomLine.marked} / ${bottomLine.total || 5}`,
+            valid: bottomLine.complete,
+            active: prizeId === "bottom-line",
+        },
+        {
+            label: "Four Corners",
+            value: `${validation.markedCorners} / 4`,
+            valid: validation.fourCorners,
+            active: prizeId === "four-corners",
+        },
         // ADDED: Show the server-verified six-ticket condition in the admin claim review.
-        { label: "Sheet Prize", value: "Six tickets • one mark each", valid: prizeId === "sheet-prize", active: prizeId === "sheet-prize" },
-        { label: "Full House", value: `${validation.markedTotal} / ${validation.totalNumbers || 15}`, valid: validation.totalNumbers > 0 && validation.markedTotal === validation.totalNumbers, active: prizeId === "full-house" },
+        {
+            label: "Sheet Prize",
+            value: "Six tickets • one mark each",
+            valid: prizeId === "sheet-prize",
+            active: prizeId === "sheet-prize",
+        },
+        {
+            label: "Full House",
+            value: `${validation.markedTotal} / ${validation.totalNumbers || 15}`,
+            valid:
+                validation.totalNumbers > 0 &&
+                validation.markedTotal === validation.totalNumbers,
+            active: prizeId === "full-house",
+        },
     ];
     return (
         <div className="claim-validation-panel">
@@ -574,13 +607,19 @@ function ClaimValidationPanel({ claim, calledNumbers }) {
                     <strong>Winning Condition Check</strong>
                     <span>System calculation based on the numbers already called.</span>
                 </div>
-                <span className="claim-validation-total">{validation.markedTotal} / {validation.totalNumbers || 15}</span>
+                <span className="claim-validation-total">
+                    {validation.markedTotal} / {validation.totalNumbers || 15}
+                </span>
             </div>
             <div className="claim-validation-list">
                 {checks.map((check) => (
                     <div
                         key={check.label}
-                        className={["claim-validation-row", check.active ? "active" : "", check.valid ? "valid" : ""]
+                        className={[
+                            "claim-validation-row",
+                            check.active ? "active" : "",
+                            check.valid ? "valid" : "",
+                        ]
                             .filter(Boolean)
                             .join(" ")}
                     >
@@ -599,7 +638,14 @@ function ClaimValidationPanel({ claim, calledNumbers }) {
     );
 }
 
-function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onReject }) {
+function ClaimReviewModal({
+    claim,
+    calledNumbers,
+    balls,
+    onClose,
+    onVerify,
+    onReject,
+}) {
     if (!claim) return null;
     const status = String(claim.status || "pending").toLowerCase();
     return (
@@ -617,9 +663,16 @@ function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onRe
                             PRIZE CLAIM VERIFICATION
                         </div>
                         <h2>Review Winner Claim</h2>
-                        <p>Verify the player, ticket and winning condition before approving this claim.</p>
+                        <p>
+                            Verify the player, ticket and winning condition before approving
+                            this claim.
+                        </p>
                     </div>
-                    <button type="button" className="claim-review-close" onClick={onClose}>
+                    <button
+                        type="button"
+                        className="claim-review-close"
+                        onClick={onClose}
+                    >
                         <X size={18} />
                     </button>
                 </div>
@@ -627,27 +680,58 @@ function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onRe
                 <div className="claim-review-status-row">
                     <div>
                         <span className="claim-review-prize-label">CLAIMED PRIZE</span>
-                        <strong className="claim-review-prize">{claim.prizeName || "Prize"}</strong>
+                        <strong className="claim-review-prize">
+                            {claim.prizeName || "Prize"}
+                        </strong>
                     </div>
-                    <span className={`claim-review-status ${status}`}>{status.toUpperCase()}</span>
+                    <span className={`claim-review-status ${status}`}>
+                        {status.toUpperCase()}
+                    </span>
                 </div>
 
                 <div className="claim-review-info-grid">
                     <div className="claim-review-info-card">
-                        <div className="claim-review-info-icon"><UserRound size={16} /></div>
-                        <div><span>PLAYER NAME</span><strong>{claim.user?.name || "Unknown"}</strong></div>
+                        <div className="claim-review-info-icon">
+                            <UserRound size={16} />
+                        </div>
+                        <div>
+                            <span>PLAYER NAME</span>
+                            <strong>{claim.user?.name || "Unknown"}</strong>
+                        </div>
                     </div>
                     <div className="claim-review-info-card">
-                        <div className="claim-review-info-icon"><Phone size={16} /></div>
-                        <div><span>CONTACT NUMBER</span><strong>{claim.user?.phone || "N/A"}</strong></div>
+                        <div className="claim-review-info-icon">
+                            <Phone size={16} />
+                        </div>
+                        <div>
+                            <span>CONTACT NUMBER</span>
+                            <strong>{claim.user?.phone || "N/A"}</strong>
+                        </div>
                     </div>
                     <div className="claim-review-info-card">
-                        <div className="claim-review-info-icon"><Ticket size={16} /></div>
-                        <div><span>TICKET ID</span><strong>{claim.ticket?.publicCode || claim.ticket?.code || claim.ticket?.number || "N/A"}</strong></div>
+                        <div className="claim-review-info-icon">
+                            <Ticket size={16} />
+                        </div>
+                        <div>
+                            <span>TICKET ID</span>
+                            <strong>
+                                {claim.ticket?.publicCode ||
+                                    claim.ticket?.code ||
+                                    claim.ticket?.number ||
+                                    "N/A"}
+                            </strong>
+                        </div>
                     </div>
                     <div className="claim-review-info-card">
-                        <div className="claim-review-info-icon"><Trophy size={16} /></div>
-                        <div><span>PRIZE AMOUNT</span><strong>₹{Number(claim.prizeAmount || 0).toLocaleString("en-IN")}</strong></div>
+                        <div className="claim-review-info-icon">
+                            <Trophy size={16} />
+                        </div>
+                        <div>
+                            <span>PRIZE AMOUNT</span>
+                            <strong>
+                                ₹{Number(claim.prizeAmount || 0).toLocaleString("en-IN")}
+                            </strong>
+                        </div>
                     </div>
                 </div>
 
@@ -657,9 +741,14 @@ function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onRe
                             <strong>Exact Ticket Verification</strong>
                             <span>Numbers highlighted in gold have already been called.</span>
                         </div>
-                        <span className="claim-review-ball-count">{calledNumbers.length} / {balls || 90} CALLED</span>
+                        <span className="claim-review-ball-count">
+                            {calledNumbers.length} / {balls || 90} CALLED
+                        </span>
                     </div>
-                    <ClaimTicketChart ticket={claim.ticket} calledNumbers={calledNumbers} />
+                    <ClaimTicketChart
+                        ticket={claim.ticket}
+                        calledNumbers={calledNumbers}
+                    />
                 </div>
 
                 <div className="claim-review-section">
@@ -667,10 +756,17 @@ function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onRe
                 </div>
 
                 <div className="claim-review-validation">
-                    <div className="claim-review-validation-icon"><CheckCircle2 size={17} /></div>
+                    <div className="claim-review-validation-icon">
+                        <CheckCircle2 size={17} />
+                    </div>
                     <div>
                         <strong>Claim submission record</strong>
-                        <span>Submitted {claim.claimedAt ? new Date(claim.claimedAt).toLocaleString("en-IN") : "N/A"}</span>
+                        <span>
+                            Submitted{" "}
+                            {claim.claimedAt
+                                ? new Date(claim.claimedAt).toLocaleString("en-IN")
+                                : "N/A"}
+                        </span>
                     </div>
                     <div className="claim-review-validation-value">
                         {status === "pending" ? "PENDING REVIEW" : status.toUpperCase()}
@@ -679,18 +775,30 @@ function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onRe
 
                 {status === "pending" ? (
                     <div className="claim-review-actions">
-                        <button type="button" className="claim-review-reject" onClick={() => onReject(claim._id)}>
+                        <button
+                            type="button"
+                            className="claim-review-reject"
+                            onClick={() => onReject(claim._id)}
+                        >
                             <XCircle size={16} />
                             Reject Claim
                         </button>
-                        <button type="button" className="claim-review-verify" onClick={() => onVerify(claim._id)}>
+                        <button
+                            type="button"
+                            className="claim-review-verify"
+                            onClick={() => onVerify(claim._id)}
+                        >
                             <CheckCircle2 size={16} />
                             Verify Winner
                         </button>
                     </div>
                 ) : (
                     <div className="claim-review-closed">
-                        {status === "verified" ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                        {status === "verified" ? (
+                            <CheckCircle2 size={16} />
+                        ) : (
+                            <XCircle size={16} />
+                        )}
                         Claim status: <strong>{status.toUpperCase()}</strong>
                     </div>
                 )}
@@ -699,20 +807,116 @@ function ClaimReviewModal({ claim, calledNumbers, balls, onClose, onVerify, onRe
     );
 }
 
-const overlayStyle = { position: "fixed", inset: 0, zIndex: 2000, background: "rgba(5,10,20,.78)", backdropFilter: "blur(7px)", display: "grid", placeItems: "center", padding: 16 };
-const modalStyle = { width: "min(1050px, 100%)", maxHeight: "92vh", overflow: "auto", background: "#111827", color: "#e5e7eb", border: "1px solid #334155", borderRadius: 18, boxShadow: "0 25px 90px #0008" };
-const modalHeaderStyle = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, padding: "20px 24px", borderBottom: "1px solid #293548" };
-const modalBodyStyle = { display: "grid", gridTemplateColumns: "minmax(230px,.8fr) minmax(0,1.3fr)" };
-const modalListStyle = { padding: 14, borderRight: "1px solid #293548", maxHeight: "65vh", overflow: "auto" };
-const paymentRowStyle = { width: "100%", display: "flex", justifyContent: "space-between", gap: 10, textAlign: "left", padding: 13, marginBottom: 8, color: "inherit", background: "#1b2638", border: "1px solid #334155", borderRadius: 11, cursor: "pointer" };
-const smallStyle = { display: "block", color: "#9ca3af", fontSize: 12, marginTop: 5 };
+const overlayStyle = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 2000,
+    background: "rgba(5,10,20,.78)",
+    backdropFilter: "blur(7px)",
+    display: "grid",
+    placeItems: "center",
+    padding: 16,
+};
+const modalStyle = {
+    width: "min(1050px, 100%)",
+    maxHeight: "92vh",
+    overflow: "auto",
+    background: "#111827",
+    color: "#e5e7eb",
+    border: "1px solid #334155",
+    borderRadius: 18,
+    boxShadow: "0 25px 90px #0008",
+};
+const modalHeaderStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 16,
+    padding: "20px 24px",
+    borderBottom: "1px solid #293548",
+};
+const modalBodyStyle = {
+    display: "grid",
+    gridTemplateColumns: "minmax(230px,.8fr) minmax(0,1.3fr)",
+};
+const modalListStyle = {
+    padding: 14,
+    borderRight: "1px solid #293548",
+    maxHeight: "65vh",
+    overflow: "auto",
+};
+const paymentRowStyle = {
+    width: "100%",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 10,
+    textAlign: "left",
+    padding: 13,
+    marginBottom: 8,
+    color: "inherit",
+    background: "#1b2638",
+    border: "1px solid #334155",
+    borderRadius: 11,
+    cursor: "pointer",
+};
+const smallStyle = {
+    display: "block",
+    color: "#9ca3af",
+    fontSize: 12,
+    marginTop: 5,
+};
 const modalDetailStyle = { padding: 22, minWidth: 0 };
-const amountStyle = { padding: 16, margin: "14px 0 18px", background: "#1b2638", border: "1px solid #334155", borderRadius: 12 };
-const detailsGridStyle = { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 15 };
-const warningStyle = { padding: 12, margin: "18px 0", background: "#332a16", border: "1px solid #6b5122", borderRadius: 10, fontSize: 12, lineHeight: 1.55, color: "#fcdca1" };
-const textareaStyle = { width: "100%", boxSizing: "border-box", background: "#0b1220", color: "white", border: "1px solid #475569", borderRadius: 9, padding: 11, resize: "vertical" };
-const actionsStyle = { display: "flex", justifyContent: "flex-end", flexWrap: "wrap", gap: 10, marginTop: 14 };
-const rejectButtonStyle = { display: "flex", alignItems: "center", gap: 7, border: 0, borderRadius: 9, padding: "11px 14px", color: "white", background: "#991b1b", fontWeight: 700, cursor: "pointer" };
+const amountStyle = {
+    padding: 16,
+    margin: "14px 0 18px",
+    background: "#1b2638",
+    border: "1px solid #334155",
+    borderRadius: 12,
+};
+const detailsGridStyle = {
+    display: "grid",
+    gridTemplateColumns: "repeat(2,minmax(0,1fr))",
+    gap: 15,
+};
+const warningStyle = {
+    padding: 12,
+    margin: "18px 0",
+    background: "#332a16",
+    border: "1px solid #6b5122",
+    borderRadius: 10,
+    fontSize: 12,
+    lineHeight: 1.55,
+    color: "#fcdca1",
+};
+const textareaStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    background: "#0b1220",
+    color: "white",
+    border: "1px solid #475569",
+    borderRadius: 9,
+    padding: 11,
+    resize: "vertical",
+};
+const actionsStyle = {
+    display: "flex",
+    justifyContent: "flex-end",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 14,
+};
+const rejectButtonStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: 7,
+    border: 0,
+    borderRadius: 9,
+    padding: "11px 14px",
+    color: "white",
+    background: "#991b1b",
+    fontWeight: 700,
+    cursor: "pointer",
+};
 const approveButtonStyle = { ...rejectButtonStyle, background: "#047857" };
 
 // CHANGED: Generate a downloadable PNG poster from the current room setup, prizes, timing, and ticket count.
@@ -723,7 +927,9 @@ function downloadGamePoster({ room, totalTickets }) {
     canvas.width = 1200;
     canvas.height = 1500;
     const context = canvas.getContext("2d");
-    const prizes = (room.prizes || []).filter((prize) => prize?.enabled !== false);
+    const prizes = (room.prizes || []).filter(
+        (prize) => prize?.enabled !== false,
+    );
     const startTime = room.startsAt
         ? new Date(room.startsAt).toLocaleString("en-IN", {
             weekday: "short",
@@ -753,7 +959,11 @@ function downloadGamePoster({ room, totalTickets }) {
         let lines = 0;
         words.forEach((word) => {
             const test = line ? `${line} ${word}` : word;
-            if (context.measureText(test).width > maxWidth && line && lines < maxLines - 1) {
+            if (
+                context.measureText(test).width > maxWidth &&
+                line &&
+                lines < maxLines - 1
+            ) {
                 context.fillText(line, x, y + lines * lineHeight);
                 lines += 1;
                 line = word;
@@ -761,7 +971,8 @@ function downloadGamePoster({ room, totalTickets }) {
                 line = test;
             }
         });
-        if (line && lines < maxLines) context.fillText(line, x, y + lines * lineHeight);
+        if (line && lines < maxLines)
+            context.fillText(line, x, y + lines * lineHeight);
         return y + Math.min(lines + 1, maxLines) * lineHeight;
     };
 
@@ -789,13 +1000,31 @@ function downloadGamePoster({ room, totalTickets }) {
     wrapText(room.title || "Live Tambola Game", 84, 190, 1030, 76, 2);
     context.fillStyle = "#c7d2fe";
     context.font = "400 24px Arial";
-    wrapText(room.description || "Join the live game and play for exciting prizes.", 88, 350, 880, 34, 2);
+    wrapText(
+        room.description || "Join the live game and play for exciting prizes.",
+        88,
+        350,
+        880,
+        34,
+        2,
+    );
 
-    roundedRect(84, 450, 1032, 155, 22, "rgba(255,255,255,0.08)", "rgba(165,180,252,0.32)");
+    roundedRect(
+        84,
+        450,
+        1032,
+        155,
+        22,
+        "rgba(255,255,255,0.08)",
+        "rgba(165,180,252,0.32)",
+    );
     const meta = [
         ["ROOM CODE", room.code || "—"],
         ["STARTS", startTime],
-        ["TICKETS", `${Number(totalTickets || 0).toLocaleString("en-IN")} available`],
+        [
+            "TICKETS",
+            `${Number(totalTickets || 0).toLocaleString("en-IN")} available`,
+        ],
     ];
     meta.forEach(([label, value], index) => {
         const x = 116 + index * 337;
@@ -812,17 +1041,33 @@ function downloadGamePoster({ room, totalTickets }) {
     context.fillText("PRIZES TO WIN", 88, 690);
     prizes.forEach((prize, index) => {
         const y = 735 + index * 92;
-        roundedRect(84, y, 1032, 72, 14, "rgba(15,23,42,0.72)", "rgba(255,255,255,0.1)");
+        roundedRect(
+            84,
+            y,
+            1032,
+            72,
+            14,
+            "rgba(15,23,42,0.72)",
+            "rgba(255,255,255,0.1)",
+        );
         context.fillStyle = "#f8fafc";
         context.font = "700 24px Arial";
         context.fillText(prize.name || `Prize ${index + 1}`, 112, y + 31);
         context.fillStyle = "#94a3b8";
         context.font = "400 16px Arial";
-        context.fillText(prize.detail || "Complete the winning pattern", 112, y + 55);
+        context.fillText(
+            prize.detail || "Complete the winning pattern",
+            112,
+            y + 55,
+        );
         context.fillStyle = "#4edea3";
         context.font = "800 25px Arial";
         context.textAlign = "right";
-        context.fillText(`₹${Number(prize.amount || 0).toLocaleString("en-IN")}`, 1085, y + 43);
+        context.fillText(
+            `₹${Number(prize.amount || 0).toLocaleString("en-IN")}`,
+            1085,
+            y + 43,
+        );
         context.textAlign = "left";
     });
 
@@ -830,13 +1075,25 @@ function downloadGamePoster({ room, totalTickets }) {
     roundedRect(84, footerY, 1032, 120, 18, "#4f46e5", null);
     context.fillStyle = "#ffffff";
     context.font = "800 28px Arial";
-    context.fillText(`Ticket price: ₹${Number(room.ticketPrice || 0).toLocaleString("en-IN")}`, 116, footerY + 48);
+    context.fillText(
+        `Ticket price: ₹${Number(room.ticketPrice || 0).toLocaleString("en-IN")}`,
+        116,
+        footerY + 48,
+    );
     context.font = "400 18px Arial";
     context.fillStyle = "#e0e7ff";
-    context.fillText("Book your ticket and be ready when the caller goes live.", 116, footerY + 82);
+    context.fillText(
+        "Book your ticket and be ready when the caller goes live.",
+        116,
+        footerY + 82,
+    );
     context.fillStyle = "#94a3b8";
     context.font = "400 16px Arial";
-    context.fillText("Play responsibly • Keep this poster handy for the room code", 88, 1430);
+    context.fillText(
+        "Play responsibly • Keep this poster handy for the room code",
+        88,
+        1430,
+    );
 
     canvas.toBlob((blob) => {
         if (!blob) return;
@@ -881,7 +1138,11 @@ function downloadWinnerPoster({ room, winnerClaims }) {
         let lines = 0;
         words.forEach((word) => {
             const test = line ? `${line} ${word}` : word;
-            if (context.measureText(test).width > maxWidth && line && lines < maxLines - 1) {
+            if (
+                context.measureText(test).width > maxWidth &&
+                line &&
+                lines < maxLines - 1
+            ) {
                 context.fillText(line, x, y + lines * lineHeight);
                 lines += 1;
                 line = word;
@@ -889,7 +1150,8 @@ function downloadWinnerPoster({ room, winnerClaims }) {
                 line = test;
             }
         });
-        if (line && lines < maxLines) context.fillText(line, x, y + lines * lineHeight);
+        if (line && lines < maxLines)
+            context.fillText(line, x, y + lines * lineHeight);
     };
 
     const background = context.createLinearGradient(0, 0, 1200, canvas.height);
@@ -916,7 +1178,11 @@ function downloadWinnerPoster({ room, winnerClaims }) {
     context.fillText("WINNERS", 84, 168);
     context.fillStyle = "#c7d2fe";
     context.font = "400 24px Arial";
-    context.fillText(`${room.title || "Tambola Game"} • Room ${room.code || "—"}`, 88, 218);
+    context.fillText(
+        `${room.title || "Tambola Game"} • Room ${room.code || "—"}`,
+        88,
+        218,
+    );
 
     const verifiedAt = new Date().toLocaleString("en-IN", {
         day: "2-digit",
@@ -929,7 +1195,15 @@ function downloadWinnerPoster({ room, winnerClaims }) {
 
     verifiedWinners.forEach((claim, index) => {
         const y = 320 + index * rowHeight;
-        roundedRect(84, y, 1032, 92, 16, "rgba(15,23,42,0.78)", "rgba(255,255,255,0.12)");
+        roundedRect(
+            84,
+            y,
+            1032,
+            92,
+            16,
+            "rgba(15,23,42,0.78)",
+            "rgba(255,255,255,0.12)",
+        );
 
         context.fillStyle = "#fbbf24";
         context.font = "800 26px Arial";
@@ -942,7 +1216,11 @@ function downloadWinnerPoster({ room, winnerClaims }) {
         context.fillStyle = "#cbd5e1";
         context.font = "600 19px Arial";
         const playerName = claim.user?.name || claim.userName || "Player";
-        const ticketNumber = claim.ticket?.publicCode || claim.ticket?.number || claim.ticketNumber || "—";
+        const ticketNumber =
+            claim.ticket?.publicCode ||
+            claim.ticket?.number ||
+            claim.ticketNumber ||
+            "—";
         context.fillText(playerName, 520, y + 31);
         context.fillStyle = "#94a3b8";
         context.font = "400 16px Arial";
@@ -951,13 +1229,21 @@ function downloadWinnerPoster({ room, winnerClaims }) {
         context.fillStyle = "#4edea3";
         context.font = "800 23px Arial";
         context.textAlign = "right";
-        context.fillText(`₹${Number(claim.prizeAmount || 0).toLocaleString("en-IN")}`, 1082, y + 38);
+        context.fillText(
+            `₹${Number(claim.prizeAmount || 0).toLocaleString("en-IN")}`,
+            1082,
+            y + 38,
+        );
         context.textAlign = "left";
     });
 
     context.fillStyle = "#94a3b8";
     context.font = "400 16px Arial";
-    context.fillText("Congratulations to all winners • Tambola Pulse", 88, canvas.height - 48);
+    context.fillText(
+        "Congratulations to all winners • Tambola Pulse",
+        88,
+        canvas.height - 48,
+    );
 
     canvas.toBlob((blob) => {
         if (!blob) return;
@@ -969,16 +1255,13 @@ function downloadWinnerPoster({ room, winnerClaims }) {
     }, "image/png");
 }
 
-
 export default function Admin() {
     const navigate = useNavigate();
 
     useEffect(() => {
         try {
             const token = localStorage.getItem("tp_admin_token");
-            const user = JSON.parse(
-                localStorage.getItem("tp_admin_user") || "null",
-            );
+            const user = JSON.parse(localStorage.getItem("tp_admin_user") || "null");
 
             if (!token || user?.role !== "admin") {
                 navigate("/", {
@@ -1006,10 +1289,11 @@ export default function Admin() {
     const [musicSearch, setMusicSearch] = useState("");
     const [musicCurrentTime, setMusicCurrentTime] = useState(0);
     const [musicDuration, setMusicDuration] = useState(0);
-    const [activeSection, setActiveSection] =
-        useState("overview");
+    const [activeSection, setActiveSection] = useState("overview");
 
-    const [roomCode, setRoomCode] = useState(() => localStorage.getItem("tp_admin_room_code") || "");
+    const [roomCode, setRoomCode] = useState(
+        () => localStorage.getItem("tp_admin_room_code") || "",
+    );
     const [room, setRoom] = useState(null);
     const [tickets, setTickets] = useState([]);
     const [bookings, setBookings] = useState([]);
@@ -1026,17 +1310,13 @@ export default function Admin() {
     const calledBalls = Array.isArray(room?.calledNumbers)
         ? room.calledNumbers
         : [];
-    const [winnerClaims, setWinnerClaims] =
-        useState([]);
+    const [winnerClaims, setWinnerClaims] = useState([]);
 
-    const [winnerAlert, setWinnerAlert] =
-        useState(null);
+    const [winnerAlert, setWinnerAlert] = useState(null);
 
-    const seenClaimIds =
-        useRef(new Set());
+    const seenClaimIds = useRef(new Set());
 
-    const claimsInitialized =
-        useRef(false);
+    const claimsInitialized = useRef(false);
     async function verifyClaim(claimId) {
         try {
             const { data } = await adminApi.post(`/admin/claims/${claimId}/verify`);
@@ -1057,7 +1337,9 @@ export default function Admin() {
             await loadAdminData({ silent: true });
         } catch (error) {
             console.error("Verify winner error:", error);
-            setLastAction(error.response?.data?.message || "Unable to verify winner.");
+            setLastAction(
+                error.response?.data?.message || "Unable to verify winner.",
+            );
         }
     }
 
@@ -1087,7 +1369,8 @@ export default function Admin() {
     const [roomForm, setRoomForm] = useState({
         code: "",
         title: "Pick Your Lucky Numbers & Win Jackpot Housie",
-        description: "Official weekend mega bumper draw with instant UPI automated settlements.",
+        description:
+            "Official weekend mega bumper draw with instant UPI automated settlements.",
         startsAt: "",
         ticketPrice: 50,
         jackpot: 15000,
@@ -1193,13 +1476,9 @@ export default function Admin() {
                 ? "terminated"
                 : "upcoming";
 
+    const [notifications, setNotifications] = useState(true);
 
-
-    const [notifications, setNotifications] =
-        useState(true);
-
-    const [lastAction, setLastAction] =
-        useState("");
+    const [lastAction, setLastAction] = useState("");
 
     const totalGenerated = dashboardStats.totalTickets;
     const availableTickets = dashboardStats.availableTickets;
@@ -1210,109 +1489,172 @@ export default function Admin() {
 
     const loadAdminData = async ({ silent = false } = {}) => {
         if (!roomCode) {
-            setRoom(null); setTickets([]); setBookings([]); setPayments([]);
-            setDashboardStats({ totalTickets: 0, availableTickets: 0, bookedTickets: 0, heldTickets: 0, totalBookings: 0, revenue: 0 });
-            setLoading(false); return;
+            setRoom(null);
+            setTickets([]);
+            setBookings([]);
+            setPayments([]);
+            setDashboardStats({
+                totalTickets: 0,
+                availableTickets: 0,
+                bookedTickets: 0,
+                heldTickets: 0,
+                totalBookings: 0,
+                revenue: 0,
+            });
+            setLoading(false);
+            return;
         }
-        const claimsResponse =
-            await adminApi.get(
-                `/admin/rooms/${roomCode}/claims`,
-            );
+        const claimsResponse = await adminApi.get(
+            `/admin/rooms/${roomCode}/claims`,
+        );
 
-        const claims =
-            claimsResponse.data.claims || [];
+        const claims = claimsResponse.data.claims || [];
 
         setWinnerClaims(claims);
         if (claimsInitialized.current) {
-            const newClaim =
-                claims.find(
-                    (claim) =>
-                        claim.status ===
-                        "pending" &&
-                        !seenClaimIds.current.has(
-                            claim._id,
-                        ),
-                );
+            const newClaim = claims.find(
+                (claim) =>
+                    claim.status === "pending" && !seenClaimIds.current.has(claim._id),
+            );
 
-            if (
-                newClaim &&
-                notifications
-            ) {
+            if (newClaim && notifications) {
                 setWinnerAlert(newClaim);
             }
         }
 
         claims.forEach((claim) => {
-            seenClaimIds.current.add(
-                claim._id,
-            );
+            seenClaimIds.current.add(claim._id);
         });
 
         claimsInitialized.current = true;
         if (!silent) setLoading(true);
         try {
-            const [roomResponse, ticketsResponse, bookingsResponse, paymentsResponse] = await Promise.all([
+            const [
+                roomResponse,
+                ticketsResponse,
+                bookingsResponse,
+                paymentsResponse,
+            ] = await Promise.all([
                 adminApi.get(`/rooms/${encodeURIComponent(roomCode)}`),
                 adminApi.get(`/admin/tickets?room=${encodeURIComponent(roomCode)}`),
                 adminApi.get(`/admin/bookings?room=${encodeURIComponent(roomCode)}`),
-                adminApi.get(`/admin/payments?room=${encodeURIComponent(roomCode)}`).catch(() => ({ data: { payments: [] } })),
+                adminApi
+                    .get(`/admin/payments?room=${encodeURIComponent(roomCode)}`)
+                    .catch(() => ({ data: { payments: [] } })),
             ]);
             const nextRoom = roomResponse.data.room;
-            const nextTickets = (ticketsResponse.data.tickets || []).map((ticket) => ({ ...ticket, code: ticket.publicCode || ticket.code }));
+            const nextTickets = (ticketsResponse.data.tickets || []).map(
+                (ticket) => ({ ...ticket, code: ticket.publicCode || ticket.code }),
+            );
             const nextBookings = bookingsResponse.data.bookings || [];
             const nextPayments = paymentsResponse.data.payments || [];
-            setRoom(nextRoom); setTickets(nextTickets); setBookings(nextBookings); setPayments(nextPayments);
-            const available = nextTickets.filter((x) => x.status === "available").length;
+            setRoom(nextRoom);
+            setTickets(nextTickets);
+            setBookings(nextBookings);
+            setPayments(nextPayments);
+            const available = nextTickets.filter(
+                (x) => x.status === "available",
+            ).length;
             const booked = nextTickets.filter((x) => x.status === "booked").length;
             const held = nextTickets.filter((x) => x.status === "held").length;
-            const revenue = nextBookings.filter((x) => x.paymentStatus === "paid").reduce((sum, x) => sum + Number(x.total ?? x.amount ?? 0), 0);
-            setDashboardStats({ totalTickets: nextTickets.length, availableTickets: available, bookedTickets: booked, heldTickets: held, totalBookings: nextBookings.length, revenue });
+            const revenue = nextBookings
+                .filter((x) => x.paymentStatus === "paid")
+                .reduce((sum, x) => sum + Number(x.total ?? x.amount ?? 0), 0);
+            setDashboardStats({
+                totalTickets: nextTickets.length,
+                availableTickets: available,
+                bookedTickets: booked,
+                heldTickets: held,
+                totalBookings: nextBookings.length,
+                revenue,
+            });
         } catch (error) {
             console.error("Admin data loading error:", error);
             if (error.response?.status === 404) {
-                setRoom(null); setTickets([]); setBookings([]); setPayments([]);
-                setLastAction(`Room ${roomCode} was not found. Create/select a valid room.`);
+                setRoom(null);
+                setTickets([]);
+                setBookings([]);
+                setPayments([]);
+                setLastAction(
+                    `Room ${roomCode} was not found. Create/select a valid room.`,
+                );
             } else {
-                setLastAction(error.response?.data?.message || "Unable to synchronize AdminDesk with the server.");
+                setLastAction(
+                    error.response?.data?.message ||
+                    "Unable to synchronize AdminDesk with the server.",
+                );
             }
-        } finally { setLoading(false); }
+        } finally {
+            setLoading(false);
+        }
     };
-    const pendingPaymentReviews = payments.filter((payment) =>
-        payment.paymentStatus !== "paid" && !["confirmed", "rejected", "cancelled", "expired"].includes(payment.status)
+    const pendingPaymentReviews = payments.filter(
+        (payment) =>
+            payment.paymentStatus !== "paid" &&
+            !["confirmed", "rejected", "cancelled", "expired"].includes(
+                payment.status,
+            ),
     );
-    const selectedPayment = pendingPaymentReviews.find((payment) => String(payment.reference) === String(selectedPaymentReference)) || null;
+    const selectedPayment =
+        pendingPaymentReviews.find(
+            (payment) =>
+                String(payment.reference) === String(selectedPaymentReference),
+        ) || null;
 
     async function handleVerifyManualPayment(payment) {
         const amount = Number(payment.total ?? payment.amount ?? 0);
-        if (!window.confirm(`Confirm you independently verified receipt of ₹${amount.toFixed(2)} for booking ${payment.reference}?`)) return;
+        if (
+            !window.confirm(
+                `Confirm you independently verified receipt of ₹${amount.toFixed(2)} for booking ${payment.reference}?`,
+            )
+        )
+            return;
         setBusyPaymentReference(payment.reference);
         setLastAction("");
         try {
-            await adminApi.post(`/admin/payments/${encodeURIComponent(payment.reference)}/approve`);
+            await adminApi.post(
+                `/admin/payments/${encodeURIComponent(payment.reference)}/approve`,
+            );
             setLastAction(`Payment verified for ${payment.reference}.`);
             setPaymentReviewOpen(false);
             setSelectedPaymentReference("");
             await loadAdminData({ silent: true });
         } catch (error) {
-            setLastAction(error.response?.data?.message || "Payment verification failed. Confirm the admin approval route exists.");
-        } finally { setBusyPaymentReference(""); }
+            setLastAction(
+                error.response?.data?.message ||
+                "Payment verification failed. Confirm the admin approval route exists.",
+            );
+        } finally {
+            setBusyPaymentReference("");
+        }
     }
 
     async function handleRejectManualPayment(payment) {
         const reason = paymentRejectionReason.trim();
-        if (reason.length < 3) { setLastAction("Enter a rejection reason of at least 3 characters."); return; }
+        if (reason.length < 3) {
+            setLastAction("Enter a rejection reason of at least 3 characters.");
+            return;
+        }
         setBusyPaymentReference(payment.reference);
         setLastAction("");
         try {
-            await adminApi.post(`/admin/payments/${encodeURIComponent(payment.reference)}/reject`, { reason });
+            await adminApi.post(
+                `/admin/payments/${encodeURIComponent(payment.reference)}/reject`,
+                { reason },
+            );
             setLastAction(`Payment rejected for ${payment.reference}.`);
             setPaymentReviewOpen(false);
             setSelectedPaymentReference("");
             setPaymentRejectionReason("");
             await loadAdminData({ silent: true });
         } catch (error) {
-            setLastAction(error.response?.data?.message || "Payment rejection failed. Confirm the admin rejection route exists.");
-        } finally { setBusyPaymentReference(""); }
+            setLastAction(
+                error.response?.data?.message ||
+                "Payment rejection failed. Confirm the admin rejection route exists.",
+            );
+        } finally {
+            setBusyPaymentReference("");
+        }
     }
 
     useEffect(() => {
@@ -1322,19 +1664,15 @@ export default function Admin() {
             return undefined;
         }
 
-        const interval =
-            window.setInterval(
-                () =>
-                    loadAdminData({
-                        silent: true,
-                    }),
-                1000,
-            );
+        const interval = window.setInterval(
+            () =>
+                loadAdminData({
+                    silent: true,
+                }),
+            1000,
+        );
 
-        return () =>
-            window.clearInterval(
-                interval,
-            );
+        return () => window.clearInterval(interval);
     }, [roomCode]);
 
     async function handleCreateRoom(event) {
@@ -1357,25 +1695,17 @@ export default function Admin() {
                 })),
             };
 
-            const { data } = await adminApi.post(
-                "/admin/rooms",
-                payload,
-            );
+            const { data } = await adminApi.post("/admin/rooms", payload);
 
             const createdRoom = data.room;
             const code = createdRoom.code;
 
-            localStorage.setItem(
-                "tp_admin_room_code",
-                code,
-            );
+            localStorage.setItem("tp_admin_room_code", code);
 
             setRoomCode(code);
             setRoom(createdRoom);
 
-            setLastAction(
-                `Room ${code} created successfully.`,
-            );
+            setLastAction(`Room ${code} created successfully.`);
 
             setRoomForm({
                 code: "",
@@ -1468,22 +1798,16 @@ export default function Admin() {
                 ],
             });
         } catch (error) {
-            console.error(
-                "Create room error:",
-                error,
-            );
+            console.error("Create room error:", error);
 
-            setLastAction(
-                error.response?.data?.message ||
-                "Unable to create room.",
-            );
+            setLastAction(error.response?.data?.message || "Unable to create room.");
         } finally {
             setCreatingRoom(false);
         }
     }
     function clearSelectedRoom() {
         const confirmed = window.confirm(
-            "Start a new AdminDesk session? This only deselects the current room; it does not delete the room or its tickets."
+            "Start a new AdminDesk session? This only deselects the current room; it does not delete the room or its tickets.",
         );
 
         if (!confirmed) return;
@@ -1502,50 +1826,40 @@ export default function Admin() {
             totalBookings: 0,
             revenue: 0,
         });
-        setLastAction("Selected room cleared. The Create Room section remains available.");
+        setLastAction(
+            "Selected room cleared. The Create Room section remains available.",
+        );
     }
 
     function scrollToSection(id) {
         setActiveSection(id);
         setSidebarOpen(false);
 
-        document
-            .getElementById(id)
-            ?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-            });
+        document.getElementById(id)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+        });
     }
     async function drawBall() {
         if (!roomCode) {
-            setLastAction(
-                "Select a room before drawing a ball.",
-            );
+            setLastAction("Select a room before drawing a ball.");
             return;
         }
 
         if (room?.status !== "live") {
-            setLastAction(
-                "Game must be live before drawing a ball.",
-            );
+            setLastAction("Game must be live before drawing a ball.");
             return;
         }
 
         try {
-            const { data } =
-                await adminApi.post(
-                    `/admin/rooms/${encodeURIComponent(
-                        roomCode,
-                    )}/draw`,
-                );
+            const { data } = await adminApi.post(
+                `/admin/rooms/${encodeURIComponent(roomCode)}/draw`,
+            );
 
-            const updatedRoom =
-                data?.room;
+            const updatedRoom = data?.room;
 
             if (!updatedRoom) {
-                throw new Error(
-                    "Server did not return the updated room.",
-                );
+                throw new Error("Server did not return the updated room.");
             }
 
             /*
@@ -1553,22 +1867,16 @@ export default function Admin() {
              */
             setRoom(updatedRoom);
 
-            setLastAction(
-                `Ball ${updatedRoom.currentNumber} called`,
-            );
+            setLastAction(`Ball ${updatedRoom.currentNumber} called`);
 
             await loadAdminData({
                 silent: true,
             });
         } catch (error) {
-            console.error(
-                "Draw ball error:",
-                error,
-            );
+            console.error("Draw ball error:", error);
 
             setLastAction(
-                error.response?.data
-                    ?.message ||
+                error.response?.data?.message ||
                 error.message ||
                 "Unable to draw ball.",
             );
@@ -1584,10 +1892,7 @@ export default function Admin() {
             setLastAction("Game started");
             await loadAdminData({ silent: true });
         } catch (error) {
-            setLastAction(
-                error.response?.data?.message ||
-                "Failed to start game",
-            );
+            setLastAction(error.response?.data?.message || "Failed to start game");
         }
     }
 
@@ -1610,13 +1915,10 @@ export default function Admin() {
             await loadAdminData({ silent: true });
         } catch (error) {
             setLastAction(
-                error.response?.data?.message ||
-                "Failed to update game state",
+                error.response?.data?.message || "Failed to update game state",
             );
         }
     }
-
-
 
     async function terminateGame() {
         try {
@@ -1629,8 +1931,7 @@ export default function Admin() {
             await loadAdminData({ silent: true });
         } catch (error) {
             setLastAction(
-                error.response?.data?.message ||
-                "Failed to terminate game",
+                error.response?.data?.message || "Failed to terminate game",
             );
         }
     }
@@ -1638,20 +1939,47 @@ export default function Admin() {
     async function resetRoom() {
         if (!roomCode) return;
         try {
-            const { data } = await adminApi.post(`/admin/rooms/${encodeURIComponent(roomCode)}/reset`);
-            setRoom(data.room); setLastAction("Room reset successfully."); await loadAdminData({ silent: true });
-        } catch (error) { setLastAction(error.response?.data?.message || "Failed to reset room."); }
+            const { data } = await adminApi.post(
+                `/admin/rooms/${encodeURIComponent(roomCode)}/reset`,
+            );
+            setRoom(data.room);
+            setLastAction("Room reset successfully.");
+            await loadAdminData({ silent: true });
+        } catch (error) {
+            setLastAction(error.response?.data?.message || "Failed to reset room.");
+        }
     }
 
     async function generateTickets() {
-        if (!roomCode) { setLastAction("Create a room before generating tickets."); return; }
+        if (!roomCode) {
+            setLastAction("Create a room before generating tickets.");
+            return;
+        }
         const requestedCount = Number(ticketCount);
         // CHANGED: Validate any integer ticket count from 1 through 1000.
-        if (!Number.isInteger(requestedCount) || requestedCount < 1 || requestedCount > 1000) { setLastAction("Ticket count must be between 1 and 1000."); return; }
+        if (
+            !Number.isInteger(requestedCount) ||
+            requestedCount < 1 ||
+            requestedCount > 1000
+        ) {
+            setLastAction("Ticket count must be between 1 and 1000.");
+            return;
+        }
         try {
-            const { data } = await adminApi.post("/admin/tickets/generate", { roomCode, count: requestedCount });
-            setLastAction(data.message || `${requestedCount} tickets generated successfully.`); await loadAdminData({ silent: true });
-        } catch (error) { console.error("Generate tickets error:", error); setLastAction(error.response?.data?.message || "Failed to generate tickets."); }
+            const { data } = await adminApi.post("/admin/tickets/generate", {
+                roomCode,
+                count: requestedCount,
+            });
+            setLastAction(
+                data.message || `${requestedCount} tickets generated successfully.`,
+            );
+            await loadAdminData({ silent: true });
+        } catch (error) {
+            console.error("Generate tickets error:", error);
+            setLastAction(
+                error.response?.data?.message || "Failed to generate tickets.",
+            );
+        }
     }
 
     async function refreshMusicLibrary({ quiet = false } = {}) {
@@ -1659,7 +1987,10 @@ export default function Admin() {
             const { data } = await adminApi.get("/admin/music/library");
             setMusicLibrary(Array.isArray(data?.tracks) ? data.tracks : []);
         } catch (error) {
-            if (!quiet) setLastAction(error.response?.data?.message || "Unable to load the music library.");
+            if (!quiet)
+                setLastAction(
+                    error.response?.data?.message || "Unable to load the music library.",
+                );
         }
     }
 
@@ -1673,10 +2004,12 @@ export default function Admin() {
             setLastAction("Create or select a room before playing music.");
             return;
         }
-        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
+        if (musicPositionUpdateTimerRef.current)
+            window.clearTimeout(musicPositionUpdateTimerRef.current);
         const audio = adminMusicRef.current;
         if (audio) {
-            const configuredApi = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+            const configuredApi =
+                import.meta.env.VITE_API_URL || "http://localhost:5000/api";
             const apiOrigin = new URL(configuredApi, window.location.origin);
             audio.pause();
             audio.src = new URL(track.url, apiOrigin).href;
@@ -1685,14 +2018,19 @@ export default function Admin() {
             audio.play()?.catch(() => { });
         }
         try {
-            const { data } = await adminApi.post("/admin/music/select", { roomCode, trackId: track._id });
+            const { data } = await adminApi.post("/admin/music/select", {
+                roomCode,
+                trackId: track._id,
+            });
             setRoom(data.room);
             setMusicCurrentTime(0);
             setMusicDuration(0);
             setLastAction(data.message || `Now playing: ${track.title}`);
         } catch (error) {
             audio?.pause();
-            setLastAction(error.response?.data?.message || "Unable to play the selected track.");
+            setLastAction(
+                error.response?.data?.message || "Unable to play the selected track.",
+            );
         }
     }
 
@@ -1703,7 +2041,8 @@ export default function Admin() {
             return;
         }
         const currentIndex = currentMusicTrackIndex();
-        const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % musicLibrary.length;
+        const nextIndex =
+            currentIndex < 0 ? 0 : (currentIndex + 1) % musicLibrary.length;
         await selectRoomMusic(musicLibrary[nextIndex]);
     }
 
@@ -1716,19 +2055,30 @@ export default function Admin() {
         }
         if (musicLibrary.length === 0) return;
         const currentIndex = currentMusicTrackIndex();
-        const previousIndex = currentIndex < 0
-            ? musicLibrary.length - 1
-            : (currentIndex - 1 + musicLibrary.length) % musicLibrary.length;
+        const previousIndex =
+            currentIndex < 0
+                ? musicLibrary.length - 1
+                : (currentIndex - 1 + musicLibrary.length) % musicLibrary.length;
         await selectRoomMusic(musicLibrary[previousIndex]);
     }
 
     // ADDED: Apply a seek locally and debounce its room-wide synchronization request.
     function saveRoomMusicPosition(position) {
-        const target = Math.max(0, Math.min(Number.isFinite(musicDuration) && musicDuration > 0 ? musicDuration : Number.MAX_SAFE_INTEGER, Number(position) || 0));
+        const target = Math.max(
+            0,
+            Math.min(
+                Number.isFinite(musicDuration) && musicDuration > 0
+                    ? musicDuration
+                    : Number.MAX_SAFE_INTEGER,
+                Number(position) || 0,
+            ),
+        );
         setMusicCurrentTime(target);
         const audio = adminMusicRef.current;
-        if (audio && Number.isFinite(audio.duration)) audio.currentTime = Math.min(target, audio.duration);
-        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
+        if (audio && Number.isFinite(audio.duration))
+            audio.currentTime = Math.min(target, audio.duration);
+        if (musicPositionUpdateTimerRef.current)
+            window.clearTimeout(musicPositionUpdateTimerRef.current);
         musicPositionUpdateTimerRef.current = window.setTimeout(async () => {
             try {
                 const { data } = await adminApi.post("/admin/music/control", {
@@ -1738,7 +2088,9 @@ export default function Admin() {
                 });
                 setRoom(data.room);
             } catch (error) {
-                setLastAction(error.response?.data?.message || "Unable to seek the room music.");
+                setLastAction(
+                    error.response?.data?.message || "Unable to seek the room music.",
+                );
             }
         }, 250);
     }
@@ -1753,7 +2105,9 @@ export default function Admin() {
         event.target.value = "";
         if (!file) return;
         if (!roomCode) {
-            setLastAction("Create or select a room before choosing background music.");
+            setLastAction(
+                "Create or select a room before choosing background music.",
+            );
             return;
         }
         if (file.size > 25 * 1024 * 1024) {
@@ -1762,16 +2116,22 @@ export default function Admin() {
         }
         try {
             const query = new URLSearchParams({ roomCode, fileName: file.name });
-            const { data } = await adminApi.post(`/admin/music/upload?${query}`, file, {
-                headers: { "Content-Type": "application/octet-stream" },
-            });
+            const { data } = await adminApi.post(
+                `/admin/music/upload?${query}`,
+                file,
+                {
+                    headers: { "Content-Type": "application/octet-stream" },
+                },
+            );
             setRoom(data.room);
             setMusicCurrentTime(0);
             setMusicDuration(0);
             await refreshMusicLibrary({ quiet: true });
             setLastAction(data.message || "Background music uploaded.");
         } catch (error) {
-            setLastAction(error.response?.data?.message || "Unable to upload background music.");
+            setLastAction(
+                error.response?.data?.message || "Unable to upload background music.",
+            );
         }
     }
 
@@ -1783,9 +2143,12 @@ export default function Admin() {
             return;
         }
         const nextPlaying = !room.musicPlaying;
-        if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
+        if (musicPositionUpdateTimerRef.current)
+            window.clearTimeout(musicPositionUpdateTimerRef.current);
         const audio = adminMusicRef.current;
-        const currentTime = audio?.readyState ? audio.currentTime : Number(room.musicPosition) || 0;
+        const currentTime = audio?.readyState
+            ? audio.currentTime
+            : Number(room.musicPosition) || 0;
         if (nextPlaying) {
             if (audio && audio.readyState) audio.currentTime = currentTime;
             audio?.play()?.catch(() => { });
@@ -1802,16 +2165,21 @@ export default function Admin() {
             setLastAction(data.message || "Background music updated.");
         } catch (error) {
             if (nextPlaying) adminMusicRef.current?.pause();
-            setLastAction(error.response?.data?.message || "Unable to update background music.");
+            setLastAction(
+                error.response?.data?.message || "Unable to update background music.",
+            );
         }
     }
 
     // ADDED: Change the room master volume immediately, then persist the latest slider value.
     function updateRoomMusicVolume(event) {
         const volume = Math.max(0, Math.min(1, Number(event.target.value) / 100));
-        setRoom((current) => current ? { ...current, musicVolume: volume } : current);
+        setRoom((current) =>
+            current ? { ...current, musicVolume: volume } : current,
+        );
         if (adminMusicRef.current) adminMusicRef.current.volume = volume;
-        if (musicVolumeUpdateTimerRef.current) window.clearTimeout(musicVolumeUpdateTimerRef.current);
+        if (musicVolumeUpdateTimerRef.current)
+            window.clearTimeout(musicVolumeUpdateTimerRef.current);
         musicVolumeUpdateTimerRef.current = window.setTimeout(async () => {
             try {
                 const { data } = await adminApi.post("/admin/music/control", {
@@ -1820,7 +2188,10 @@ export default function Admin() {
                 });
                 setRoom(data.room);
             } catch (error) {
-                setLastAction(error.response?.data?.message || "Unable to update room music volume.");
+                setLastAction(
+                    error.response?.data?.message ||
+                    "Unable to update room music volume.",
+                );
             }
         }, 250);
     }
@@ -1829,8 +2200,11 @@ export default function Admin() {
     useEffect(() => {
         const audio = adminMusicRef.current;
         if (!audio) return;
-        audio.volume = Number.isFinite(Number(room?.musicVolume)) ? Math.max(0, Math.min(1, Number(room.musicVolume))) : 1;
-        const configuredApi = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+        audio.volume = Number.isFinite(Number(room?.musicVolume))
+            ? Math.max(0, Math.min(1, Number(room.musicVolume)))
+            : 1;
+        const configuredApi =
+            import.meta.env.VITE_API_URL || "http://localhost:5000/api";
         const apiOrigin = new URL(configuredApi, window.location.origin);
         const source = room?.musicUrl ? new URL(room.musicUrl, apiOrigin).href : "";
         if (!source) {
@@ -1845,11 +2219,24 @@ export default function Admin() {
         if (room?.musicPlaying) {
             const alignAudio = () => {
                 if (!room.musicUpdatedAt) return;
-                const elapsed = Math.max(0, (Date.now() - new Date(room.musicUpdatedAt).getTime()) / 1000);
+                const elapsed = Math.max(
+                    0,
+                    (Date.now() - new Date(room.musicUpdatedAt).getTime()) / 1000,
+                );
                 const position = Math.max(0, Number(room.musicPosition) || 0) + elapsed;
-                const target = Number.isFinite(audio.duration) && audio.duration > 0 ? position % audio.duration : position;
-                if (Number.isFinite(target) && Math.abs(audio.currentTime - target) > 3) {
-                    try { audio.currentTime = target; } catch { /* metadata is not ready yet */ }
+                const target =
+                    Number.isFinite(audio.duration) && audio.duration > 0
+                        ? position % audio.duration
+                        : position;
+                if (
+                    Number.isFinite(target) &&
+                    Math.abs(audio.currentTime - target) > 3
+                ) {
+                    try {
+                        audio.currentTime = target;
+                    } catch {
+                        /* metadata is not ready yet */
+                    }
                 }
             };
             if (audio.readyState >= 1) alignAudio();
@@ -1860,22 +2247,31 @@ export default function Admin() {
         audio.pause();
         const restorePosition = () => {
             const saved = Math.max(0, Number(room?.musicPosition) || 0);
-            if (Number.isFinite(audio.duration) && audio.duration > 0) audio.currentTime = Math.min(saved, audio.duration);
+            if (Number.isFinite(audio.duration) && audio.duration > 0)
+                audio.currentTime = Math.min(saved, audio.duration);
         };
         if (audio.readyState >= 1) restorePosition();
-        else audio.addEventListener("loadedmetadata", restorePosition, { once: true });
+        else
+            audio.addEventListener("loadedmetadata", restorePosition, { once: true });
         return () => audio.removeEventListener("loadedmetadata", restorePosition);
-    }, [room?.musicUrl, room?.musicPlaying, room?.musicUpdatedAt, room?.musicPosition, room?.musicVolume]);
+    }, [
+        room?.musicUrl,
+        room?.musicPlaying,
+        room?.musicUpdatedAt,
+        room?.musicPosition,
+        room?.musicVolume,
+    ]);
 
     // ADDED: Load the saved library once and clear delayed playback updates on unmount.
     useEffect(() => {
         refreshMusicLibrary({ quiet: true });
         return () => {
-            if (musicVolumeUpdateTimerRef.current) window.clearTimeout(musicVolumeUpdateTimerRef.current);
-            if (musicPositionUpdateTimerRef.current) window.clearTimeout(musicPositionUpdateTimerRef.current);
+            if (musicVolumeUpdateTimerRef.current)
+                window.clearTimeout(musicVolumeUpdateTimerRef.current);
+            if (musicPositionUpdateTimerRef.current)
+                window.clearTimeout(musicPositionUpdateTimerRef.current);
         };
     }, []);
-
 
     if (loading) {
         return (
@@ -1898,36 +2294,270 @@ export default function Admin() {
 
     return (
         <div className="admin-page">
-            {paymentReviewOpen && <div style={overlayStyle} onMouseDown={(e) => { if (e.target === e.currentTarget && !busyPaymentReference) setPaymentReviewOpen(false); }}>
-                <style>{`@media(max-width:700px){.admin-payment-review-modal>div{grid-template-columns:1fr!important}.admin-payment-review-modal>div>div:first-child{max-height:220px;border-right:0!important;border-bottom:1px solid #293548}.admin-payment-review-modal>div>div:last-child>div:nth-child(2){grid-template-columns:1fr!important}.admin-payment-review-modal footer{font-size:10px}}`}</style>
-                <section style={modalStyle} className="admin-payment-review-modal" role="dialog" aria-modal="true" aria-labelledby="payment-review-title">
-                    <header style={modalHeaderStyle}>
-                        <div><small style={{ color: "#a5b4fc", fontWeight: 800, letterSpacing: ".12em" }}>ADMIN DESK / MANUAL UPI</small><h2 id="payment-review-title" style={{ margin: "7px 0" }}>Payment verification queue</h2><p style={{ margin: 0, color: "#9ca3af", fontSize: 13 }}>Verify the received transaction before confirming tickets.</p></div>
-                        <button type="button" disabled={!!busyPaymentReference} onClick={() => setPaymentReviewOpen(false)} aria-label="Close payment verification"><X size={18} /></button>
-                    </header>
-                    <div style={modalBodyStyle}>
-                        <div style={modalListStyle}>
-                            <p style={{ color: "#fbbf24", fontSize: 13 }}>{pendingPaymentReviews.length} booking(s) awaiting review</p>
-                            {pendingPaymentReviews.length === 0 ? <div style={{ padding: 24, color: "#9ca3af", textAlign: "center" }}><CheckCircle2 size={30} /><p>No pending payments</p></div> : pendingPaymentReviews.map((payment) => <button key={payment._id || payment.reference} type="button" onClick={() => { setSelectedPaymentReference(payment.reference); setPaymentRejectionReason(""); }} style={{ ...paymentRowStyle, borderColor: String(selectedPaymentReference) === String(payment.reference) ? "#818cf8" : "#334155" }}><span><strong>{payment.reference}</strong><small style={smallStyle}>{payment.user?.name || payment.user?.phone || "Unknown player"}</small><small style={smallStyle}>{payment.status || "pending"} · {payment.paymentStatus || "pending"}</small></span><strong>₹{Number(payment.total ?? payment.amount ?? 0).toFixed(2)}</strong></button>)}
+            {paymentReviewOpen && (
+                <div
+                    style={overlayStyle}
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget && !busyPaymentReference)
+                            setPaymentReviewOpen(false);
+                    }}
+                >
+                    <style>{`@media(max-width:700px){.admin-payment-review-modal>div{grid-template-columns:1fr!important}.admin-payment-review-modal>div>div:first-child{max-height:220px;border-right:0!important;border-bottom:1px solid #293548}.admin-payment-review-modal>div>div:last-child>div:nth-child(2){grid-template-columns:1fr!important}.admin-payment-review-modal footer{font-size:10px}}`}</style>
+                    <section
+                        style={modalStyle}
+                        className="admin-payment-review-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="payment-review-title"
+                    >
+                        <header style={modalHeaderStyle}>
+                            <div>
+                                <small
+                                    style={{
+                                        color: "#a5b4fc",
+                                        fontWeight: 800,
+                                        letterSpacing: ".12em",
+                                    }}
+                                >
+                                    ADMIN DESK / MANUAL UPI
+                                </small>
+                                <h2 id="payment-review-title" style={{ margin: "7px 0" }}>
+                                    Payment verification queue
+                                </h2>
+                                <p style={{ margin: 0, color: "#9ca3af", fontSize: 13 }}>
+                                    Verify the received transaction before confirming tickets.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={!!busyPaymentReference}
+                                onClick={() => setPaymentReviewOpen(false)}
+                                aria-label="Close payment verification"
+                            >
+                                <X size={18} />
+                            </button>
+                        </header>
+                        <div style={modalBodyStyle}>
+                            <div style={modalListStyle}>
+                                <p style={{ color: "#fbbf24", fontSize: 13 }}>
+                                    {pendingPaymentReviews.length} booking(s) awaiting review
+                                </p>
+                                {pendingPaymentReviews.length === 0 ? (
+                                    <div
+                                        style={{
+                                            padding: 24,
+                                            color: "#9ca3af",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        <CheckCircle2 size={30} />
+                                        <p>No pending payments</p>
+                                    </div>
+                                ) : (
+                                    pendingPaymentReviews.map((payment) => (
+                                        <button
+                                            key={payment._id || payment.reference}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedPaymentReference(payment.reference);
+                                                setPaymentRejectionReason("");
+                                            }}
+                                            style={{
+                                                ...paymentRowStyle,
+                                                borderColor:
+                                                    String(selectedPaymentReference) ===
+                                                        String(payment.reference)
+                                                        ? "#818cf8"
+                                                        : "#334155",
+                                            }}
+                                        >
+                                            <span>
+                                                <strong>{payment.reference}</strong>
+                                                <small style={smallStyle}>
+                                                    {payment.user?.name ||
+                                                        payment.user?.phone ||
+                                                        "Unknown player"}
+                                                </small>
+                                                <small style={smallStyle}>
+                                                    {payment.status || "pending"} ·{" "}
+                                                    {payment.paymentStatus || "pending"}
+                                                </small>
+                                            </span>
+                                            <strong>
+                                                ₹
+                                                {Number(payment.total ?? payment.amount ?? 0).toFixed(
+                                                    2,
+                                                )}
+                                            </strong>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                            <div style={modalDetailStyle}>
+                                {!selectedPayment ? (
+                                    <div
+                                        style={{
+                                            padding: 28,
+                                            textAlign: "center",
+                                            color: "#9ca3af",
+                                        }}
+                                    >
+                                        <ShieldCheck size={32} />
+                                        <p>Select a booking to review</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <small style={{ color: "#a5b4fc", letterSpacing: ".1em" }}>
+                                            BOOKING REFERENCE
+                                        </small>
+                                        <h3 style={{ overflowWrap: "anywhere" }}>
+                                            {selectedPayment.reference}
+                                        </h3>
+                                        <div style={amountStyle}>
+                                            <small style={smallStyle}>Amount to verify</small>
+                                            <strong style={{ fontSize: 28 }}>
+                                                ₹
+                                                {Number(
+                                                    selectedPayment.total ?? selectedPayment.amount ?? 0,
+                                                ).toFixed(2)}
+                                            </strong>
+                                        </div>
+                                        <div style={detailsGridStyle}>
+                                            <div>
+                                                <small style={smallStyle}>Player</small>
+                                                <strong>
+                                                    {selectedPayment.user?.name || "Not provided"}
+                                                </strong>
+                                            </div>
+                                            <div>
+                                                <small style={smallStyle}>Phone</small>
+                                                <strong>
+                                                    {selectedPayment.user?.phone || "Not provided"}
+                                                </strong>
+                                            </div>
+                                            <div>
+                                                <small style={smallStyle}>Payment method</small>
+                                                <strong>
+                                                    {(selectedPayment.paymentMethod || "UPI")
+                                                        .replaceAll("_", " ")
+                                                        .toUpperCase()}
+                                                </strong>
+                                            </div>
+                                            <div>
+                                                <small style={smallStyle}>
+                                                    UPI transaction reference
+                                                </small>
+                                                <strong>
+                                                    {selectedPayment.upiReference || "Not provided"}
+                                                </strong>
+                                            </div>
+                                            <div style={{ gridColumn: "1 / -1" }}>
+                                                <small style={smallStyle}>Tickets</small>
+                                                <strong>
+                                                    {(selectedPayment.tickets || [])
+                                                        .map((t) => t.publicCode || t.number || t)
+                                                        .join(", ") || "No ticket details returned"}
+                                                </strong>
+                                            </div>
+                                            <div>
+                                                <small style={smallStyle}>Created</small>
+                                                <strong>
+                                                    {selectedPayment.createdAt
+                                                        ? new Date(
+                                                            selectedPayment.createdAt,
+                                                        ).toLocaleString("en-IN")
+                                                        : "Not provided"}
+                                                </strong>
+                                            </div>
+                                            <div>
+                                                <small style={smallStyle}>Status</small>
+                                                <strong>
+                                                    {selectedPayment.status || "pending"} /{" "}
+                                                    {selectedPayment.paymentStatus || "pending"}
+                                                </strong>
+                                            </div>
+                                        </div>
+                                        <p style={warningStyle}>
+                                            A screenshot or checkbox is not proof of payment.
+                                            Independently confirm the transaction in your receiving
+                                            UPI app or bank account before approving.
+                                        </p>
+                                        <label
+                                            htmlFor="payment-rejection-reason"
+                                            style={{
+                                                display: "block",
+                                                fontSize: 12,
+                                                marginBottom: 7,
+                                            }}
+                                        >
+                                            Rejection reason (required to reject)
+                                        </label>
+                                        <textarea
+                                            id="payment-rejection-reason"
+                                            rows={2}
+                                            value={paymentRejectionReason}
+                                            onChange={(e) =>
+                                                setPaymentRejectionReason(e.target.value)
+                                            }
+                                            placeholder="e.g. Payment not received or amount mismatch"
+                                            style={textareaStyle}
+                                        />
+                                        <div style={actionsStyle}>
+                                            <button
+                                                type="button"
+                                                disabled={
+                                                    !!busyPaymentReference ||
+                                                    paymentRejectionReason.trim().length < 3
+                                                }
+                                                onClick={() =>
+                                                    handleRejectManualPayment(selectedPayment)
+                                                }
+                                                style={rejectButtonStyle}
+                                            >
+                                                {busyPaymentReference === selectedPayment.reference ? (
+                                                    "Processing…"
+                                                ) : (
+                                                    <>
+                                                        <XCircle size={16} /> Reject payment
+                                                    </>
+                                                )}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={!!busyPaymentReference}
+                                                onClick={() =>
+                                                    handleVerifyManualPayment(selectedPayment)
+                                                }
+                                                style={approveButtonStyle}
+                                            >
+                                                {busyPaymentReference === selectedPayment.reference ? (
+                                                    "Processing…"
+                                                ) : (
+                                                    <>
+                                                        <CheckCircle2 size={16} /> Verify & approve
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                        <div style={modalDetailStyle}>
-                            {!selectedPayment ? <div style={{ padding: 28, textAlign: "center", color: "#9ca3af" }}><ShieldCheck size={32} /><p>Select a booking to review</p></div> : <>
-                                <small style={{ color: "#a5b4fc", letterSpacing: ".1em" }}>BOOKING REFERENCE</small><h3 style={{ overflowWrap: "anywhere" }}>{selectedPayment.reference}</h3>
-                                <div style={amountStyle}><small style={smallStyle}>Amount to verify</small><strong style={{ fontSize: 28 }}>₹{Number(selectedPayment.total ?? selectedPayment.amount ?? 0).toFixed(2)}</strong></div>
-                                <div style={detailsGridStyle}>
-                                    <div><small style={smallStyle}>Player</small><strong>{selectedPayment.user?.name || "Not provided"}</strong></div><div><small style={smallStyle}>Phone</small><strong>{selectedPayment.user?.phone || "Not provided"}</strong></div>
-                                    <div><small style={smallStyle}>Payment method</small><strong>{(selectedPayment.paymentMethod || "UPI").replaceAll("_", " ").toUpperCase()}</strong></div><div><small style={smallStyle}>UPI transaction reference</small><strong>{selectedPayment.upiReference || "Not provided"}</strong></div>
-                                    <div style={{ gridColumn: "1 / -1" }}><small style={smallStyle}>Tickets</small><strong>{(selectedPayment.tickets || []).map(t => t.publicCode || t.number || t).join(", ") || "No ticket details returned"}</strong></div><div><small style={smallStyle}>Created</small><strong>{selectedPayment.createdAt ? new Date(selectedPayment.createdAt).toLocaleString("en-IN") : "Not provided"}</strong></div><div><small style={smallStyle}>Status</small><strong>{selectedPayment.status || "pending"} / {selectedPayment.paymentStatus || "pending"}</strong></div>
-                                </div>
-                                <p style={warningStyle}>A screenshot or checkbox is not proof of payment. Independently confirm the transaction in your receiving UPI app or bank account before approving.</p>
-                                <label htmlFor="payment-rejection-reason" style={{ display: "block", fontSize: 12, marginBottom: 7 }}>Rejection reason (required to reject)</label><textarea id="payment-rejection-reason" rows={2} value={paymentRejectionReason} onChange={e => setPaymentRejectionReason(e.target.value)} placeholder="e.g. Payment not received or amount mismatch" style={textareaStyle} />
-                                <div style={actionsStyle}><button type="button" disabled={!!busyPaymentReference || paymentRejectionReason.trim().length < 3} onClick={() => handleRejectManualPayment(selectedPayment)} style={rejectButtonStyle}>{busyPaymentReference === selectedPayment.reference ? "Processing…" : <><XCircle size={16} /> Reject payment</>}</button><button type="button" disabled={!!busyPaymentReference} onClick={() => handleVerifyManualPayment(selectedPayment)} style={approveButtonStyle}>{busyPaymentReference === selectedPayment.reference ? "Processing…" : <><CheckCircle2 size={16} /> Verify & approve</>}</button></div>
-                            </>}
-                        </div>
-                    </div>
-                    <footer style={{ padding: 14, borderTop: "1px solid #293548", color: "#9ca3af", fontSize: 11 }}>Approval must be backed by independent payment verification. The backend must enforce admin authorization and update booking/ticket state.</footer>
-                </section>
-            </div>}
+                        <footer
+                            style={{
+                                padding: 14,
+                                borderTop: "1px solid #293548",
+                                color: "#9ca3af",
+                                fontSize: 11,
+                            }}
+                        >
+                            Approval must be backed by independent payment verification. The
+                            backend must enforce admin authorization and update booking/ticket
+                            state.
+                        </footer>
+                    </section>
+                </div>
+            )}
             <ClaimReviewModal
                 claim={winnerAlert}
                 calledNumbers={calledBalls}
@@ -1946,10 +2576,7 @@ export default function Admin() {
             )}
 
             {/* SIDEBAR */}
-            <aside
-                className={`admin-sidebar ${sidebarOpen ? "open" : ""
-                    }`}
-            >
+            <aside className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}>
                 <div className="admin-brand">
                     <div className="admin-brand-logo">
                         <Gamepad2 size={21} />
@@ -1960,135 +2587,98 @@ export default function Admin() {
                             Tambola <span>Pulse</span>
                         </div>
 
-                        <div className="admin-brand-subtitle">
-                            ADMIN DESK
-                        </div>
+                        <div className="admin-brand-subtitle">ADMIN DESK</div>
                     </div>
 
                     <button
                         className="admin-sidebar-close"
-                        onClick={() =>
-                            setSidebarOpen(false)
-                        }
+                        onClick={() => setSidebarOpen(false)}
                         aria-label="Close navigation"
                     >
                         <X size={18} />
                     </button>
                 </div>
 
-                <div className="admin-nav-label">
-                    OPERATIONS
-                </div>
+                <div className="admin-nav-label">OPERATIONS</div>
 
                 <nav className="admin-navigation">
                     <button
-                        className={`admin-nav-item ${activeSection === "overview"
-                            ? "active"
-                            : ""
+                        className={`admin-nav-item ${activeSection === "overview" ? "active" : ""
                             }`}
-                        onClick={() =>
-                            scrollToSection("overview")
-                        }
+                        onClick={() => scrollToSection("overview")}
                     >
                         <LayoutDashboard size={16} />
                         <span>Live Caller Board</span>
                     </button>
 
                     <button
-                        className={`admin-nav-item ${activeSection === "tickets"
-                            ? "active"
-                            : ""
+                        className={`admin-nav-item ${activeSection === "tickets" ? "active" : ""
                             }`}
-                        onClick={() =>
-                            scrollToSection("tickets")
-                        }
+                        onClick={() => scrollToSection("tickets")}
                     >
                         <Ticket size={16} />
                         <span>Ticket Generator</span>
                     </button>
 
                     <button
-                        className={`admin-nav-item ${activeSection === "prizes"
-                            ? "active"
-                            : ""
+                        className={`admin-nav-item ${activeSection === "prizes" ? "active" : ""
                             }`}
-                        onClick={() =>
-                            scrollToSection("prizes")
-                        }
+                        onClick={() => scrollToSection("prizes")}
                     >
                         <Trophy size={16} />
                         <span>Prize Matrix</span>
                     </button>
 
                     <button
-                        className={`admin-nav-item ${activeSection === "disputes"
-                            ? "active"
-                            : ""
+                        className={`admin-nav-item ${activeSection === "disputes" ? "active" : ""
                             }`}
-                        onClick={() =>
-                            scrollToSection("disputes")
-                        }
+                        onClick={() => scrollToSection("disputes")}
                     >
                         <ShieldCheck size={16} />
                         <span>Dispute Queue</span>
                         <span className="admin-nav-badge">
-                            {winnerClaims.filter((claim) => claim.status === "pending").length}
+                            {
+                                winnerClaims.filter((claim) => claim.status === "pending")
+                                    .length
+                            }
                         </span>
                     </button>
 
                     <button
-                        className={`admin-nav-item ${activeSection === "bookings"
-                            ? "active"
-                            : ""
+                        className={`admin-nav-item ${activeSection === "bookings" ? "active" : ""
                             }`}
-                        onClick={() =>
-                            scrollToSection("bookings")
-                        }
+                        onClick={() => scrollToSection("bookings")}
                     >
                         <FileText size={16} />
                         <span>Booking History</span>
                     </button>
 
                     <button
-                        className={`admin-nav-item ${activeSection === "payments"
-                            ? "active"
-                            : ""
+                        className={`admin-nav-item ${activeSection === "payments" ? "active" : ""
                             }`}
-                        onClick={() =>
-                            scrollToSection("payments")
-                        }
+                        onClick={() => scrollToSection("payments")}
                     >
                         <Activity size={16} />
                         <span>Payment History</span>
                     </button>
 
                     <button
-                        className={`admin-nav-item ${activeSection === "history"
-                            ? "active"
-                            : ""
+                        className={`admin-nav-item ${activeSection === "history" ? "active" : ""
                             }`}
-                        onClick={() =>
-                            scrollToSection("history")
-                        }
+                        onClick={() => scrollToSection("history")}
                     >
                         <History size={16} />
                         <span>Historical Sessions</span>
                     </button>
                 </nav>
 
-                <div className="admin-nav-label secondary">
-                    ROOM
-                </div>
+                <div className="admin-nav-label secondary">ROOM</div>
 
                 <nav className="admin-navigation">
                     <button
-                        className={`admin-nav-item ${activeSection === "room"
-                            ? "active"
-                            : ""
+                        className={`admin-nav-item ${activeSection === "room" ? "active" : ""
                             }`}
-                        onClick={() =>
-                            scrollToSection("room")
-                        }
+                        onClick={() => scrollToSection("room")}
                     >
                         <Settings size={16} />
                         <span>Room Config</span>
@@ -2109,9 +2699,15 @@ export default function Admin() {
                     <button
                         type="button"
                         className="admin-poster-button"
-                        onClick={() => downloadGamePoster({ room, totalTickets: totalGenerated })}
+                        onClick={() =>
+                            downloadGamePoster({ room, totalTickets: totalGenerated })
+                        }
                         disabled={!room}
-                        title={room ? "Download a poster with the current game setup" : "Create or select a room first"}
+                        title={
+                            room
+                                ? "Download a poster with the current game setup"
+                                : "Create or select a room first"
+                        }
                     >
                         <Download size={15} />
                         <span>Download Announcement Poster</span>
@@ -2120,8 +2716,15 @@ export default function Admin() {
                         type="button"
                         className="admin-poster-button"
                         onClick={() => downloadWinnerPoster({ room, winnerClaims })}
-                        disabled={room?.status !== "closed" || !winnerClaims.some((claim) => claim.status === "verified")}
-                        title={room?.status !== "closed" ? "Close the room after the game finishes to download results" : "Download a poster of verified winners"}
+                        disabled={
+                            room?.status !== "closed" ||
+                            !winnerClaims.some((claim) => claim.status === "verified")
+                        }
+                        title={
+                            room?.status !== "closed"
+                                ? "Close the room after the game finishes to download results"
+                                : "Download a poster of verified winners"
+                        }
                     >
                         <Download size={15} />
                         <span>Download Result Poster</span>
@@ -2131,9 +2734,7 @@ export default function Admin() {
 
                         <div>
                             <strong>RNG SYSTEM ONLINE</strong>
-                            <small>
-                                Secure draw engine operational
-                            </small>
+                            <small>Secure draw engine operational</small>
                         </div>
                     </div>
                 </div>
@@ -2146,18 +2747,14 @@ export default function Admin() {
                     <div className="admin-header-left">
                         <button
                             className="admin-mobile-menu"
-                            onClick={() =>
-                                setSidebarOpen(true)
-                            }
+                            onClick={() => setSidebarOpen(true)}
                             aria-label="Open navigation"
                         >
                             <Menu size={19} />
                         </button>
 
                         <div>
-                            <div className="admin-deck-title">
-                                ADMIN OPERATIONAL DECK
-                            </div>
+                            <div className="admin-deck-title">ADMIN OPERATIONAL DECK</div>
                         </div>
 
                         <div className="admin-live-indicator">
@@ -2180,11 +2777,17 @@ export default function Admin() {
                             ref={adminMusicRef}
                             preload="metadata"
                             aria-hidden="true"
-                            onTimeUpdate={(event) => setMusicCurrentTime(event.currentTarget.currentTime || 0)}
+                            onTimeUpdate={(event) =>
+                                setMusicCurrentTime(event.currentTarget.currentTime || 0)
+                            }
                             onLoadedMetadata={(event) => {
                                 const audio = event.currentTarget;
-                                setMusicDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
-                                setMusicCurrentTime(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
+                                setMusicDuration(
+                                    Number.isFinite(audio.duration) ? audio.duration : 0,
+                                );
+                                setMusicCurrentTime(
+                                    Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
+                                );
                             }}
                             onEnded={playNextRoomMusic}
                         />
@@ -2193,10 +2796,20 @@ export default function Admin() {
                             className="admin-music-button"
                             onClick={toggleRoomMusic}
                             disabled={!roomCode}
-                            title={room?.musicTitle ? `${room.musicPlaying ? "Pause" : "Play"}: ${room.musicTitle}` : "Choose a music file to play for the room"}
+                            title={
+                                room?.musicTitle
+                                    ? `${room.musicPlaying ? "Pause" : "Play"}: ${room.musicTitle}`
+                                    : "Choose a music file to play for the room"
+                            }
                         >
                             {room?.musicPlaying ? <Pause size={15} /> : <Music2 size={15} />}
-                            <span>{room?.musicPlaying ? "Pause music" : room?.musicUrl ? "Play music" : "Play music"}</span>
+                            <span>
+                                {room?.musicPlaying
+                                    ? "Pause music"
+                                    : room?.musicUrl
+                                        ? "Play music"
+                                        : "Play music"}
+                            </span>
                         </button>
                         <button
                             type="button"
@@ -2204,7 +2817,11 @@ export default function Admin() {
                             onClick={() => musicInputRef.current?.click()}
                             disabled={!roomCode}
                             aria-label="Choose a different music file"
-                            title={room?.musicTitle ? `Change track (${room.musicTitle})` : "Choose a music file"}
+                            title={
+                                room?.musicTitle
+                                    ? `Change track (${room.musicTitle})`
+                                    : "Choose a music file"
+                            }
                         >
                             <Upload size={16} />
                         </button>
@@ -2239,28 +2856,66 @@ export default function Admin() {
                                 <ListMusic size={16} />
                             </button>
                             {musicLibraryOpen && (
-                                <section className="admin-music-library-panel" aria-label="Music library and player">
+                                <section
+                                    className="admin-music-library-panel"
+                                    aria-label="Music library and player"
+                                >
                                     <div className="admin-music-library-heading">
                                         <div>
                                             <strong>Music library</strong>
-                                            <small>{musicLibrary.length} saved {musicLibrary.length === 1 ? "track" : "tracks"}</small>
+                                            <small>
+                                                {musicLibrary.length} saved{" "}
+                                                {musicLibrary.length === 1 ? "track" : "tracks"}
+                                            </small>
                                         </div>
-                                        <button type="button" className="admin-music-library-close" onClick={() => setMusicLibraryOpen(false)} aria-label="Close music library">
+                                        <button
+                                            type="button"
+                                            className="admin-music-library-close"
+                                            onClick={() => setMusicLibraryOpen(false)}
+                                            aria-label="Close music library"
+                                        >
                                             <X size={16} />
                                         </button>
                                     </div>
                                     <div className="admin-music-current-track">
                                         <Music2 size={16} />
-                                        <span title={room?.musicTitle || "No track selected"}>{room?.musicTitle || "No track selected"}</span>
+                                        <span title={room?.musicTitle || "No track selected"}>
+                                            {room?.musicTitle || "No track selected"}
+                                        </span>
                                     </div>
                                     <div className="admin-music-transport">
-                                        <button type="button" onClick={playPreviousRoomMusic} disabled={!musicLibrary.length} aria-label="Previous track" title="Previous track">
+                                        <button
+                                            type="button"
+                                            onClick={playPreviousRoomMusic}
+                                            disabled={!musicLibrary.length}
+                                            aria-label="Previous track"
+                                            title="Previous track"
+                                        >
                                             <SkipBack size={16} />
                                         </button>
-                                        <button type="button" className="admin-music-main-transport" onClick={toggleRoomMusic} disabled={!roomCode} aria-label={room?.musicPlaying ? "Pause music" : "Play music"} title={room?.musicPlaying ? "Pause" : "Play"}>
-                                            {room?.musicPlaying ? <Pause size={17} /> : <Play size={17} />}
+                                        <button
+                                            type="button"
+                                            className="admin-music-main-transport"
+                                            onClick={toggleRoomMusic}
+                                            disabled={!roomCode}
+                                            aria-label={
+                                                room?.musicPlaying ? "Pause music" : "Play music"
+                                            }
+                                            title={room?.musicPlaying ? "Pause" : "Play"}
+                                        >
+                                            {room?.musicPlaying ? (
+                                                <Pause size={17} />
+                                            ) : (
+                                                <Play size={17} />
+                                            )}
                                         </button>
-                                        <button type="button" onClick={playNextRoomMusic} disabled={!musicLibrary.length} aria-label="Next track" title="Next track">
+                                        <button
+                                            type="button"
+                                            onClick={playNextRoomMusic}
+                                            disabled={!musicLibrary.length}
+                                            aria-label="Next track"
+                                            title="Next track"
+                                        >
                                             <SkipForward size={16} />
                                         </button>
                                     </div>
@@ -2270,14 +2925,25 @@ export default function Admin() {
                                             min="0"
                                             max={Math.max(musicDuration, 1)}
                                             step="0.1"
-                                            value={Math.min(musicCurrentTime, musicDuration || musicCurrentTime)}
+                                            value={Math.min(
+                                                musicCurrentTime,
+                                                musicDuration || musicCurrentTime,
+                                            )}
                                             onChange={seekRoomMusic}
                                             disabled={!room?.musicUrl || !musicDuration}
                                             aria-label="Seek music playback"
                                         />
-                                        <div><span>{formatMusicTime(musicCurrentTime)}</span><span>{formatMusicTime(musicDuration)}</span></div>
+                                        <div>
+                                            <span>{formatMusicTime(musicCurrentTime)}</span>
+                                            <span>{formatMusicTime(musicDuration)}</span>
+                                        </div>
                                     </div>
-                                    <button type="button" className="admin-music-library-upload" onClick={() => musicInputRef.current?.click()} disabled={!roomCode}>
+                                    <button
+                                        type="button"
+                                        className="admin-music-library-upload"
+                                        onClick={() => musicInputRef.current?.click()}
+                                        disabled={!roomCode}
+                                    >
                                         <Upload size={14} /> Add music from this device
                                     </button>
                                     <label className="admin-music-library-search">
@@ -2292,11 +2958,19 @@ export default function Admin() {
                                     </label>
                                     <div className="admin-music-library-list">
                                         {musicLibrary
-                                            .filter((track) => String(track.title || "").toLowerCase().includes(musicSearch.trim().toLowerCase()))
+                                            .filter((track) =>
+                                                String(track.title || "")
+                                                    .toLowerCase()
+                                                    .includes(musicSearch.trim().toLowerCase()),
+                                            )
                                             .map((track, index) => (
                                                 <button
                                                     type="button"
-                                                    key={track._id || track.fileName || `${track.url}-${index}`}
+                                                    key={
+                                                        track._id ||
+                                                        track.fileName ||
+                                                        `${track.url}-${index}`
+                                                    }
                                                     className={`admin-music-library-track ${track.url === room?.musicUrl ? "active" : ""}`}
                                                     onClick={() => selectRoomMusic(track)}
                                                     disabled={!roomCode}
@@ -2304,11 +2978,29 @@ export default function Admin() {
                                                 >
                                                     <Music2 size={14} />
                                                     <span>{track.title}</span>
-                                                    {track.url === room?.musicUrl && room?.musicPlaying ? <span className="admin-music-playing-indicator">PLAYING</span> : null}
+                                                    {track.url === room?.musicUrl &&
+                                                        room?.musicPlaying ? (
+                                                        <span className="admin-music-playing-indicator">
+                                                            PLAYING
+                                                        </span>
+                                                    ) : null}
                                                 </button>
                                             ))}
-                                        {musicLibrary.length === 0 && <p className="admin-music-library-empty">No saved music yet. Add a song from your device.</p>}
-                                        {musicLibrary.length > 0 && !musicLibrary.some((track) => String(track.title || "").toLowerCase().includes(musicSearch.trim().toLowerCase())) && <p className="admin-music-library-empty">No tracks match that search.</p>}
+                                        {musicLibrary.length === 0 && (
+                                            <p className="admin-music-library-empty">
+                                                No saved music yet. Add a song from your device.
+                                            </p>
+                                        )}
+                                        {musicLibrary.length > 0 &&
+                                            !musicLibrary.some((track) =>
+                                                String(track.title || "")
+                                                    .toLowerCase()
+                                                    .includes(musicSearch.trim().toLowerCase()),
+                                            ) && (
+                                                <p className="admin-music-library-empty">
+                                                    No tracks match that search.
+                                                </p>
+                                            )}
                                     </div>
                                 </section>
                             )}
@@ -2320,23 +3012,15 @@ export default function Admin() {
 
                         <button
                             className="admin-header-button"
-                            onClick={() =>
-                                setNotifications(
-                                    (value) => !value,
-                                )
-                            }
+                            onClick={() => setNotifications((value) => !value)}
                             aria-label="Toggle notifications"
                         >
                             <Bell size={17} />
 
-                            {notifications && (
-                                <span className="admin-notification-dot" />
-                            )}
+                            {notifications && <span className="admin-notification-dot" />}
                         </button>
 
-                        <div className="admin-avatar">
-                            A
-                        </div>
+                        <div className="admin-avatar">A</div>
                     </div>
                 </header>
 
@@ -2352,10 +3036,7 @@ export default function Admin() {
                     {room ? (
                         <>
                             {/* ROOM HEADER */}
-                            <section
-                                id="room"
-                                className="admin-room-header"
-                            >
+                            <section id="room" className="admin-room-header">
                                 <div className="admin-room-info">
                                     <div className="admin-room-icon">
                                         <Gamepad2 size={22} />
@@ -2364,32 +3045,24 @@ export default function Admin() {
                                     <div>
                                         <div className="admin-room-name">
                                             Room #{roomCode}
-
                                             <span className="admin-room-live">
                                                 <span />
-                                                {gameState === "live" ? "LIVE HOST SESSION" : gameState.toUpperCase()}
+                                                {gameState === "live"
+                                                    ? "LIVE HOST SESSION"
+                                                    : gameState.toUpperCase()}
                                             </span>
                                         </div>
 
                                         <div className="admin-room-meta">
                                             Jackpot
-                                            <strong>
-                                                ₹{room?.jackpot ?? 0}
-                                            </strong>
-
+                                            <strong>₹{room?.jackpot ?? 0}</strong>
                                             <span>•</span>
-
                                             Tickets
-                                            <strong>
-                                                {totalGenerated}
-                                            </strong>
-
+                                            <strong>{totalGenerated}</strong>
                                             <span>•</span>
-
                                             Balls
                                             <strong>
-                                                {calledBalls.length}
-                                                /{room?.balls ?? 90}
+                                                {calledBalls.length}/{room?.balls ?? 90}
                                             </strong>
                                         </div>
                                     </div>
@@ -2404,7 +3077,9 @@ export default function Admin() {
                                     <button
                                         className="admin-poster-shortcut"
                                         type="button"
-                                        onClick={() => downloadGamePoster({ room, totalTickets: totalGenerated })}
+                                        onClick={() =>
+                                            downloadGamePoster({ room, totalTickets: totalGenerated })
+                                        }
                                         disabled={!room}
                                         title="Download the announcement poster for this room"
                                     >
@@ -2412,15 +3087,15 @@ export default function Admin() {
                                         Announcement Poster
                                     </button>
 
-                                    <button className="admin-action-button" onClick={clearSelectedRoom}>
+                                    <button
+                                        className="admin-action-button"
+                                        onClick={clearSelectedRoom}
+                                    >
                                         <X size={14} />
                                         New Room
                                     </button>
 
-                                    <button
-                                        className="admin-action-button"
-                                        onClick={resetRoom}
-                                    >
+                                    <button className="admin-action-button" onClick={resetRoom}>
                                         <RefreshCcw size={14} />
                                         Reset
                                     </button>
@@ -2436,52 +3111,220 @@ export default function Admin() {
                             </section>
 
                             {/* OVERVIEW */}
-                            <section
-                                id="overview"
-                                className="admin-section"
-                            >
+                            <section id="overview" className="admin-section">
                                 {/* ADDED: Live room attendance table; active means a room heartbeat within 20 seconds. */}
                                 {(() => {
-                                    const confirmedBookings = bookings.filter((booking) => booking.paymentStatus === "paid" && booking.status === "confirmed");
-                                    const bookedPlayers = new Map(confirmedBookings.filter((booking) => booking.user?._id).map((booking) => [String(booking.user._id), booking]));
+                                    const confirmedBookings = bookings.filter(
+                                        (booking) =>
+                                            booking.paymentStatus === "paid" &&
+                                            booking.status === "confirmed",
+                                    );
+                                    const bookedPlayers = new Map(
+                                        confirmedBookings
+                                            .filter((booking) => booking.user?._id)
+                                            .map((booking) => [String(booking.user._id), booking]),
+                                    );
                                     const activeCutoff = Date.now() - 20000;
-                                    const activeAttendees = [...new Map(confirmedBookings
-                                        .filter((booking) => booking.user && String(booking.user.roomPresenceRoom) === String(room?._id) && new Date(booking.user.roomLastSeen).getTime() >= activeCutoff)
-                                        .map((booking) => [String(booking.user._id), booking])).values()];
+                                    const activeAttendees = [
+                                        ...new Map(
+                                            confirmedBookings
+                                                .filter(
+                                                    (booking) =>
+                                                        booking.user &&
+                                                        String(booking.user.roomPresenceRoom) ===
+                                                        String(room?._id) &&
+                                                        new Date(booking.user.roomLastSeen).getTime() >=
+                                                        activeCutoff,
+                                                )
+                                                .map((booking) => [String(booking.user._id), booking]),
+                                        ).values(),
+                                    ];
                                     const pageSize = 10;
-                                    const pageCount = Math.max(1, Math.ceil(activeAttendees.length / pageSize));
+                                    const pageCount = Math.max(
+                                        1,
+                                        Math.ceil(activeAttendees.length / pageSize),
+                                    );
                                     const currentPage = Math.min(attendancePage, pageCount - 1);
-                                    const pageAttendees = activeAttendees.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+                                    const pageAttendees = activeAttendees.slice(
+                                        currentPage * pageSize,
+                                        (currentPage + 1) * pageSize,
+                                    );
                                     return (
                                         <div className="admin-panel" style={{ marginBottom: 24 }}>
-                                            <PanelHeader icon={Users} title="Room attendance" description="Players whose room session has checked in within the last 20 seconds." tag="LIVE PRESENCE" />
-                                            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "4px 0 18px", flexWrap: "wrap" }}>
-                                                <strong style={{ fontSize: 26 }}>{activeAttendees.length} <span style={{ fontSize: 15, opacity: 0.65, fontWeight: 600 }}>joined</span></strong>
+                                            <PanelHeader
+                                                icon={Users}
+                                                title="Room attendance"
+                                                description="Players whose room session has checked in within the last 20 seconds."
+                                                tag="LIVE PRESENCE"
+                                            />
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "baseline",
+                                                    gap: 8,
+                                                    margin: "4px 0 18px",
+                                                    flexWrap: "wrap",
+                                                }}
+                                            >
+                                                <strong style={{ fontSize: 26 }}>
+                                                    {activeAttendees.length}{" "}
+                                                    <span
+                                                        style={{
+                                                            fontSize: 15,
+                                                            opacity: 0.65,
+                                                            fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        joined
+                                                    </span>
+                                                </strong>
                                                 <span style={{ opacity: 0.6 }}>/</span>
-                                                <strong style={{ fontSize: 26 }}>{bookedPlayers.size}</strong>
+                                                <strong style={{ fontSize: 26 }}>
+                                                    {bookedPlayers.size}
+                                                </strong>
                                                 <span style={{ opacity: 0.65 }}>booked players</span>
                                             </div>
                                             <div style={{ overflowX: "auto" }}>
-                                                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                                                    <thead><tr>{["PLAYER", "PHONE", "BOOKING", "TICKETS", "LAST SEEN"].map((label) => <th key={label} style={{ padding: "10px 12px", fontSize: 11, opacity: 0.65, borderBottom: "1px solid rgba(148,163,184,.2)" }}>{label}</th>)}</tr></thead>
-                                                    <tbody>{pageAttendees.map((booking) => <tr key={booking.user._id}>
-                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{booking.user.name || "Player"}</td>
-                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{booking.user.phone || "—"}</td>
-                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{booking.reference || "—"}</td>
-                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{booking.tickets?.length || 0}</td>
-                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{new Date(booking.user.roomLastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</td>
-                                                    </tr>)}
-                                                    {activeAttendees.length === 0 && <tr><td colSpan="5" style={{ padding: 20, textAlign: "center", opacity: 0.65 }}>No booked players are currently active in this room.</td></tr>}</tbody>
+                                                <table
+                                                    style={{
+                                                        width: "100%",
+                                                        borderCollapse: "collapse",
+                                                        textAlign: "left",
+                                                    }}
+                                                >
+                                                    <thead>
+                                                        <tr>
+                                                            {[
+                                                                "PLAYER",
+                                                                "PHONE",
+                                                                "BOOKING",
+                                                                "TICKETS",
+                                                                "LAST SEEN",
+                                                            ].map((label) => (
+                                                                <th
+                                                                    key={label}
+                                                                    style={{
+                                                                        padding: "10px 12px",
+                                                                        fontSize: 11,
+                                                                        opacity: 0.65,
+                                                                        borderBottom:
+                                                                            "1px solid rgba(148,163,184,.2)",
+                                                                    }}
+                                                                >
+                                                                    {label}
+                                                                </th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {pageAttendees.map((booking) => (
+                                                            <tr key={booking.user._id}>
+                                                                <td
+                                                                    style={{
+                                                                        padding: "12px",
+                                                                        borderBottom:
+                                                                            "1px solid rgba(148,163,184,.12)",
+                                                                    }}
+                                                                >
+                                                                    {booking.user.name || "Player"}
+                                                                </td>
+                                                                <td
+                                                                    style={{
+                                                                        padding: "12px",
+                                                                        borderBottom:
+                                                                            "1px solid rgba(148,163,184,.12)",
+                                                                    }}
+                                                                >
+                                                                    {booking.user.phone || "—"}
+                                                                </td>
+                                                                <td
+                                                                    style={{
+                                                                        padding: "12px",
+                                                                        borderBottom:
+                                                                            "1px solid rgba(148,163,184,.12)",
+                                                                    }}
+                                                                >
+                                                                    {booking.reference || "—"}
+                                                                </td>
+                                                                <td
+                                                                    style={{
+                                                                        padding: "12px",
+                                                                        borderBottom:
+                                                                            "1px solid rgba(148,163,184,.12)",
+                                                                    }}
+                                                                >
+                                                                    {booking.tickets?.length || 0}
+                                                                </td>
+                                                                <td
+                                                                    style={{
+                                                                        padding: "12px",
+                                                                        borderBottom:
+                                                                            "1px solid rgba(148,163,184,.12)",
+                                                                    }}
+                                                                >
+                                                                    {new Date(
+                                                                        booking.user.roomLastSeen,
+                                                                    ).toLocaleTimeString([], {
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                        second: "2-digit",
+                                                                    })}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                        {activeAttendees.length === 0 && (
+                                                            <tr>
+                                                                <td
+                                                                    colSpan="5"
+                                                                    style={{
+                                                                        padding: 20,
+                                                                        textAlign: "center",
+                                                                        opacity: 0.65,
+                                                                    }}
+                                                                >
+                                                                    No booked players are currently active in this
+                                                                    room.
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
                                                 </table>
                                             </div>
                                             {/* ADDED: Paginate the live attendance list in pages of 10 players. */}
                                             {activeAttendees.length > 0 && (
                                                 <div className="admin-attendance-pagination">
-                                                    <span>Showing {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, activeAttendees.length)} of {activeAttendees.length} players</span>
+                                                    <span>
+                                                        Showing {currentPage * pageSize + 1}–
+                                                        {Math.min(
+                                                            (currentPage + 1) * pageSize,
+                                                            activeAttendees.length,
+                                                        )}{" "}
+                                                        of {activeAttendees.length} players
+                                                    </span>
                                                     <div>
-                                                        <button type="button" onClick={() => setAttendancePage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>Previous</button>
-                                                        <strong>Page {currentPage + 1} of {pageCount}</strong>
-                                                        <button type="button" onClick={() => setAttendancePage(Math.min(pageCount - 1, currentPage + 1))} disabled={currentPage >= pageCount - 1}>Next</button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setAttendancePage(Math.max(0, currentPage - 1))
+                                                            }
+                                                            disabled={currentPage === 0}
+                                                        >
+                                                            Previous
+                                                        </button>
+                                                        <strong>
+                                                            Page {currentPage + 1} of {pageCount}
+                                                        </strong>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setAttendancePage(
+                                                                    Math.min(pageCount - 1, currentPage + 1),
+                                                                )
+                                                            }
+                                                            disabled={currentPage >= pageCount - 1}
+                                                        >
+                                                            Next
+                                                        </button>
                                                     </div>
                                                 </div>
                                             )}
@@ -2500,9 +3343,7 @@ export default function Admin() {
 
                                         <div className="admin-scheduler">
                                             <div className="admin-schedule-box">
-                                                <span>
-                                                    START TIME
-                                                </span>
+                                                <span>START TIME</span>
 
                                                 <strong>
                                                     20:00
@@ -2515,28 +3356,18 @@ export default function Admin() {
                                             </div>
 
                                             <div className="admin-schedule-box">
-                                                <span>
-                                                    PLAYERS
-                                                </span>
+                                                <span>PLAYERS</span>
 
-                                                <strong>
-                                                    128
-                                                </strong>
+                                                <strong>128</strong>
 
                                                 <div className="admin-countdown">
-                                                    <strong>
-                                                        +12
-                                                    </strong>{" "}
-                                                    this session
+                                                    <strong>+12</strong> this session
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="admin-scheduler-actions">
-                                            <button
-                                                className="admin-start-game"
-                                                onClick={startGame}
-                                            >
+                                            <button className="admin-start-game" onClick={startGame}>
                                                 <Play size={15} />
                                                 START GAME
                                             </button>
@@ -2545,8 +3376,7 @@ export default function Admin() {
                                                 className="admin-secondary-action"
                                                 onClick={toggleGame}
                                             >
-                                                {gameState ===
-                                                    "live" ? (
+                                                {gameState === "live" ? (
                                                     <>
                                                         <Pause size={14} />
                                                         Pause
@@ -2573,38 +3403,24 @@ export default function Admin() {
                                             title="Automated Caller"
                                             description="Secure live draw engine."
                                             tag={
-                                                gameState ===
-                                                    "live"
-                                                    ? "LIVE"
-                                                    : gameState.toUpperCase()
+                                                gameState === "live" ? "LIVE" : gameState.toUpperCase()
                                             }
                                         />
 
                                         <div className="admin-current-ball-area">
                                             <div className="admin-ball">
-                                                <span>
-                                                    CURRENT BALL
-                                                </span>
+                                                <span>CURRENT BALL</span>
 
-                                                <strong>
-                                                    {currentBall ||
-                                                        "--"}
-                                                </strong>
+                                                <strong>{currentBall || "--"}</strong>
 
-                                                <small>
-                                                    / {room?.balls ?? 90}
-                                                </small>
+                                                <small>/ {room?.balls ?? 90}</small>
                                             </div>
                                         </div>
 
                                         <div className="admin-next-draw">
-                                            <span>
-                                                NEXT DRAW
-                                            </span>
+                                            <span>NEXT DRAW</span>
 
-                                            <strong>
-                                                {cadence}s
-                                            </strong>
+                                            <strong>{cadence}s</strong>
                                         </div>
 
                                         <div className="admin-progress">
@@ -2621,47 +3437,30 @@ export default function Admin() {
                                         </div>
 
                                         <div className="admin-cadence">
-                                            <span>
-                                                CALL CADENCE
-                                            </span>
+                                            <span>CALL CADENCE</span>
 
-                                            {[3, 5, 10].map(
-                                                (value) => (
-                                                    <button
-                                                        key={value}
-                                                        className={
-                                                            cadence ===
-                                                                value
-                                                                ? "active"
-                                                                : ""
-                                                        }
-                                                        onClick={() =>
-                                                            setCadence(
-                                                                value,
-                                                            )
-                                                        }
-                                                    >
-                                                        {value}s
-                                                    </button>
-                                                ),
-                                            )}
+                                            {[3, 5, 10].map((value) => (
+                                                <button
+                                                    key={value}
+                                                    className={cadence === value ? "active" : ""}
+                                                    onClick={() => setCadence(value)}
+                                                >
+                                                    {value}s
+                                                </button>
+                                            ))}
                                         </div>
 
                                         <button
                                             className="admin-draw-button"
                                             onClick={drawBall}
-                                            disabled={
-                                                gameState !== "live"
-                                            }
+                                            disabled={gameState !== "live"}
                                         >
                                             <Zap size={14} />
                                             DRAW NEXT BALL
                                         </button>
 
                                         <div className="admin-recent-calls">
-                                            <span>
-                                                RECENT CALLS
-                                            </span>
+                                            <span>RECENT CALLS</span>
 
                                             <div className="admin-recent-ball-list">
                                                 {calledBalls
@@ -2696,12 +3495,7 @@ export default function Admin() {
                                         label="TICKETS SOLD"
                                         value={bookedTickets}
                                         detail={`${Math.round(
-                                            (bookedTickets /
-                                                Math.max(
-                                                    totalGenerated,
-                                                    1,
-                                                )) *
-                                            100,
+                                            (bookedTickets / Math.max(totalGenerated, 1)) * 100,
                                         )}% of inventory`}
                                     />
 
@@ -2719,16 +3513,13 @@ export default function Admin() {
                                         value={
                                             gameState === "live"
                                                 ? "LIVE"
-                                                : gameState ===
-                                                    "paused"
+                                                : gameState === "paused"
                                                     ? "PAUSED"
-                                                    : gameState ===
-                                                        "terminated"
+                                                    : gameState === "terminated"
                                                         ? "ENDED"
                                                         : "READY"
                                         }
-                                        detail={`Ball #${currentBall || "--"
-                                            }`}
+                                        detail={`Ball #${currentBall || "--"}`}
                                         tone="purple"
                                     />
                                 </div>
@@ -2749,9 +3540,7 @@ export default function Admin() {
 
                                 <div className="admin-generator-actions">
                                     <div className="admin-count-input">
-                                        <span>
-                                            TICKETS
-                                        </span>
+                                        <span>TICKETS</span>
 
                                         {/* CHANGED: Allow any ticket count, not just multiples of six. */}
                                         <input
@@ -2760,11 +3549,7 @@ export default function Admin() {
                                             max="1000"
                                             step="1"
                                             value={ticketCount}
-                                            onChange={(event) =>
-                                                setTicketCount(
-                                                    event.target.value,
-                                                )
-                                            }
+                                            onChange={(event) => setTicketCount(event.target.value)}
                                         />
                                     </div>
 
@@ -2778,11 +3563,7 @@ export default function Admin() {
 
                                     <button
                                         className="admin-export-button"
-                                        onClick={() =>
-                                            setLastAction(
-                                                "Export requested",
-                                            )
-                                        }
+                                        onClick={() => setLastAction("Export requested")}
                                     >
                                         <Download size={14} />
                                         Export PDF
@@ -2791,69 +3572,40 @@ export default function Admin() {
 
                                 <div className="admin-inventory">
                                     <div>
-                                        <span>
-                                            TOTAL GENERATED
-                                        </span>
-                                        <strong>
-                                            {totalGenerated}
-                                        </strong>
+                                        <span>TOTAL GENERATED</span>
+                                        <strong>{totalGenerated}</strong>
                                     </div>
 
                                     <div>
-                                        <span>
-                                            AVAILABLE
-                                        </span>
-                                        <strong className="green-text">
-                                            {availableTickets}
-                                        </strong>
+                                        <span>AVAILABLE</span>
+                                        <strong className="green-text">{availableTickets}</strong>
                                     </div>
 
                                     <div>
-                                        <span>
-                                            BOOKED
-                                        </span>
-                                        <strong className="purple-text">
-                                            {bookedTickets}
-                                        </strong>
+                                        <span>BOOKED</span>
+                                        <strong className="purple-text">{bookedTickets}</strong>
                                     </div>
 
                                     <div>
-                                        <span>
-                                            HELD
-                                        </span>
-                                        <strong className="orange-text">
-                                            1
-                                        </strong>
+                                        <span>HELD</span>
+                                        <strong className="orange-text">1</strong>
                                     </div>
 
                                     <div>
-                                        <span>
-                                            CAPACITY
-                                        </span>
-                                        <strong>
-                                            1,000
-                                        </strong>
+                                        <span>CAPACITY</span>
+                                        <strong>1,000</strong>
                                     </div>
                                 </div>
 
                                 <div className="admin-ticket-grid-list">
-                                    {tickets
-                                        .slice(0, 8)
-                                        .map((ticket) => (
-                                            <TicketCard
-                                                key={ticket.code}
-                                                ticket={ticket}
-                                            />
-                                        ))}
+                                    {tickets.slice(0, 8).map((ticket) => (
+                                        <TicketCard key={ticket.code} ticket={ticket} />
+                                    ))}
                                 </div>
 
                                 <button
                                     className="admin-view-all"
-                                    onClick={() =>
-                                        setLastAction(
-                                            "Ticket inventory opened",
-                                        )
-                                    }
+                                    onClick={() => setLastAction("Ticket inventory opened")}
                                 >
                                     View full ticket inventory
                                     <ChevronRight size={13} />
@@ -2861,10 +3613,7 @@ export default function Admin() {
                             </section>
 
                             {/* PRIZES */}
-                            <section
-                                id="prizes"
-                                className="admin-two-column"
-                            >
+                            <section id="prizes" className="admin-two-column">
                                 <div className="admin-panel">
                                     <PanelHeader
                                         icon={Trophy}
@@ -2877,15 +3626,13 @@ export default function Admin() {
                                         {(room?.prizes || []).map((prize, index) => {
                                             const verifiedWinner = winnerClaims.find(
                                                 (claim) =>
-                                                    String(claim.prizeId) ===
-                                                    String(prize.id) &&
+                                                    String(claim.prizeId) === String(prize.id) &&
                                                     claim.status === "verified",
                                             );
 
                                             const pendingClaim = winnerClaims.find(
                                                 (claim) =>
-                                                    String(claim.prizeId) ===
-                                                    String(prize.id) &&
+                                                    String(claim.prizeId) === String(prize.id) &&
                                                     claim.status === "pending",
                                             );
 
@@ -2903,9 +3650,7 @@ export default function Admin() {
 
                                                         {verifiedWinner ? (
                                                             <small className="prize-winner">
-                                                                Winner:{" "}
-                                                                {verifiedWinner.user?.name ||
-                                                                    "Unknown"}
+                                                                Winner: {verifiedWinner.user?.name || "Unknown"}
                                                             </small>
                                                         ) : pendingClaim ? (
                                                             <small className="prize-pending">
@@ -2921,10 +3666,7 @@ export default function Admin() {
                                                     </div>
 
                                                     <strong>
-                                                        ₹
-                                                        {Number(
-                                                            prize.amount || 0,
-                                                        ).toLocaleString("en-IN")}
+                                                        ₹{Number(prize.amount || 0).toLocaleString("en-IN")}
                                                     </strong>
 
                                                     <small>
@@ -2939,9 +3681,7 @@ export default function Admin() {
                                     </div>
 
                                     <div className="admin-payout-footer">
-                                        <span>
-                                            TOTAL CONFIGURED PAYOUT
-                                        </span>
+                                        <span>TOTAL CONFIGURED PAYOUT</span>
 
                                         <strong>
                                             ₹
@@ -2974,15 +3714,33 @@ export default function Admin() {
                                     <div className="admin-verification-summary">
                                         <div className="verification-summary-item">
                                             <span>PENDING</span>
-                                            <strong>{winnerClaims.filter((claim) => claim.status === "pending").length}</strong>
+                                            <strong>
+                                                {
+                                                    winnerClaims.filter(
+                                                        (claim) => claim.status === "pending",
+                                                    ).length
+                                                }
+                                            </strong>
                                         </div>
                                         <div className="verification-summary-item">
                                             <span>VERIFIED</span>
-                                            <strong>{winnerClaims.filter((claim) => claim.status === "verified").length}</strong>
+                                            <strong>
+                                                {
+                                                    winnerClaims.filter(
+                                                        (claim) => claim.status === "verified",
+                                                    ).length
+                                                }
+                                            </strong>
                                         </div>
                                         <div className="verification-summary-item">
                                             <span>REJECTED</span>
-                                            <strong>{winnerClaims.filter((claim) => claim.status === "rejected").length}</strong>
+                                            <strong>
+                                                {
+                                                    winnerClaims.filter(
+                                                        (claim) => claim.status === "rejected",
+                                                    ).length
+                                                }
+                                            </strong>
                                         </div>
                                     </div>
 
@@ -2991,34 +3749,79 @@ export default function Admin() {
                                             <div className="verification-empty">
                                                 <ShieldCheck size={28} />
                                                 <strong>No claims submitted</strong>
-                                                <span>Player prize claims will appear here when submitted.</span>
+                                                <span>
+                                                    Player prize claims will appear here when submitted.
+                                                </span>
                                             </div>
                                         ) : (
                                             winnerClaims.map((claim) => {
-                                                const status = String(claim.status || "pending").toLowerCase();
-                                                const ticketLabel = claim.ticket?.publicCode || claim.ticket?.code || claim.ticket?.number || "Unknown ticket";
+                                                const status = String(
+                                                    claim.status || "pending",
+                                                ).toLowerCase();
+                                                const ticketLabel =
+                                                    claim.ticket?.publicCode ||
+                                                    claim.ticket?.code ||
+                                                    claim.ticket?.number ||
+                                                    "Unknown ticket";
                                                 return (
-                                                    <div className={`verification-claim-card ${status}`} key={claim._id}>
+                                                    <div
+                                                        className={`verification-claim-card ${status}`}
+                                                        key={claim._id}
+                                                    >
                                                         <div className="verification-claim-main">
-                                                            <div className={`verification-claim-icon ${status}`}>
-                                                                {status === "verified" ? <CheckCircle2 size={17} /> : status === "rejected" ? <XCircle size={17} /> : <AlertTriangle size={17} />}
+                                                            <div
+                                                                className={`verification-claim-icon ${status}`}
+                                                            >
+                                                                {status === "verified" ? (
+                                                                    <CheckCircle2 size={17} />
+                                                                ) : status === "rejected" ? (
+                                                                    <XCircle size={17} />
+                                                                ) : (
+                                                                    <AlertTriangle size={17} />
+                                                                )}
                                                             </div>
                                                             <div className="verification-claim-content">
                                                                 <div className="verification-claim-title">
-                                                                    <strong>{claim.prizeName || "Prize Claim"}</strong>
-                                                                    <span className={`verification-status-pill ${status}`}>{status.toUpperCase()}</span>
+                                                                    <strong>
+                                                                        {claim.prizeName || "Prize Claim"}
+                                                                    </strong>
+                                                                    <span
+                                                                        className={`verification-status-pill ${status}`}
+                                                                    >
+                                                                        {status.toUpperCase()}
+                                                                    </span>
                                                                 </div>
                                                                 <div className="verification-claim-player">
                                                                     <UserRound size={13} />
-                                                                    <span>{claim.user?.name || "Unknown Player"}</span>
-                                                                    <span className="verification-separator">•</span>
+                                                                    <span>
+                                                                        {claim.user?.name || "Unknown Player"}
+                                                                    </span>
+                                                                    <span className="verification-separator">
+                                                                        •
+                                                                    </span>
                                                                     <Phone size={13} />
                                                                     <span>{claim.user?.phone || "N/A"}</span>
                                                                 </div>
                                                                 <div className="verification-claim-meta">
-                                                                    <span>Ticket <strong>{ticketLabel}</strong></span>
-                                                                    <span>Prize <strong>₹{Number(claim.prizeAmount || 0).toLocaleString("en-IN")}</strong></span>
-                                                                    <span>{claim.claimedAt ? new Date(claim.claimedAt).toLocaleString("en-IN") : "Time unavailable"}</span>
+                                                                    <span>
+                                                                        Ticket <strong>{ticketLabel}</strong>
+                                                                    </span>
+                                                                    <span>
+                                                                        Prize{" "}
+                                                                        <strong>
+                                                                            ₹
+                                                                            {Number(
+                                                                                claim.prizeAmount || 0,
+                                                                            ).toLocaleString("en-IN")}
+                                                                        </strong>
+                                                                    </span>
+                                                                    <span>
+                                                                        {claim.claimedAt
+                                                                            ? new Date(
+                                                                                claim.claimedAt,
+                                                                            ).toLocaleString("en-IN")
+                                                                            : "Time unavailable"}
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -3029,7 +3832,9 @@ export default function Admin() {
                                                                 onClick={() => setWinnerAlert(claim)}
                                                             >
                                                                 <ShieldCheck size={14} />
-                                                                {status === "pending" ? "Review Claim" : "View Details"}
+                                                                {status === "pending"
+                                                                    ? "Review Claim"
+                                                                    : "View Details"}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -3041,7 +3846,11 @@ export default function Admin() {
                                     <button
                                         className="admin-view-queue"
                                         type="button"
-                                        onClick={() => document.getElementById("disputes")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                                        onClick={() =>
+                                            document
+                                                .getElementById("disputes")
+                                                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                                        }
                                     >
                                         Open Verification Queue
                                         <ChevronRight size={13} />
@@ -3075,79 +3884,54 @@ export default function Admin() {
                                         </thead>
 
                                         <tbody>
-                                            {bookings.map(
-                                                (booking) => (
-                                                    <tr
-                                                        key={
-                                                            booking.reference
-                                                        }
-                                                    >
-                                                        <td className="reference">
-                                                            {
-                                                                booking.reference
-                                                            }
-                                                        </td>
+                                            {bookings.map((booking) => (
+                                                <tr key={booking.reference}>
+                                                    <td className="reference">{booking.reference}</td>
 
-                                                        <td className="muted">
-                                                            {booking.user?.name ||
-                                                                booking.user?.phone ||
-                                                                "Unknown"}
-                                                        </td>
+                                                    <td className="muted">
+                                                        {booking.user?.name ||
+                                                            booking.user?.phone ||
+                                                            "Unknown"}
+                                                    </td>
 
-                                                        <td>
-                                                            <div className="ticket-pills">
-                                                                {(booking.tickets || []).map(
-                                                                    (
-                                                                        ticket,
-                                                                    ) => (
-                                                                        <span
-                                                                            key={
-                                                                                ticket
-                                                                            }
-                                                                        >
-                                                                            {typeof ticket === "string"
-                                                                                ? ticket.split("-")[2]
-                                                                                : ticket.number}
+                                                    <td>
+                                                        <div className="ticket-pills">
+                                                            {(booking.tickets || []).map((ticket) => (
+                                                                <span key={ticket}>
+                                                                    {typeof ticket === "string"
+                                                                        ? ticket.split("-")[2]
+                                                                        : ticket.number}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </td>
 
-                                                                        </span>
-                                                                    ),
-                                                                )}
-                                                            </div>
-                                                        </td>
+                                                    <td className="amount">
+                                                        ₹{booking.total ?? booking.amount ?? 0}
+                                                    </td>
 
-                                                        <td className="amount">
-                                                            ₹{booking.total ?? booking.amount ?? 0}
-                                                        </td>
+                                                    <td>
+                                                        <span
+                                                            className={`payment-status ${booking.paymentStatus === "pending"
+                                                                ? "pending"
+                                                                : ""
+                                                                }`}
+                                                        >
+                                                            <span />
+                                                            {booking.paymentStatus || "pending"}
+                                                        </span>
+                                                    </td>
 
-                                                        <td>
-                                                            <span
-                                                                className={`payment-status ${booking.paymentStatus ===
-                                                                    "pending"
-                                                                    ? "pending"
-                                                                    : ""
-                                                                    }`}
-                                                            >
-                                                                <span />
-                                                                {booking.paymentStatus || "pending"}
-                                                            </span>
-                                                        </td>
-
-                                                        <td>
-                                                            <span
-                                                                className={`booking-status ${booking.status ===
-                                                                    "held"
-                                                                    ? "held"
-                                                                    : ""
-                                                                    }`}
-                                                            >
-                                                                {
-                                                                    booking.status
-                                                                }
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ),
-                                            )}
+                                                    <td>
+                                                        <span
+                                                            className={`booking-status ${booking.status === "held" ? "held" : ""
+                                                                }`}
+                                                        >
+                                                            {booking.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
@@ -3164,13 +3948,26 @@ export default function Admin() {
                                     description="Live payment records synchronized from confirmed and pending bookings."
                                     tag={`${payments.length} PAYMENTS`}
                                 />
-                                <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 18px 16px" }}>
-                                    <button type="button" className="admin-view-queue" onClick={() => {
-                                        setSelectedPaymentReference(pendingPaymentReviews[0]?.reference || "");
-                                        setPaymentRejectionReason("");
-                                        setPaymentReviewOpen(true);
-                                    }}>
-                                        <ShieldCheck size={15} /> Verify submitted payments ({pendingPaymentReviews.length}) <ChevronRight size={13} />
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "flex-end",
+                                        padding: "0 18px 16px",
+                                    }}
+                                >
+                                    <button
+                                        type="button"
+                                        className="admin-view-queue"
+                                        onClick={() => {
+                                            setSelectedPaymentReference(
+                                                pendingPaymentReviews[0]?.reference || "",
+                                            );
+                                            setPaymentRejectionReason("");
+                                            setPaymentReviewOpen(true);
+                                        }}
+                                    >
+                                        <ShieldCheck size={15} /> Verify submitted payments (
+                                        {pendingPaymentReviews.length}) <ChevronRight size={13} />
                                     </button>
                                 </div>
                                 <div className="admin-booking-table-wrap">
@@ -3202,10 +3999,14 @@ export default function Admin() {
                                                             {payment.reference || "—"}
                                                         </td>
                                                         <td className="muted">
-                                                            {payment.user?.name || payment.user?.phone || "Unknown"}
+                                                            {payment.user?.name ||
+                                                                payment.user?.phone ||
+                                                                "Unknown"}
                                                         </td>
                                                         <td>
-                                                            {(payment.paymentMethod || "—").replaceAll("_", " ").toUpperCase()}
+                                                            {(payment.paymentMethod || "—")
+                                                                .replaceAll("_", " ")
+                                                                .toUpperCase()}
                                                         </td>
                                                         <td className="amount">
                                                             ₹{payment.total ?? payment.amount ?? 0}
@@ -3227,10 +4028,7 @@ export default function Admin() {
                             </section>
 
                             {/* HISTORY */}
-                            <section
-                                id="history"
-                                className="admin-panel"
-                            >
+                            <section id="history" className="admin-panel">
                                 <PanelHeader
                                     icon={History}
                                     title="Historical Game Sessions"
@@ -3240,25 +4038,14 @@ export default function Admin() {
 
                                 <div className="admin-history-grid">
                                     {historyRows.map((item) => (
-                                        <div
-                                            className="admin-history-card"
-                                            key={item.room}
-                                        >
-                                            <span>
-                                                {item.room}
-                                            </span>
+                                        <div className="admin-history-card" key={item.room}>
+                                            <span>{item.room}</span>
 
-                                            <strong>
-                                                {item.name}
-                                            </strong>
+                                            <strong>{item.name}</strong>
 
-                                            <small>
-                                                {item.date}
-                                            </small>
+                                            <small>{item.date}</small>
 
-                                            <div>
-                                                {item.jackpot}
-                                            </div>
+                                            <div>{item.jackpot}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -3288,8 +4075,7 @@ export default function Admin() {
                                     Room {roomCode}
                                     <span>•</span>
                                     {totalBookings} bookings
-                                    <span>•</span>
-                                    ₹{totalRevenue} revenue
+                                    <span>•</span>₹{totalRevenue} revenue
                                 </div>
 
                                 <div>
