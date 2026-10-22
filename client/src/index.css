@@ -3107,8 +3107,6 @@ button {
   cursor: not-allowed;
 }
 
-
-
 .admin-login-message {
   display: flex;
   align-items: center;
@@ -8505,7 +8503,6 @@ button {
   }
 }
 
-
 /* ADDED: Keep booked tickets together in a dedicated responsive grid on desktop. */
 @media (min-width: 761px) {
   .room-layout {
@@ -8684,10 +8681,13 @@ button {
     width: 100%;
   }
 
-  .board-rail { order: 4; }
-  .insight-rail { order: 5; }
+  .board-rail {
+    order: 4;
+  }
+  .insight-rail {
+    order: 5;
+  }
 }
-
 
 /* ADDED: Compact desktop caller/prize rail at upper left, tickets alongside, supporting panels below. */
 @media (min-width: 761px) {
