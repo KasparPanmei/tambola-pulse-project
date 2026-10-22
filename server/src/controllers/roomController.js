@@ -1,6 +1,7 @@
 import Room from "../models/Room.js";
 import Ticket from "../models/Ticket.js";
 import Booking from "../models/Booking.js";
+import User from "../models/User.js";
 import PrizeClaim from "../models/PrizeClaim.js";
 
 import { drawNextBall } from "../utils/gameEngine.js";
@@ -470,6 +471,12 @@ export async function getPlayerRoomState(
                     "You do not have access to this room",
             });
         }
+
+        // Record a lightweight heartbeat so AdminDesk can show players actively in this room.
+        await User.updateOne(
+            { _id: userId },
+            { $set: { roomPresenceRoom: room._id, roomLastSeen: new Date() } },
+        );
 
         /*
          * Only verified winners are visible

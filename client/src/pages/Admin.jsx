@@ -1013,6 +1013,8 @@ export default function Admin() {
     const [room, setRoom] = useState(null);
     const [tickets, setTickets] = useState([]);
     const [bookings, setBookings] = useState([]);
+    // ADDED: Track the current page of the attendance list (10 active players per page).
+    const [attendancePage, setAttendancePage] = useState(0);
     const [payments, setPayments] = useState([]);
     const [paymentReviewOpen, setPaymentReviewOpen] = useState(false);
     const [selectedPaymentReference, setSelectedPaymentReference] = useState("");
@@ -2438,6 +2440,54 @@ export default function Admin() {
                                 id="overview"
                                 className="admin-section"
                             >
+                                {/* ADDED: Live room attendance table; active means a room heartbeat within 20 seconds. */}
+                                {(() => {
+                                    const confirmedBookings = bookings.filter((booking) => booking.paymentStatus === "paid" && booking.status === "confirmed");
+                                    const bookedPlayers = new Map(confirmedBookings.filter((booking) => booking.user?._id).map((booking) => [String(booking.user._id), booking]));
+                                    const activeCutoff = Date.now() - 20000;
+                                    const activeAttendees = [...new Map(confirmedBookings
+                                        .filter((booking) => booking.user && String(booking.user.roomPresenceRoom) === String(room?._id) && new Date(booking.user.roomLastSeen).getTime() >= activeCutoff)
+                                        .map((booking) => [String(booking.user._id), booking])).values()];
+                                    const pageSize = 10;
+                                    const pageCount = Math.max(1, Math.ceil(activeAttendees.length / pageSize));
+                                    const currentPage = Math.min(attendancePage, pageCount - 1);
+                                    const pageAttendees = activeAttendees.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+                                    return (
+                                        <div className="admin-panel" style={{ marginBottom: 24 }}>
+                                            <PanelHeader icon={Users} title="Room attendance" description="Players whose room session has checked in within the last 20 seconds." tag="LIVE PRESENCE" />
+                                            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "4px 0 18px", flexWrap: "wrap" }}>
+                                                <strong style={{ fontSize: 26 }}>{activeAttendees.length} <span style={{ fontSize: 15, opacity: 0.65, fontWeight: 600 }}>joined</span></strong>
+                                                <span style={{ opacity: 0.6 }}>/</span>
+                                                <strong style={{ fontSize: 26 }}>{bookedPlayers.size}</strong>
+                                                <span style={{ opacity: 0.65 }}>booked players</span>
+                                            </div>
+                                            <div style={{ overflowX: "auto" }}>
+                                                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                                                    <thead><tr>{["PLAYER", "PHONE", "BOOKING", "TICKETS", "LAST SEEN"].map((label) => <th key={label} style={{ padding: "10px 12px", fontSize: 11, opacity: 0.65, borderBottom: "1px solid rgba(148,163,184,.2)" }}>{label}</th>)}</tr></thead>
+                                                    <tbody>{pageAttendees.map((booking) => <tr key={booking.user._id}>
+                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{booking.user.name || "Player"}</td>
+                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{booking.user.phone || "—"}</td>
+                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{booking.reference || "—"}</td>
+                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{booking.tickets?.length || 0}</td>
+                                                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(148,163,184,.12)" }}>{new Date(booking.user.roomLastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</td>
+                                                    </tr>)}
+                                                    {activeAttendees.length === 0 && <tr><td colSpan="5" style={{ padding: 20, textAlign: "center", opacity: 0.65 }}>No booked players are currently active in this room.</td></tr>}</tbody>
+                                                </table>
+                                            </div>
+                                            {/* ADDED: Paginate the live attendance list in pages of 10 players. */}
+                                            {activeAttendees.length > 0 && (
+                                                <div className="admin-attendance-pagination">
+                                                    <span>Showing {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, activeAttendees.length)} of {activeAttendees.length} players</span>
+                                                    <div>
+                                                        <button type="button" onClick={() => setAttendancePage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>Previous</button>
+                                                        <strong>Page {currentPage + 1} of {pageCount}</strong>
+                                                        <button type="button" onClick={() => setAttendancePage(Math.min(pageCount - 1, currentPage + 1))} disabled={currentPage >= pageCount - 1}>Next</button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                                 <div className="admin-control-grid">
                                     {/* SCHEDULER */}
                                     <div className="admin-panel">

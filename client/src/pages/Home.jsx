@@ -257,17 +257,16 @@ export default function Home() {
                     </section>
                 )}
 
-                {room?.status === "upcoming" && (
-                    // CHANGED: Add a conspicuous pre-game countdown and Join Room action directly below the ticket hero card.
-                    <section className="home-upcoming-room-card" aria-label="Upcoming game room">
+                {(room?.status === "upcoming" || room?.status === "live") && (
+                    // ADDED: Keep Join Room available after the game starts; booking verification still controls access.
+                    <section className="home-upcoming-room-card" aria-label={room.status === "live" ? "Live game room" : "Upcoming game room"}>
                         <div className="home-upcoming-room-copy">
-                            <span className="home-upcoming-eyebrow">NEXT GAME STARTS IN</span>
+                            <span className="home-upcoming-eyebrow">
+                                {room.status === "live" ? "GAME IN PROGRESS" : "NEXT GAME STARTS IN"}
+                            </span>
                             <strong className="home-upcoming-countdown">
-                                {/* CHANGED: Show the upcoming room countdown as days, hours, minutes, and seconds. */}
-                                <Countdown
-                                    target={new Date(room.startsAt)}
-                                    format="days-hours-minutes-seconds"
-                                />
+                                {/* CHANGED: Upcoming rooms show the countdown; live rooms show their in-progress state. */}
+                                {room.status === "live" ? "Live now" : <Countdown target={new Date(room.startsAt)} format="days-hours-minutes-seconds" />}
                             </strong>
                             <span className="home-upcoming-room-code">Room #{room.code}</span>
                         </div>

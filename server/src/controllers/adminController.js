@@ -421,9 +421,10 @@ export async function getAdminBookings(
             await Booking.find({
                 room: room._id,
             })
+                // ADDED: Include the player's room heartbeat fields for the attendance monitor.
                 .populate(
                     "user",
-                    "name phone",
+                    "name phone roomPresenceRoom roomLastSeen",
                 )
                 .populate(
                     "tickets",

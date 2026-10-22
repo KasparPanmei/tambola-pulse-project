@@ -21,6 +21,20 @@ const s = new mongoose.Schema(
             default: false,
         },
 
+        // ADDED: Track which room this player last checked into for live admin attendance.
+        roomPresenceRoom: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Room",
+            default: null,
+            index: true,
+        },
+
+        roomLastSeen: {
+            type: Date,
+            default: null,
+            index: true,
+        },
+
         role: {
             type: String,
             enum: ["player", "admin"],

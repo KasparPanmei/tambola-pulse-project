@@ -1846,16 +1846,22 @@ button {
 .admin-generator-actions {
   display: flex;
   align-items: center;
+
   gap: 6px;
+
   flex-wrap: wrap;
 }
 
 .admin-count-input {
   display: flex;
   align-items: center;
+
   gap: 6px;
+
   padding: 6px 9px;
+
   border-radius: 6px;
+
   background: var(--admin-sidebar);
 }
 
@@ -1870,6 +1876,7 @@ button {
 }
 
 .admin-count-input input {
+  /* MERGED: Match the full-width admin input sizing from the uploaded stylesheet. */
   width: 100%;
 
   border: 0;
@@ -3099,6 +3106,8 @@ button {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+
 
 .admin-login-message {
   display: flex;
@@ -7363,6 +7372,25 @@ button {
   color: var(--text);
 }
 
+/* ADDED: Make the six checkout OTP cells distinct and legible in the light-cool, Soft Light, and lagoon themes. */
+:root[data-theme="light-cool"] .otp,
+:root[data-theme="light-soft"] .otp,
+:root[data-theme="lagoon"] .otp {
+  border: 1px solid color-mix(in srgb, var(--p) 55%, var(--muted2));
+  border-radius: 8px;
+  background: var(--sl);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="light-cool"] .otp:focus,
+:root[data-theme="light-soft"] .otp:focus,
+:root[data-theme="lagoon"] .otp:focus {
+  border-color: var(--p);
+  outline: 2px solid color-mix(in srgb, var(--p) 35%, transparent);
+  outline-offset: 1px;
+}
+
 /* CHANGED: Winner celebration modal, confetti animation, and responsive player-room styles. */
 .winner-celebration-overlay {
   position: fixed;
@@ -8475,4 +8503,278 @@ button {
   .ticket-color-options {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* ADDED: Keep booked tickets together in a dedicated responsive grid on desktop. */
+@media (min-width: 761px) {
+  .room-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .caller-rail {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+    align-items: start;
+  }
+
+  .player-tickets-section {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    align-items: start;
+  }
+
+  .player-tickets-section > .ticket-heading-row {
+    grid-column: 1 / -1;
+  }
+
+  .player-tickets-section > .ticket-card {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ADDED: On phones show a compact caller, tickets immediately after it, and supporting panels below. */
+@media (max-width: 760px) {
+  .room-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .caller-rail {
+    display: contents;
+  }
+
+  .caller-rail > .caller-card {
+    order: 1;
+    width: 100%;
+  }
+
+  .player-tickets-section {
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    width: 100%;
+  }
+
+  .player-tickets-section > .ticket-heading-row {
+    grid-column: 1 / -1;
+  }
+
+  .player-tickets-section .section-heading {
+    margin-bottom: 0;
+  }
+
+  .player-tickets-section .section-heading h2 {
+    font-size: 17px;
+  }
+
+  .player-tickets-section .auto-badge {
+    font-size: 9px;
+  }
+
+  .player-tickets-section > .ticket-card {
+    width: 100%;
+    padding: 9px;
+    border-radius: 10px;
+  }
+
+  .player-tickets-section .ticket-topline {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .player-tickets-section .ticket-topline h2 {
+    font-size: 12px;
+  }
+
+  .player-tickets-section .ticket-progress {
+    align-self: flex-start;
+    font-size: 9px;
+  }
+
+  .player-tickets-section .ticket-note,
+  .player-tickets-section .ticket-footer {
+    display: none;
+  }
+
+  .player-tickets-section .ticket-grid {
+    border-radius: 6px;
+  }
+
+  .player-tickets-section .ticket-cell {
+    font-size: clamp(8px, 2.5vw, 11px);
+    aspect-ratio: 1 / 0.76;
+  }
+
+  .caller-card {
+    order: 1;
+  }
+
+  .caller-card .caller-header {
+    min-height: 0;
+    padding: 9px 12px;
+  }
+
+  .caller-card .caller-header .caller-actions {
+    gap: 5px;
+  }
+
+  .caller-card .caller-stage {
+    min-height: 76px;
+    padding: 7px 12px;
+    gap: 10px;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .caller-card .number-orb {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+  }
+
+  .caller-card .number-orb strong {
+    font-size: 27px;
+  }
+
+  .caller-card .number-orb::before {
+    inset: 4px;
+  }
+
+  .caller-card .number-orb::after {
+    inset: -4px;
+  }
+
+  .caller-card .caller-history {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+  }
+
+  .caller-card .caller-history .recent-label,
+  .caller-card .caller-history .voice-note {
+    display: none;
+  }
+
+  .caller-card .caller-history .recent-pills {
+    gap: 5px;
+  }
+
+  .caller-card .caller-history .recent-pill {
+    width: 27px;
+    height: 27px;
+    font-size: 9px;
+  }
+
+  .caller-card .caller-footer {
+    display: none;
+  }
+
+  .player-tickets-section ~ .board-rail,
+  .caller-rail > .prize-card,
+  .insight-rail {
+    order: 3;
+    width: 100%;
+  }
+
+  .board-rail { order: 4; }
+  .insight-rail { order: 5; }
+}
+
+
+/* ADDED: Compact desktop caller/prize rail at upper left, tickets alongside, supporting panels below. */
+@media (min-width: 761px) {
+  .room-layout {
+    grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+    grid-template-rows: auto auto;
+    align-items: start;
+  }
+
+  .caller-rail {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .caller-rail > .caller-card {
+    width: 100%;
+  }
+
+  .caller-rail > .caller-card .caller-stage {
+    min-height: 128px;
+    padding: 14px;
+  }
+
+  .caller-rail > .caller-card .number-orb {
+    width: 96px;
+    height: 96px;
+  }
+
+  .caller-rail > .caller-card .number-orb strong {
+    font-size: 40px;
+  }
+
+  .caller-rail > .caller-card .caller-footer {
+    padding: 6px 12px;
+  }
+
+  .player-tickets-section {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  }
+
+  .room-layout > .board-rail {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .room-layout > .insight-rail {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+/* ADDED: Simple controls and range text for the 10-player attendance pages. */
+.admin-attendance-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  color: var(--muted, #94a3b8);
+  font-size: 12px;
+}
+
+.admin-attendance-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-attendance-pagination button {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.admin-attendance-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

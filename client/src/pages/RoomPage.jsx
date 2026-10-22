@@ -10,6 +10,8 @@ import {
 
 import api from "../lib/api.js";
 import GameRoom from "../components/GameRoom.jsx";
+// ADDED: Protect active gameplay from accidental browser/device Back navigation.
+import BackConfirmationGuard from "../components/BackConfirmationGuard.jsx";
 
 export default function RoomPage() {
     const { code } = useParams();
@@ -149,7 +151,9 @@ export default function RoomPage() {
     }
 
     return (
-        // CHANGED: The confirmation is scoped to JoinRoomModal; after entry, device Back returns directly to Home.
-        <GameRoom room={room} tickets={tickets} player={player} />
+        // ADDED: Keep the player in the active game unless they confirm leaving.
+        <BackConfirmationGuard active>
+            <GameRoom room={room} tickets={tickets} player={player} />
+        </BackConfirmationGuard>
     );
 }
