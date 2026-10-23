@@ -235,7 +235,7 @@ export default function PaymentScreen({
     } catch (e) {
       setError(
         e.response?.data?.message ||
-          "Unable to submit your payment confirmation. Please try again.",
+        "Unable to submit your payment confirmation. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -466,25 +466,6 @@ export default function PaymentScreen({
                 <div className="small muted">Amount: ₹{total.toFixed(2)}</div>
               </div>
 
-              <a
-                className="btn primary"
-                href={upiUri || undefined}
-                onClick={(event) => {
-                  if (!upiUri) {
-                    event.preventDefault();
-                  }
-                }}
-                style={{
-                  textDecoration: "none",
-
-                  justifyContent: "center",
-                }}
-              >
-                <Smartphone size={20} />
-                Open UPI App
-                <ExternalLink size={16} />
-              </a>
-
               <div className="info">
                 <Info size={18} />
 
@@ -629,7 +610,7 @@ export default function PaymentScreen({
                 ₹
                 {Number(
                   booking.room?.ticketPrice ??
-                    total / Math.max(tickets.length, 1),
+                  total / Math.max(tickets.length, 1),
                 ).toFixed(2)}
               </strong>
             </div>

@@ -110,21 +110,35 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             setCheckingFullSheet(false);
         }
     };
+
     async function send() {
         try {
             setError("");
+            setMessage("");
+
             if (!name.trim()) {
                 setError("Enter your name before requesting an OTP.");
                 return;
             }
-            // CHANGED: Send the booking name with the phone so the server can reject phone reuse under a different name.
-            await api.post("/auth/request-otp", { phone, name });
+
+            const response = await api.post("/auth/request-otp", {
+                phone,
+                name: name.trim(),
+            });
+
+            // Clear any old error after the server confirms success.
+            setError("");
             setSent(true);
-            setMsg("OTP sent by SMS. Please check your messages.");
+            setMessage(
+                response.data?.message || "OTP sent successfully. Please check your SMS."
+            );
         } catch (e) {
-            setError(e.response?.data?.message || "Could not send OTP");
+            setError(
+                e.response?.data?.message || "Could not send OTP. Please try again."
+            );
         }
     }
+
 
     async function verify() {
         try {
@@ -606,6 +620,12 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                         {msg && (
                             <div className="small" style={{ color: "var(--green)" }}>
                                 {msg}
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="small" style={{ color: "#ffb4ab" }}>
+                                {error}
                             </div>
                         )}
                     </div>
