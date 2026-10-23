@@ -199,11 +199,6 @@ export default function PaymentScreen({
       return;
     }
 
-    if (!submitted && !whatsappNumber) {
-      setError("The admin WhatsApp number is not configured.");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -518,6 +513,14 @@ export default function PaymentScreen({
               >
                 {loading ? "Submitting..." : "Confirm Booking for Verification"}
               </button>
+
+              {error && (
+                <div className="payment-error" role="alert">
+                  <strong>Unable to submit</strong>
+
+                  <span>{error}</span>
+                </div>
+              )}
             </>
           )}
         </div>
