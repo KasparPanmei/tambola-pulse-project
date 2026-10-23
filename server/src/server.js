@@ -40,6 +40,7 @@ const clientDistDirectory = path.resolve(serverDirectory, "../../client/dist");
 const allowedOrigins = new Set([
   "https://tambola-pulse.online",
   "https://www.tambola-pulse.online",
+  "https://tambola-pulse-project.vercel.app/",
   "http://localhost:5173",
   process.env.CLIENT_URL,
 ].filter(Boolean));
