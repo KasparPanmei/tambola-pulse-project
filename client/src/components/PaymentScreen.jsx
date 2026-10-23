@@ -31,8 +31,6 @@ export default function PaymentScreen({
 
   const [error, setError] = useState("");
 
-  const [confirmed, setConfirmed] = useState(false);
-
   const [upiTransactionId, setUpiTransactionId] = useState("");
 
   const [copied, setCopied] = useState(false);
@@ -196,19 +194,13 @@ export default function PaymentScreen({
   async function submitPaymentConfirmation() {
     setError("");
 
-    if (!confirmed) {
-      setError(
-        "Please confirm that you have paid and sent your payment screenshot to the admin on WhatsApp.",
-      );
-
+    if (!reference) {
+      setError("Booking reference is missing.");
       return;
     }
 
     if (!submitted && !whatsappNumber) {
-      setError(
-        "The admin WhatsApp number is not configured. Please contact the administrator.",
-      );
-
+      setError("The admin WhatsApp number is not configured.");
       return;
     }
 
@@ -217,25 +209,19 @@ export default function PaymentScreen({
     try {
       const { data } = await api.post(
         `/bookings/${encodeURIComponent(reference)}/submit-manual-payment`,
-
         {
-          confirmed: true,
-
           upiTransactionId: upiTransactionId.trim(),
         },
       );
 
       setSubmitted(true);
-
-      setBookingStatus(data.booking?.status || "pending");
-
+      setBookingStatus(data.booking?.status || data.status || "pending");
       setPaymentStatus(data.booking?.paymentStatus || "pending");
-
       setError("");
     } catch (e) {
       setError(
         e.response?.data?.message ||
-        "Unable to submit your payment confirmation. Please try again.",
+        "Unable to submit payment details. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -556,14 +542,16 @@ export default function PaymentScreen({
                 </span>
               </label>
 
+
               <button
                 type="button"
                 className="btn primary"
                 onClick={submitPaymentConfirmation}
-                disabled={loading || !confirmed || !upiId || total <= 0}
+                disabled={loading || !upiId || total <= 0}
               >
                 {loading ? "Submitting..." : "Confirm Booking for Verification"}
               </button>
+
 
               {error && (
                 <div className="payment-error" role="alert">

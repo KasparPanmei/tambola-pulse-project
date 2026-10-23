@@ -1,4 +1,3 @@
-
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Ticket from "../models/Ticket.js";
@@ -52,14 +51,10 @@ function bookingResponse(booking) {
         paymentMethod: booking.paymentMethod,
         paymentStatus: booking.paymentStatus,
         status: booking.status,
-        manualPaymentSubmitted:
-            booking.manualPaymentSubmitted || false,
-        paymentSubmittedAt:
-            booking.paymentSubmittedAt || null,
-        paymentVerifiedAt:
-            booking.paymentVerifiedAt || null,
-        paymentRejectionReason:
-            booking.paymentRejectionReason || "",
+        manualPaymentSubmitted: booking.manualPaymentSubmitted || false,
+        paymentSubmittedAt: booking.paymentSubmittedAt || null,
+        paymentVerifiedAt: booking.paymentVerifiedAt || null,
+        paymentRejectionReason: booking.paymentRejectionReason || "",
         upiReference: booking.upiReference || "",
         amount: booking.amount,
         fee: booking.fee || 0,
@@ -126,8 +121,7 @@ export async function holdTickets(req, res) {
 
         if (availableTickets.length !== uniqueIds.length) {
             return res.status(409).json({
-                message:
-                    "One or more tickets are no longer available.",
+                message: "One or more tickets are no longer available.",
             });
         }
 
@@ -135,22 +129,30 @@ export async function holdTickets(req, res) {
         // from the same persisted sheet, never an arbitrary selection of six tickets.
         if (uniqueIds.length === 6) {
             const sheetId = availableTickets[0]?.sheetId;
-            const sameSheet = Boolean(sheetId) && availableTickets.every((ticket) => String(ticket.sheetId) === String(sheetId));
+            const sameSheet =
+                Boolean(sheetId) &&
+                availableTickets.every(
+                    (ticket) => String(ticket.sheetId) === String(sheetId),
+                );
             const completeSheet = sameSheet
-                ? await Ticket.find({ room: room._id, sheetId, status: "available" }).select("_id").lean()
+                ? await Ticket.find({ room: room._id, sheetId, status: "available" })
+                    .select("_id")
+                    .lean()
                 : [];
             const requestedSet = new Set(uniqueIds);
-            if (completeSheet.length !== 6 || completeSheet.some((ticket) => !requestedSet.has(String(ticket._id)))) {
+            if (
+                completeSheet.length !== 6 ||
+                completeSheet.some((ticket) => !requestedSet.has(String(ticket._id)))
+            ) {
                 return res.status(409).json({
-                    message: "No complete available sheet matches those tickets. Please select a complete sheet again.",
+                    message:
+                        "No complete available sheet matches those tickets. Please select a complete sheet again.",
                     code: "FULL_SHEET_UNAVAILABLE",
                 });
             }
         }
 
-        const until = new Date(
-            Date.now() + HOLD_DURATION_MS,
-        );
+        const until = new Date(Date.now() + HOLD_DURATION_MS);
 
         const result = await Ticket.updateMany(
             {
@@ -171,12 +173,24 @@ export async function holdTickets(req, res) {
         if (result.modifiedCount !== uniqueIds.length) {
             // ADDED: Roll back any tickets partially held in a concurrent sheet-selection race.
             await Ticket.updateMany(
-                { _id: { $in: uniqueIds }, status: "held", heldBy: user._id, heldUntil: until, booking: null },
-                { $set: { status: "available", heldUntil: null, heldBy: null, booking: null } },
+                {
+                    _id: { $in: uniqueIds },
+                    status: "held",
+                    heldBy: user._id,
+                    heldUntil: until,
+                    booking: null,
+                },
+                {
+                    $set: {
+                        status: "available",
+                        heldUntil: null,
+                        heldBy: null,
+                        booking: null,
+                    },
+                },
             );
             return res.status(409).json({
-                message:
-                    "Some tickets were just taken. Please select again.",
+                message: "Some tickets were just taken. Please select again.",
             });
         }
 
@@ -189,8 +203,7 @@ export async function holdTickets(req, res) {
             booking: null,
         });
 
-        const total =
-            heldTickets.length * Number(room.ticketPrice);
+        const total = heldTickets.length * Number(room.ticketPrice);
 
         return res.json({
             expiresAt: until,
@@ -207,7 +220,6 @@ export async function holdTickets(req, res) {
         });
     }
 }
-
 
 export async function createBooking(req, res) {
     try {
@@ -256,9 +268,7 @@ export async function createBooking(req, res) {
             "orange",
         ];
 
-        const selectedTicketColor = String(ticketColor)
-            .trim()
-            .toLowerCase();
+        const selectedTicketColor = String(ticketColor).trim().toLowerCase();
 
         if (!allowedTicketColors.includes(selectedTicketColor)) {
             return res.status(400).json({
@@ -297,8 +307,7 @@ export async function createBooking(req, res) {
         if (
             requestedName &&
             user.name?.trim() &&
-            user.name.trim().toLocaleLowerCase() !==
-            requestedName.toLocaleLowerCase()
+            user.name.trim().toLocaleLowerCase() !== requestedName.toLocaleLowerCase()
         ) {
             return res.status(409).json({
                 message:
@@ -324,8 +333,7 @@ export async function createBooking(req, res) {
         }
 
         // Calculate amount on the server
-        const amount =
-            tickets.length * Number(room.ticketPrice);
+        const amount = tickets.length * Number(room.ticketPrice);
 
         if (!Number.isFinite(amount) || amount <= 0) {
             return res.status(400).json({
@@ -335,9 +343,7 @@ export async function createBooking(req, res) {
 
         const reference = makeReference("TAM");
 
-        const expiresAt = new Date(
-            Date.now() + PAYMENT_REVIEW_DURATION_MS
-        );
+        const expiresAt = new Date(Date.now() + PAYMENT_REVIEW_DURATION_MS);
 
         // Create the pending booking
         const booking = await Booking.create({
@@ -372,7 +378,7 @@ export async function createBooking(req, res) {
                     booking: booking._id,
                     heldUntil: expiresAt,
                 },
-            }
+            },
         );
 
         if (assigned.modifiedCount !== tickets.length) {
@@ -393,7 +399,7 @@ export async function createBooking(req, res) {
                         heldBy: null,
                         booking: null,
                     },
-                }
+                },
             );
 
             return res.status(409).json({
@@ -403,18 +409,14 @@ export async function createBooking(req, res) {
         }
 
         // Manual UPI configuration
-        const upiId = String(
-            process.env.UPI_ID || ""
-        ).trim();
+        const upiId = String(process.env.UPI_ID || "").trim();
 
         const merchantName = String(
-            process.env.MERCHANT_NAME || "Tambola Pulse"
+            process.env.MERCHANT_NAME || "Tambola Pulse",
         ).trim();
 
         const whatsappNumber = String(
-            process.env.ADMIN_WHATSAPP_NUMBER ||
-            process.env.ADMIN_PHONE ||
-            ""
+            process.env.ADMIN_WHATSAPP_NUMBER || process.env.ADMIN_PHONE || "",
         ).replace(/\D/g, "");
 
         return res.status(201).json({
@@ -441,7 +443,6 @@ export async function createBooking(req, res) {
     }
 }
 
-
 export async function submitManualPayment(req, res) {
     try {
         const booking = await Booking.findOne({
@@ -455,10 +456,7 @@ export async function submitManualPayment(req, res) {
             });
         }
 
-        if (
-            booking.paymentStatus === "paid" &&
-            booking.status === "confirmed"
-        ) {
+        if (booking.paymentStatus === "paid" && booking.status === "confirmed") {
             return res.json({
                 success: true,
                 status: "confirmed",
@@ -466,34 +464,19 @@ export async function submitManualPayment(req, res) {
             });
         }
 
-        if (
-            booking.paymentStatus !== "pending" ||
-            booking.status !== "pending"
-        ) {
+        if (booking.paymentStatus !== "pending" || booking.status !== "pending") {
             return res.status(409).json({
-                message:
-                    "This booking is no longer awaiting verification.",
+                message: "This booking is no longer awaiting verification.",
             });
         }
 
         if (booking.expiresAt && booking.expiresAt <= new Date()) {
             return res.status(410).json({
-                message:
-                    "This booking has expired. Please create a new booking.",
+                message: "This booking has expired. Please create a new booking.",
             });
         }
 
-        const {
-            confirmed,
-            upiTransactionId = "",
-        } = req.body || {};
-
-        if (confirmed !== true) {
-            return res.status(400).json({
-                message:
-                    "Confirm that you have paid and sent the payment screenshot to the admin on WhatsApp.",
-            });
-        }
+        const { upiTransactionId = "" } = req.body || {};
 
         if (!["upi_qr", "upi_id"].includes(booking.paymentMethod)) {
             return res.status(400).json({
@@ -503,9 +486,7 @@ export async function submitManualPayment(req, res) {
 
         booking.manualPaymentSubmitted = true;
         booking.paymentSubmittedAt = new Date();
-        booking.upiReference = String(upiTransactionId)
-            .trim()
-            .slice(0, 120);
+        booking.upiReference = String(upiTransactionId).trim().slice(0, 120);
 
         await booking.save();
 
@@ -622,8 +603,7 @@ export async function joinRoom(req, res) {
 
         if (cleanPhone(user.phone) !== cleanPhone(phone)) {
             return res.status(403).json({
-                message:
-                    "The mobile number does not match your registered account.",
+                message: "The mobile number does not match your registered account.",
             });
         }
 
@@ -632,12 +612,10 @@ export async function joinRoom(req, res) {
             user: user._id,
             paymentStatus: "paid",
             status: "confirmed",
-        })
-            .populate({
-                path: "tickets",
-                select:
-                    "_id number publicCode grid status sheetId sheetNumber",
-            });
+        }).populate({
+            path: "tickets",
+            select: "_id number publicCode grid status sheetId sheetNumber",
+        });
 
         if (!bookings.length) {
             const pendingBooking = await Booking.exists({
@@ -651,9 +629,7 @@ export async function joinRoom(req, res) {
                 message: pendingBooking
                     ? "Payment verification is pending. You can join the GameRoom after the admin confirms your booking."
                     : "No confirmed ticket booking was found for this room.",
-                status: pendingBooking
-                    ? "pending_verification"
-                    : "booking_required",
+                status: pendingBooking ? "pending_verification" : "booking_required",
             });
         }
 
@@ -667,25 +643,19 @@ export async function joinRoom(req, res) {
 
             for (const ticket of booking.tickets || []) {
                 if (ticket?._id) {
-                    ticketMap.set(
-                        ticket._id.toString(),
-                        {
-                            ...ticket.toObject(),
-                            ticketColor: bookingColor,
-                        },
-                    );
+                    ticketMap.set(ticket._id.toString(), {
+                        ...ticket.toObject(),
+                        ticketColor: bookingColor,
+                    });
                 }
             }
         }
 
-        const tickets = [...ticketMap.values()].sort(
-            (a, b) => a.number - b.number,
-        );
+        const tickets = [...ticketMap.values()].sort((a, b) => a.number - b.number);
 
         if (!tickets.length) {
             return res.status(403).json({
-                message:
-                    "No confirmed tickets were found for your bookings.",
+                message: "No confirmed tickets were found for your bookings.",
             });
         }
 

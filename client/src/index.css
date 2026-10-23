@@ -7746,6 +7746,64 @@ button {
   }
 }
 
+/* Keep the automatic caller readable on narrow screens. */
+@media (max-width: 600px) {
+  .caller-card {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .caller-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .caller-actions {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .next-cue {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .caller-stage {
+    min-width: 0;
+    padding: 12px 0;
+  }
+
+  .number-orb {
+    width: min(58vw, 220px);
+    height: min(58vw, 220px);
+    min-width: 130px;
+    min-height: 130px;
+    margin-inline: auto;
+  }
+
+  .number-orb strong {
+    font-size: clamp(3rem, 17vw, 5rem);
+  }
+
+  .recent-calls {
+    min-width: 0;
+  }
+
+  .recent-pills {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .voice-toggle {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
 /* ADDED: Admin music library dropdown and full in-header player controls. */
 .admin-music-library-anchor {
   position: relative;

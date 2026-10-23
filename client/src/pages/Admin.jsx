@@ -1588,13 +1588,14 @@ export default function Admin() {
             setLoading(false);
         }
     };
+
     const pendingPaymentReviews = payments.filter(
         (payment) =>
-            payment.paymentStatus !== "paid" &&
-            !["confirmed", "rejected", "cancelled", "expired"].includes(
-                payment.status,
-            ),
+            payment.manualPaymentSubmitted === true &&
+            payment.paymentStatus === "pending" &&
+            payment.status === "pending",
     );
+
     const selectedPayment =
         pendingPaymentReviews.find(
             (payment) =>
@@ -1669,7 +1670,7 @@ export default function Admin() {
                 loadAdminData({
                     silent: true,
                 }),
-            1000,
+            3000,
         );
 
         return () => window.clearInterval(interval);

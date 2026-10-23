@@ -1,3 +1,4 @@
+
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
@@ -12,21 +13,42 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { startGameEngine } from "./utils/gameEngine.js";
 
-// Load server/.env regardless of the current working directory.
+
 const serverDirectory = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(serverDirectory, "../.env");
-const envResult = dotenv.config({ path: envPath });
 
-if (envResult.error) {
-  console.error("Could not load the server environment file:", envPath);
-  console.error(envResult.error.message);
+let envLoaded = false;
+
+if (process.env.NODE_ENV !== "production") {
+  const envResult = dotenv.config({ path: envPath });
+
+  envLoaded = !envResult.error;
+
+  if (envResult.error) {
+    console.warn(
+      "Local environment file was not loaded:",
+      envResult.error.message
+    );
+    console.warn(
+      "If required variables are missing, configure them in server/.env."
+    );
+  }
+} else {
+  // In production, use environment variables configured by the host.
+  envLoaded = Boolean(process.env.JWT_SECRET);
 }
 
 const jwtSecret = process.env.JWT_SECRET || "";
 
-if (jwtSecret.length < 32 || jwtSecret.startsWith("replace-with-")) {
+if (
+  jwtSecret.length < 32 ||
+  jwtSecret.startsWith("replace-with-")
+) {
   console.error(
-    "JWT_SECRET must be a unique secret with at least 32 characters. Configure it in server/.env or the hosting environment."
+    "JWT_SECRET must be a unique secret containing at least 32 characters."
+  );
+  console.error(
+    "Configure JWT_SECRET in your local server/.env or hosting environment."
   );
   process.exit(1);
 }
@@ -35,30 +57,34 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.set("trust proxy", 1);
+app.disable("x-powered-by");
 
 console.log("SERVER STARTUP CHECK", {
   entryFile: fileURLToPath(import.meta.url),
-  envFile: envPath,
-  envLoaded: !envResult.error,
+  nodeEnv: process.env.NODE_ENV || "development",
+  envLoaded,
+  jwtSecretPresent: Boolean(process.env.JWT_SECRET),
+  mongoUriPresent: Boolean(process.env.MONGO_URI),
   twilioAccountSidPresent: Boolean(process.env.TWILIO_ACCOUNT_SID),
   twilioAuthTokenPresent: Boolean(process.env.TWILIO_AUTH_TOKEN),
   twilioVerifyServiceSidPresent: Boolean(
     process.env.TWILIO_VERIFY_SERVICE_SID
   ),
   trustProxy: app.get("trust proxy"),
-  nodeEnv: process.env.NODE_ENV || "development",
 });
-
-app.disable("x-powered-by");
 
 app.use((_, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader(
+    "Referrer-Policy",
+    "strict-origin-when-cross-origin"
+  );
   res.setHeader(
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()"
   );
+
   next();
 });
 
@@ -84,22 +110,27 @@ app.use(
         return callback(null, true);
       }
 
+      // Do not allow unlisted browser origins.
       return callback(null, false);
     },
   })
 );
 
+
 app.use(express.json({ limit: "100kb" }));
 
-// Serve uploaded room music.
+
 app.use(
   "/media/music",
-  express.static(path.join(serverDirectory, "uploads", "music"), {
-    fallthrough: false,
-  })
+  express.static(
+    path.join(serverDirectory, "uploads", "music"),
+    {
+      fallthrough: false,
+    }
+  )
 );
 
-// General authentication rate limit.
+
 app.use(
   "/api/auth",
   rateLimit({
@@ -110,7 +141,7 @@ app.use(
   })
 );
 
-// OTP request rate limit.
+// Limit OTP requests.
 app.use(
   "/api/auth/request-otp",
   rateLimit({
@@ -124,7 +155,7 @@ app.use(
   })
 );
 
-// OTP verification rate limit.
+// Limit OTP verification attempts.
 app.use(
   "/api/auth/verify-otp",
   rateLimit({
@@ -139,30 +170,44 @@ app.use(
 );
 
 app.get("/api/health", (_, res) => {
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    message: "Tambola Pulse API is running.",
+  });
 });
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Serve the Vite frontend when running the combined production deployment.
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(clientDistDirectory));
 
   app.get("/{*splat}", (req, res, next) => {
+    // Let API and non-HTML requests reach the 404 handler.
     if (!req.accepts("html")) {
       return next();
     }
 
-    res.sendFile(path.join(clientDistDirectory, "index.html"));
+    res.sendFile(
+      path.join(clientDistDirectory, "index.html"),
+      (error) => {
+        if (error) {
+          next(error);
+        }
+      }
+    );
   });
 }
 
 app.use((_, res) => {
-  res.status(404).json({ message: "Route not found" });
+  res.status(404).json({
+    message: "Route not found",
+  });
 });
+
 
 app.use((error, _, res, __) => {
   const status =
@@ -186,15 +231,20 @@ app.use((error, _, res, __) => {
   });
 });
 
-connectDB()
-  .then(() => {
+async function startServer() {
+  try {
+    await connectDB();
+
     startGameEngine();
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Tambola Pulse server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
-  })
-  .catch((error) => {
-    console.error("Database connection failed:", error);
-    process.exitCode = 1;
-  });
+  } catch (error) {
+    console.error("Server startup failed:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
