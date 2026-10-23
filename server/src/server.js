@@ -22,6 +22,7 @@ if (jwtSecret.length < 32 || jwtSecret.startsWith("replace-with-")) {
 const app = express(),
   PORT = process.env.PORT || 5000;
 
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use((_, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
