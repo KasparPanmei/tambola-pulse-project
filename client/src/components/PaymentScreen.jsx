@@ -518,15 +518,6 @@ export default function PaymentScreen({
               >
                 {loading ? "Submitting..." : "Confirm Booking for Verification"}
               </button>
-
-
-              {error && (
-                <div className="payment-error" role="alert">
-                  <strong>Unable to submit</strong>
-
-                  <span>{error}</span>
-                </div>
-              )}
             </>
           )}
         </div>
