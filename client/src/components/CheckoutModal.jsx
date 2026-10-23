@@ -125,23 +125,44 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
             setError(e.response?.data?.message || "Could not send OTP");
         }
     }
+
     async function verify() {
         try {
+            setError("");
+            setMessage("");
+
             const { data } = await api.post("/auth/verify-otp", {
                 phone,
                 otp: otp.join(""),
                 name,
             });
+
+            if (!data?.token || !data?.user) {
+                throw new Error(
+                    "The server did not return a valid verified session."
+                );
+            }
+
             localStorage.setItem("tp_token", data.token);
             localStorage.setItem("tp_user", JSON.stringify(data.user));
+
             setVerified(true);
-            // CHANGED: Remember which name was associated with the OTP-verified phone.
-            setVerifiedIdentity(data.user || { name, phone });
-            setMsg("✓ OTP verified automatically");
+            setVerifiedIdentity(data.user);
+
+            setError("");
+            setMessage("✓ OTP verified successfully");
         } catch (e) {
-            setError(e.response?.data?.message || "OTP verification failed");
+            setVerified(false);
+            setVerifiedIdentity(null);
+
+            setError(
+                e.response?.data?.message ||
+                e.message ||
+                "OTP verification failed"
+            );
         }
     }
+
     function otpChange(i, v) {
         const d = v.replace(/\D/g, "").slice(-1),
             a = [...otp];
