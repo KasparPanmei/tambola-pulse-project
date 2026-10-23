@@ -23,10 +23,13 @@ const app = express(),
   PORT = process.env.PORT || 5000;
 
 app.set("trust proxy", 1);
+
 console.log("PROXY CONFIG CHECK", {
   trustProxy: app.get("trust proxy"),
   entryFile: fileURLToPath(import.meta.url),
+  nodeEnv: process.env.NODE_ENV,
 });
+
 app.disable("x-powered-by");
 app.use((_, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
