@@ -8836,3 +8836,158 @@ button {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* MOBILE GAME ROOM POLISH: give the navbar breathing room and keep voice caller visible. */
+@media (max-width: 760px) {
+  .topbar {
+    min-height: 0;
+    height: auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px 12px;
+    padding: 10px 12px;
+  }
+
+  .topbar > .brand-lockup {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .topbar .brand-name {
+    font-size: 15px;
+    line-height: 1.15;
+  }
+
+  .topbar .brand-subtitle {
+    max-width: min(44vw, 190px);
+    margin-top: 4px;
+    font-size: 9px;
+  }
+
+  .topbar > .topbar-meta {
+    flex: 1 1 100%;
+    min-width: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 7px;
+  }
+
+  .topbar .room-code {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 7px 9px;
+  }
+
+  .topbar .room-code strong {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .topbar .theme-picker {
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 34px;
+  }
+
+  .topbar .theme-picker select {
+    max-width: 84px;
+  }
+
+  .topbar .room-music-volume-button,
+  .topbar > .topbar-meta > .icon-button {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+  }
+
+  .topbar .host-avatar {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+  }
+
+  /* The old mobile rule hid the voice control; keep it beside recent calls. */
+  .caller-card .caller-history {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .caller-card .caller-history .recent-label {
+    display: none;
+  }
+
+  .caller-card .caller-history .recent-pills {
+    display: flex;
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 5px;
+  }
+
+  .caller-card .caller-history .recent-pill {
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+  }
+
+  .caller-card .caller-history .voice-note,
+  .caller-card .caller-history .voice-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 32px;
+    max-width: 100%;
+    margin: 0;
+    padding: 6px 9px;
+    border: 1px solid color-mix(in srgb, var(--green) 38%, transparent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--green) 12%, var(--s));
+    color: var(--text);
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .caller-card .caller-history .voice-toggle.enabled {
+    color: var(--green);
+    border-color: color-mix(in srgb, var(--green) 55%, transparent);
+    background: color-mix(in srgb, var(--green) 16%, var(--s));
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .topbar > .topbar-meta {
+    gap: 5px;
+  }
+
+  .topbar .theme-picker {
+    gap: 3px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .topbar .theme-picker select {
+    max-width: 68px;
+    font-size: 9px;
+  }
+
+  .caller-card .caller-history {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .caller-card .caller-history .voice-toggle {
+    justify-self: start;
+  }
+}
