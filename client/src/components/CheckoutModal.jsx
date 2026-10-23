@@ -550,6 +550,7 @@ export default function CheckoutModal({ room, tickets, onClose, onPayment }) {
                                             setSent(false);
                                             setOtp(["", "", "", "", "", ""]);
                                             setError("");
+                                            setMessage("");
                                         }}
                                     />
                                 </div>
