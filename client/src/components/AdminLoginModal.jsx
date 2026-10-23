@@ -74,7 +74,7 @@ export default function AdminLoginModal({ onClose }) {
         } catch (e) {
             setError(
                 e.response?.data?.message ||
-                    "Could not send OTP.",
+                "Could not send OTP.",
             );
         } finally {
             setLoading(false);
@@ -137,7 +137,7 @@ export default function AdminLoginModal({ onClose }) {
         } catch (e) {
             setError(
                 e.response?.data?.message ||
-                    "OTP verification failed.",
+                "OTP verification failed.",
             );
         } finally {
             setLoading(false);

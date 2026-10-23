@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import JoinRoomModal from "./JoinRoomModal.jsx";
+import api from "../lib/api.js";
 import adminApi from "../lib/adminApi.js";
 
 const items = [
