@@ -510,39 +510,6 @@ export default function PaymentScreen({
                 your payment screenshot yourself.
               </div>
 
-              <label
-                className="row"
-                style={{
-                  alignItems: "flex-start",
-
-                  gap: 10,
-
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={confirmed}
-                  onChange={(event) => setConfirmed(event.target.checked)}
-                  style={{
-                    marginTop: 4,
-
-                    width: 18,
-
-                    height: 18,
-
-                    flexShrink: 0,
-                  }}
-                />
-
-                <span>
-                  I confirm that I have paid the displayed amount and sent the
-                  payment screenshot to the admin on WhatsApp using my
-                  registered mobile number.
-                </span>
-              </label>
-
-
               <button
                 type="button"
                 className="btn primary"
