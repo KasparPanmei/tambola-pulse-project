@@ -1,6 +1,7 @@
 
 import User from "../models/User.js";
 import { signToken } from "../utils/auth.js";
+import AdminSession from "../models/AdminSession.js";
 import twilio from "twilio";
 
 // Local development safeguard.
@@ -263,9 +264,21 @@ export async function verifyOtp(req, res) {
         // Clear the cooldown after successful verification.
         otpRequestCooldowns.delete(phone);
 
+        // Track admin sessions on the server so logout and inactivity can revoke them.
+        let token;
+        if (user.role === "admin") {
+            const session = await AdminSession.create({
+                adminId: user._id,
+                lastActivityAt: new Date(),
+            });
+            token = signToken(user, { sid: session._id.toString() });
+        } else {
+            token = signToken(user);
+        }
+
         return res.json({
             message: "OTP verified",
-            token: signToken(user),
+            token,
             user: {
                 id: user._id,
                 name: user.name,
@@ -288,5 +301,24 @@ export async function verifyOtp(req, res) {
             message:
                 "OTP was verified, but the account could not be updated.",
         });
+    }
+}
+
+
+export async function logoutAdmin(req, res) {
+    try {
+        if (req.auth?.role !== "admin" || !req.auth?.sid) {
+            return res.status(401).json({ message: "Admin session not found." });
+        }
+
+        await AdminSession.updateOne(
+            { _id: req.auth.sid, adminId: req.auth.sub, revokedAt: null },
+            { $set: { revokedAt: new Date() } },
+        );
+
+        return res.json({ success: true, message: "Admin logged out." });
+    } catch (error) {
+        console.error("Admin logout failed:", error);
+        return res.status(500).json({ message: "Could not end admin session." });
     }
 }
