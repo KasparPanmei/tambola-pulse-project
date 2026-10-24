@@ -1269,8 +1269,7 @@ export default function Admin() {
             localStorage.removeItem("tp_admin_token");
             localStorage.removeItem("tp_admin_user");
             localStorage.removeItem("tp_admin_room_code");
-            navigate("/", { replace: true, state: { openAdminLogin: true } });
-            window.location.reload();
+            navigate("/", { replace: true });
         }
     }
 
