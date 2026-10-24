@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /room/
+
+Sitemap: https://www.tambola-pulse.online/sitemap.xml
