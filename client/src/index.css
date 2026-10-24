@@ -8991,3 +8991,33 @@ button {
     justify-self: start;
   }
 }
+
+
+/* Admin sign-out action */
+.admin-logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 11px;
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(127, 29, 29, 0.18);
+  white-space: nowrap;
+}
+.admin-logout-button:hover {
+  color: #fff;
+  border-color: rgba(248, 113, 113, 0.55);
+  background: rgba(185, 28, 28, 0.3);
+}
+@media (max-width: 720px) {
+  .admin-logout-button {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+  }
+  .admin-logout-button span {
+    display: none;
+  }
+}
