@@ -1,11 +1,12 @@
 import jwt from "jsonwebtoken";
 
-export const signToken = (user) =>
+export const signToken = (user, extraClaims = {}) =>
     jwt.sign(
         {
             sub: user._id.toString(),
             phone: user.phone,
             role: user.role || "player",
+            ...extraClaims,
         },
         process.env.JWT_SECRET,
         {
