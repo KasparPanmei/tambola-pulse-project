@@ -48,10 +48,7 @@ export async function requireAdmin(req, res, next) {
             return res.status(403).json({ message: "Admin access required" });
         }
 
-        // Only successful, authenticated admin API activity refreshes the idle timer.
-        session.lastActivityAt = now;
-        await session.save();
-
+        // Do not refresh inactivity time for automatic API polling.
         return next();
     } catch (error) {
         return next(error);
