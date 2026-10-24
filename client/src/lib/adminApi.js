@@ -18,4 +18,20 @@ adminApi.interceptors.request.use((config) => {
     return config;
 });
 
+// An expired or revoked admin session must clear local credentials, not just hide the dashboard.
+adminApi.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem("tp_admin_token");
+            localStorage.removeItem("tp_admin_user");
+            if (window.location.pathname === "/admin") {
+                window.location.replace("/");
+            }
+        }
+
+        return Promise.reject(error);
+    },
+);
+
 export default adminApi;
