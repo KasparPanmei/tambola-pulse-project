@@ -282,8 +282,9 @@ export default function Home() {
                 )}
 
 
+                {!loading && (
                 <section
-                    className="card pad"
+                    className="card pad home-ticket-feed"
                     style={{
                         marginTop: 12,
                     }}
@@ -305,6 +306,7 @@ export default function Home() {
                     </div>
 
                 </section>
+                )}
 
             </main>
 
