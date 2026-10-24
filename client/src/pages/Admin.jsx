@@ -16,6 +16,7 @@ import {
     History,
     Hash,
     LayoutDashboard,
+    LogOut,
     Menu,
     Pause,
     Phone,
@@ -1257,6 +1258,21 @@ function downloadWinnerPoster({ room, winnerClaims }) {
 
 export default function Admin() {
     const navigate = useNavigate();
+
+    async function handleAdminLogout() {
+        try {
+            await adminApi.post("/auth/admin/logout");
+        } catch (error) {
+            // Clear this browser's credentials even if the server session already expired.
+            console.warn("Admin logout request did not complete:", error?.response?.status || error?.message);
+        } finally {
+            localStorage.removeItem("tp_admin_token");
+            localStorage.removeItem("tp_admin_user");
+            localStorage.removeItem("tp_admin_room_code");
+            navigate("/", { replace: true, state: { openAdminLogin: true } });
+            window.location.reload();
+        }
+    }
 
     useEffect(() => {
         try {
@@ -3019,6 +3035,17 @@ export default function Admin() {
                             <Bell size={17} />
 
                             {notifications && <span className="admin-notification-dot" />}
+                        </button>
+
+                        <button
+                            type="button"
+                            className="admin-header-button admin-logout-button"
+                            onClick={handleAdminLogout}
+                            aria-label="Log out of admin account"
+                            title="Log out"
+                        >
+                            <LogOut size={16} />
+                            <span>Log out</span>
                         </button>
 
                         <div className="admin-avatar">A</div>
