@@ -119,12 +119,12 @@ export default function AdminLoginModal({ onClose }) {
             }
 
             localStorage.setItem(
-                "tp_token",
+                "tp_admin_token",
                 data.token,
             );
 
             localStorage.setItem(
-                "tp_user",
+                "tp_admin_user",
                 JSON.stringify(data.user),
             );
 
