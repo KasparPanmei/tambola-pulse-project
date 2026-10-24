@@ -1293,6 +1293,41 @@ export default function Admin() {
         }
     }, [navigate]);
 
+    // Refresh the 24-hour idle timer only after genuine user interaction, never from dashboard polling.
+    useEffect(() => {
+        if (!localStorage.getItem("tp_admin_token")) return undefined;
+
+        let lastHeartbeatAt = 0;
+        let sending = false;
+
+        const recordActivity = () => {
+            const now = Date.now();
+            if (sending || now - lastHeartbeatAt < 60_000) return;
+
+            lastHeartbeatAt = now;
+            sending = true;
+
+            adminApi.post("/auth/admin/activity")
+                .catch(() => {
+                    // The shared admin API interceptor clears credentials on an expired session.
+                })
+                .finally(() => {
+                    sending = false;
+                });
+        };
+
+        const events = ["pointerdown", "keydown", "touchstart", "click"];
+        events.forEach((eventName) =>
+            window.addEventListener(eventName, recordActivity, { passive: true }),
+        );
+
+        return () => {
+            events.forEach((eventName) =>
+                window.removeEventListener(eventName, recordActivity),
+            );
+        };
+    }, []);
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
     // Music controls for selecting, uploading, and synchronizing room playback.
     const musicInputRef = useRef(null);
