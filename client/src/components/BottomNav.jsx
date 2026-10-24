@@ -54,6 +54,22 @@ export default function BottomNav({
         useState("");
 
     function openAdmin() {
+        // Reuse an existing admin session after a tab/browser reopen.
+        // The server validates the session; expired/revoked tokens are cleared by adminApi.
+        const token = localStorage.getItem("tp_admin_token");
+        let user = null;
+
+        try {
+            user = JSON.parse(localStorage.getItem("tp_admin_user") || "null");
+        } catch {
+            localStorage.removeItem("tp_admin_user");
+        }
+
+        if (token && user?.role === "admin") {
+            navigate("/admin");
+            return;
+        }
+
         setAdminModal(true);
         setError("");
         setMessage("");
