@@ -3073,7 +3073,7 @@ export default function Admin() {
 
                         <button
                             type="button"
-                            className="admin-header-button admin-logout-button"
+                            className="admin-header-button admin-logout-button btn-danger"
                             onClick={handleAdminLogout}
                             aria-label="Log out of admin account"
                             title="Log out"
@@ -3081,8 +3081,6 @@ export default function Admin() {
                             <LogOut size={16} />
                             <span>Log out</span>
                         </button>
-
-                        <div className="admin-avatar">A</div>
                     </div>
                 </header>
 
