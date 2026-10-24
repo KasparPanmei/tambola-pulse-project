@@ -6,6 +6,7 @@ import Home from "./pages/Home.jsx";
 import RoomPage from "./pages/RoomPage.jsx";
 import Admin from "./pages/Admin.jsx";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 function App() {
     return (
         <BrowserRouter>
@@ -25,6 +26,7 @@ function App() {
                 position="top-center"
                 richColors
             />
+            <Analytics />
         </BrowserRouter>
     );
 }
